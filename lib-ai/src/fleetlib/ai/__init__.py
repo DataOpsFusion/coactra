@@ -11,7 +11,13 @@
 # Wrap shelf (LiteLLM + Instructor). Guarded: if those heavy/optional providers
 # cannot be imported, the novel reasoning core below still loads and works.
 try:
-    from fleetlib.ai.client import LiteLLMCompleter, ask, structured
+    from fleetlib.ai.client import (
+        Client,
+        LiteLLMCompleter,
+        ask,
+        make_completer,
+        structured,
+    )
 
     _WRAP_SHELF = True
 except ImportError:  # pragma: no cover - only when litellm/instructor missing
@@ -26,6 +32,8 @@ from fleetlib.ai.store import InMemoryStore
 __all__ = [
     "ask",
     "structured",
+    "make_completer",
+    "Client",
     "LiteLLMCompleter",
     "LiteLLMEmbedding",
     "cosine",
