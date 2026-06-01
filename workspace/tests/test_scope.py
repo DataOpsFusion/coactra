@@ -27,3 +27,9 @@ def test_scope_rejects_empty_parts():
 
 def test_scope_key_is_stable_relative_path():
     assert Scope(tenant_id="acme", agent_id="planner").key == "acme/planner"
+
+
+@pytest.mark.parametrize("part", ["..", ".", "../globex", "acme/other", r"acme\other"])
+def test_scope_rejects_path_components_that_can_escape_the_desk(part):
+    with pytest.raises(ValidationError):
+        Scope(tenant_id=part, agent_id="planner")

@@ -17,7 +17,7 @@ def test_cosine_zero_vector_is_safe():
 
 def test_default_embedding_uses_litellm():
     fake = {"data": [{"embedding": [0.1, 0.2, 0.3]}]}
-    with patch("coactra.ai.embedding.litellm.embedding", return_value=fake) as m:
+    with patch("coactra.ai.completion.embedding._litellm_embedding", return_value=fake) as m:
         embed = LiteLLMEmbedding(model="text-embedding-3-small")
         out = embed("hello")
     assert out == [0.1, 0.2, 0.3]

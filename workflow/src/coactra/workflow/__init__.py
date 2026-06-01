@@ -7,8 +7,8 @@ workflow owns when/what; organization routes who; agent carries the talk. Induct
 trace-faithful and deterministic; update() is manual — we do NOT overclaim self-learning.
 """
 
-from coactra.workflow.engine import RunContext, WorkflowEngine
-from coactra.workflow.handlers import (
+from coactra.workflow.runtime.engine import RunContext, WorkflowEngine
+from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -20,9 +20,18 @@ from coactra.workflow.handlers import (
     TerminalHumanRouter,
 )
 from coactra.workflow.induction import ReasoningTrace, induce, update
-from coactra.workflow.langgraph_engine import LangGraphEngine
-from coactra.workflow.models import Procedure, RunResult, Step
-from coactra.workflow.scope import Scope
+try:
+    from coactra.workflow.backends.langgraph import LangGraphEngine
+except ImportError as exc:  # pragma: no cover - only when langgraph is not installed
+    _LANGGRAPH_IMPORT_ERROR = exc
+
+    class LangGraphEngine:
+        def __init__(self, *args, **kwargs) -> None:
+            raise ImportError(
+                "LangGraphEngine requires the langgraph dependency"
+            ) from _LANGGRAPH_IMPORT_ERROR
+from coactra.workflow.domain.models import Procedure, RunResult, Step
+from coactra.workflow.domain.scope import Scope
 from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
 
 __version__ = "0.1.0"

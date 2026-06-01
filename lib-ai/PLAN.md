@@ -1,5 +1,9 @@
 # coactra.ai Implementation Plan
 
+> **Current layout note:** the original flat module paths below remain compatibility imports.
+> Canonical implementation now lives under `completion/` (provider calls and embeddings)
+> and `replay/` (capture, gate, models, and store).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a thin, publishable foundation library that (a) wraps LiteLLM + Instructor as a small model-call / structured-output shelf, and (b) builds the one novel core — reasoning capture-replay with an adaptive gate, bounded quality-filtered retrieval, and an explicit replay-vs-re-reason fallback.

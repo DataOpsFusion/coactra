@@ -6,6 +6,7 @@ from coactra.agent.integrations.adapters import (
     OrganizationAdapter,
     WorkflowAdapter,
     WorkspaceAdapter,
+    WorkAdapter,
 )
 from coactra.agent.integrations.factory import make_coactra_agent
 
@@ -15,5 +16,6 @@ __all__ = [
     "WorkspaceAdapter",
     "WorkflowAdapter",
     "OrganizationAdapter",
+    "WorkAdapter",
     "make_coactra_agent",
 ]

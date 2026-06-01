@@ -1,5 +1,8 @@
 # coactra.workspace Implementation Plan
 
+> **Current layout note:** the original `backend.py` and `local.py` paths below remain
+> compatibility imports. Canonical backend code now lives under `backends/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a publishable, thin control layer — the persistent **agent desk** — OVER swappable sandbox backends. `Workspace` gives an agent `write` / `read` / `run` (CLI-policy-gated) / `handoff` (day-note) / `compact` (auto-compact) / a stored capability **manifest reference**, all scoped per `(tenant_id, agent_id)` and persistent by default, over a `WorkspaceBackend` Protocol with ONE working default (`LocalFilesystemBackend`).

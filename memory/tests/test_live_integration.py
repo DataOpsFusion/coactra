@@ -51,3 +51,10 @@ async def test_live_graphiti_remember_recall():
     await mem.remember(["Service A depends on Service B."], SCOPE)
     hits = await mem.recall("what depends on Service B?", SCOPE, k=5)
     assert all(isinstance(h, Recollection) for h in hits)
+
+
+@pytest.mark.skipif(not _mem0_ready, reason="mem0 extra + OPENAI_API_KEY not configured")
+async def test_live_mem0_dump_uses_current_filter_contract():
+    backend = make_backend("mem0")
+    dumped = await backend.dump(SCOPE)
+    assert all(isinstance(item, Recollection) for item in dumped)

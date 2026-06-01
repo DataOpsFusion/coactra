@@ -43,11 +43,13 @@ def test_public_surface_is_complete():
         "WorkspacePort",
         "WorkflowPort",
         "OrganizationPort",
+        "WorkPort",
         "FakeAI",
         "FakeMemory",
         "FakeWorkspace",
         "FakeWorkflow",
         "FakeOrganization",
+        "FakeWork",
         "FakeOrgNode",
         "FakeMember",
         # facade + composition root
@@ -100,7 +102,7 @@ def test_end_to_end_composition():
 
 
 def _load_workflow_handlers():
-    # Load the REAL coactra.workflow.handlers module DIRECTLY by file path. handlers.py is
+    # Load the REAL coactra.workflow.runtime.handlers module DIRECTLY by file path. handlers.py is
     # leaf-importable (it imports only typing + pydantic), so this gives us the ACTUAL
     # Protocols the inter-lib contract is defined against WITHOUT importing coactra.workflow
     # (which pulls langgraph via langgraph_engine). The test can therefore never drift from
@@ -112,7 +114,7 @@ def _load_workflow_handlers():
     # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/workflow/src/...
     repo_root = here.parents[2]
     handlers_path = (
-        repo_root / "workflow" / "src" / "coactra" / "workflow" / "handlers.py"
+        repo_root / "workflow" / "src" / "coactra" / "workflow" / "runtime" / "handlers.py"
     )
     assert handlers_path.is_file(), (
         f"real workflow handlers not found at {handlers_path}"

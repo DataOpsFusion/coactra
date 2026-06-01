@@ -20,7 +20,7 @@ the protocols themselves:
 ## The vision
 
 The runtime that wires the other libraries (`lib-ai`, `memory`, `workspace`,
-`workflow`, `organization`) into a working agent — as a **composition/policy layer over
+`workflow`, `organization`, `work`) into a working agent — as a **composition/policy layer over
 mature protocols**, not a reinvention of them. Richer agent collaboration = policy on
 top of A2A; mid-session capability mounting = orchestration on top of MCP
 `tools.listChanged`; human action = delegated on-behalf-of identity (RFC 8693).
@@ -46,3 +46,15 @@ orchestration (mid-session mount → next-safe-turn exposure, conflict/cache han
 - Mid-session mount → "next safe turn" exposure: where exactly is the turn boundary?
 - Delegated-identity chain (RFC 8693 subject/actor) across multi-hop delegation.
 - Collaboration policy above A2A: who may talk to whom, when.
+
+## Integrated Coactra stack
+
+The core package stays independently usable with ports and in-process defaults. When the
+sibling capability packages are installed, use the optional integration helper:
+
+```python
+from coactra.agent.integrations import make_coactra_agent
+```
+
+`make_coactra_agent(...)` translates the sibling scope shapes and injects the real AI,
+memory, workspace, workflow, organization, and work facades into `Agent`.

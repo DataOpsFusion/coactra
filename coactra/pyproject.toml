@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coactra"
+version = "0.1.0"
+description = "Convenience installer for the modular Coactra agent-work libraries."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "coactra authors" }]
+
+[project.optional-dependencies]
+ai = ["coactra-ai>=0.2,<0.3"]
+memory = ["coactra-memory>=0.2,<0.3"]
+workspace = ["coactra-workspace>=0.1,<0.2"]
+workflow = ["coactra-workflow>=0.1,<0.2"]
+work = ["coactra-work>=0.1,<0.2"]
+organization = ["coactra-organization>=0.2,<0.3"]
+agent = ["coactra-agent[siblings]>=0.2,<0.3"]
+all = [
+    "coactra-ai>=0.2,<0.3",
+    "coactra-memory>=0.2,<0.3",
+    "coactra-workspace>=0.1,<0.2",
+    "coactra-workflow>=0.1,<0.2",
+    "coactra-work>=0.1,<0.2",
+    "coactra-organization>=0.2,<0.3",
+    "coactra-agent>=0.2,<0.3",
+]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
+
+[tool.hatch.build.targets.wheel]
+# Preserve the PEP 420 coactra namespace: this package intentionally has no __init__.py.
+packages = ["src/coactra"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/coactra", "README.md", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

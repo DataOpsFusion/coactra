@@ -33,3 +33,13 @@
   valid typed object from qwen3.6-plus; ask() returns non-empty from a thinking model.
   Base url https://opencode.ai/zen/go/v1, models qwen3.6-plus / minimax-m3 / kimi-k2.6.
 - Never fake green; report real numbers incl. live pass/skip.
+
+## Current Layout
+
+```text
+completion/  # LiteLLM / Instructor provider shelf and embeddings
+replay/      # capture, adaptive gate, models, and stores
+adapters/    # optional storage adapters
+```
+
+The original flat module paths remain compatibility imports.

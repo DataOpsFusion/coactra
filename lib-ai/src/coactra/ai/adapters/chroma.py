@@ -1,14 +1,37 @@
-"""Optional ChromaStore adapter — install with `pip install coactra-ai[chroma]`.
+"""Optional ChromaStore adapter - install with `pip install coactra-ai[chroma]`.
 
-Stub: implements the ReasoningStore Protocol shape over a Chroma collection.
-Construction fails loudly if chromadb is not installed.
+Implements the ReasoningStore Protocol shape over a Chroma collection. Construction
+fails loudly if chromadb is not installed.
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from coactra.ai.completion.embedding import cosine
 from coactra.ai.replay.models import ReasoningTrace
+
+_META_JSON = "coactra_meta_json"
+
+
+def _to_metadata(tenant: str, trace: ReasoningTrace) -> dict[str, str | int | float | bool]:
+    """Map a trace into Chroma's scalar-only metadata shape."""
+    values = trace.model_dump(exclude={"embedding", "meta"})
+    return {
+        "tenant": tenant,
+        **values,
+        _META_JSON: json.dumps(trace.meta, separators=(",", ":"), sort_keys=True),
+    }
+
+
+def _from_metadata(metadata: dict[str, Any], embedding: list[float]) -> ReasoningTrace:
+    """Rebuild a trace while tolerating records written before meta JSON was added."""
+    values = {key: value for key, value in metadata.items() if key != "tenant"}
+    encoded_meta = values.pop(_META_JSON, "{}")
+    meta = json.loads(encoded_meta) if isinstance(encoded_meta, str) else {}
+    if not isinstance(meta, dict):
+        raise ValueError("stored Chroma reasoning metadata must decode to an object")
+    return ReasoningTrace(embedding=embedding, meta=meta, **values)
 
 
 class ChromaStore:
@@ -27,24 +50,28 @@ class ChromaStore:
         self._col.upsert(
             ids=[f"{tenant}:{trace.id}"],
             embeddings=[trace.embedding],
-            metadatas=[{"tenant": tenant, **trace.model_dump(exclude={"embedding"})}],
+            metadatas=[_to_metadata(tenant, trace)],
         )
 
     def get(self, tenant: str, trace_id: str) -> ReasoningTrace | None:
         res = self._col.get(ids=[f"{tenant}:{trace_id}"], include=["metadatas", "embeddings"])
         if not res["ids"]:
             return None
-        meta = res["metadatas"][0]
-        return ReasoningTrace(embedding=res["embeddings"][0], **{k: v for k, v in meta.items() if k != "tenant"})
+        return _from_metadata(res["metadatas"][0], res["embeddings"][0])
 
     def search(
         self, tenant: str, vector: list[float], k: int, min_quality: float
     ) -> list[tuple[ReasoningTrace, float]]:
-        res = self._col.query(query_embeddings=[vector], n_results=k * 4, where={"tenant": tenant})
+        res = self._col.query(
+            query_embeddings=[vector],
+            n_results=k * 4,
+            where={"tenant": tenant},
+            include=["metadatas", "embeddings"],
+        )
         out: list[tuple[ReasoningTrace, float]] = []
         for meta, emb in zip(res["metadatas"][0], res["embeddings"][0]):
-            t = ReasoningTrace(embedding=emb, **{k2: v for k2, v in meta.items() if k2 != "tenant"})
-            if t.quality >= min_quality:
-                out.append((t, cosine(vector, emb)))
-        out.sort(key=lambda p: p[1], reverse=True)
+            trace = _from_metadata(meta, emb)
+            if trace.quality >= min_quality:
+                out.append((trace, cosine(vector, emb)))
+        out.sort(key=lambda pair: pair[1], reverse=True)
         return out[:k]

@@ -1,6 +1,6 @@
-"""The five sibling PORTS — the un-tangling seam.
+"""The six sibling PORTS — the un-tangling seam.
 
-agent wires ai/memory/workspace/workflow/organization, but consuming a sibling's CODE
+agent wires ai/memory/workspace/workflow/organization/work, but consuming a sibling's CODE
 would re-tangle the libraries. So each sibling is consumed through a NARROW local port
 Protocol. Each port is shaped to MIRROR the real sibling facade, so the downstream wiring
 is a 3-line adapter rather than glue:
@@ -10,6 +10,7 @@ is a 3-line adapter rather than glue:
   - AIPort.ask(prompt) / structured(schema, prompt)                <- coactra.ai
   - WorkflowPort.run(procedure, state)                             <- coactra.workflow (engine + RunContext)
   - WorkspacePort.read / write / run                               <- coactra.workspace.Workspace
+  - WorkPort.submit / get / cancel                                  <- coactra.work.WorkManager
 
 This library never imports `coactra.<sibling>`; structural typing is the only contract.
 Only `MemoryPort` is async — its real facade (`Memory.remember`/`recall`) is async. The
@@ -88,4 +89,19 @@ class OrganizationPort(Protocol):
 
     def manager(self, node: Any) -> Any:
         """The escalation target one tier up — the node's parent (mirrors .manager)."""
+        ...
+
+
+@runtime_checkable
+class WorkPort(Protocol):
+    def submit(self, order: Any) -> Any:
+        """Submit one durable work order (mirrors coactra.work.WorkManager.submit)."""
+        ...
+
+    def get(self, work_id: str, scope: Scope) -> Any:
+        """Fetch one work order within the agent scope."""
+        ...
+
+    def cancel(self, work_id: str, scope: Scope, *, reason: str = "") -> Any:
+        """Cancel one non-terminal work order within the agent scope."""
         ...

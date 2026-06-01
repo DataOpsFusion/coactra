@@ -43,3 +43,9 @@ and "where does escalation go?", nothing more.
 
 - Boundary vs the `agent` runtime (org = structure, agent = behavior).
 - Dynamic hiring / org changes at runtime.
+
+## Imports
+
+Use `coactra.organization.repository` for persistence contracts and backends. The older
+`coactra.organization.store` and `coactra.organization.sqlite_store` module paths remain
+as deprecated compatibility imports for existing callers.

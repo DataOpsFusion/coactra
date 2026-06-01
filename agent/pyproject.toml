@@ -25,18 +25,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The five siblings this library WIRES together. They are declared per the charter but
-# NEVER imported — agent consumes each through a local port Protocol (ports.py) with an
-# in-process fake, so the default/test path needs none of them installed. They are kept
-# OUT of the hard `dependencies` deliberately: lib-ai/organization have no code yet and
-# memory/workspace/workflow ship no pyproject yet, so a hard dep would make the wheel
-# uninstallable. Install this extra once the siblings publish (or via the dev sources below).
+# The six optional siblings this library can wire together. The core imports none of
+# them: it consumes local port Protocols with in-process fakes. Optional adapters under
+# `coactra.agent.integrations` import sibling facades lazily when the full stack is used.
 siblings = [
     "coactra-ai",
     "coactra-memory",
     "coactra-workspace",
     "coactra-workflow",
     "coactra-organization",
+    "coactra-work",
 ]
 mcp = ["fastmcp>=2"]
 a2a = ["a2a-sdk>=0.2"]
@@ -66,6 +64,7 @@ coactra-memory = { path = "../memory", editable = true }
 coactra-workspace = { path = "../workspace", editable = true }
 coactra-workflow = { path = "../workflow", editable = true }
 coactra-organization = { path = "../organization", editable = true }
+coactra-work = { path = "../work", editable = true }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

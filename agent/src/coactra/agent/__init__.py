@@ -1,4 +1,4 @@
-"""coactra.agent — the runtime that WIRES the five sibling capabilities into a working
+"""coactra.agent — the runtime that WIRES the six sibling capabilities into a working
 agent, as a thin composition/POLICY layer ABOVE mature protocols (it does NOT fork them).
 
 It builds only the three session-level gaps the research verdict identified:
@@ -9,7 +9,7 @@ It builds only the three session-level gaps the research verdict identified:
   3. collaboration policy over A2A — tenant-qualified, deniable `AgentRef` targets
      (collaboration.py + domain.refs).
 
-The five siblings (ai/memory/workspace/workflow/organization) are consumed through narrow
+The six siblings (ai/memory/workspace/workflow/organization/work) are consumed through narrow
 local port Protocols shaped to MIRROR the real sibling facades (ports/), never by importing
 their internals. Build one with `make_agent(...)` (factory.py); every default is an
 in-process fake, so the package is fully testable with zero siblings installed.
@@ -61,10 +61,12 @@ from coactra.agent.ports import (
     FakeOrgNode,
     FakeWorkflow,
     FakeWorkspace,
+    FakeWork,
     MemoryPort,
     OrganizationPort,
     WorkflowPort,
     WorkspacePort,
+    WorkPort,
 )
 
 __all__ = [
@@ -101,11 +103,13 @@ __all__ = [
     "WorkspacePort",
     "WorkflowPort",
     "OrganizationPort",
+    "WorkPort",
     "FakeAI",
     "FakeMemory",
     "FakeWorkspace",
     "FakeWorkflow",
     "FakeOrganization",
+    "FakeWork",
     "FakeOrgNode",
     "FakeMember",
     # facade + composition root

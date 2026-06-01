@@ -11,11 +11,13 @@ from coactra.agent import (
     FakeOrgNode,
     FakeWorkflow,
     FakeWorkspace,
+    FakeWork,
     MemoryPort,
     OrganizationPort,
     Scope,
     WorkflowPort,
     WorkspacePort,
+    WorkPort,
 )
 
 ACME = Scope(tenant_id="acme")
@@ -27,6 +29,7 @@ def test_fakes_satisfy_their_ports():
     assert isinstance(FakeWorkspace(), WorkspacePort)
     assert isinstance(FakeWorkflow(), WorkflowPort)
     assert isinstance(FakeOrganization(), OrganizationPort)
+    assert isinstance(FakeWork(), WorkPort)
 
 
 def test_ports_package_does_not_import_sibling_internals():
@@ -34,7 +37,7 @@ def test_ports_package_does_not_import_sibling_internals():
     # Source-check the WHOLE ports package (protocols + fakes), not just one module.
     for module in (ports_pkg, *_submodules(ports_pkg)):
         src = inspect.getsource(module)
-        for sibling in ("ai", "memory", "workflow", "workspace", "organization"):
+        for sibling in ("ai", "memory", "workflow", "workspace", "organization", "work"):
             assert f"import coactra.{sibling}" not in src
             assert f"from coactra.{sibling}" not in src
 
@@ -145,3 +148,14 @@ def test_fake_organization_members_and_manager():
     # manager(node) is the parent OU; the root has no manager
     assert org.manager(eng) is root
     assert org.manager(root) is None
+
+
+def test_fake_work_is_tenant_scoped():
+    from types import SimpleNamespace
+
+    work = FakeWork()
+    order = SimpleNamespace(id="work-1", scope=ACME, status="queued", error=None)
+    assert work.submit(order) is order
+    assert work.get("work-1", ACME) is order
+    assert work.get("work-1", Scope(tenant_id="globex")) is None
+    assert work.cancel("work-1", ACME, reason="stop").status == "cancelled"

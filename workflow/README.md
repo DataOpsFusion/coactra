@@ -48,3 +48,14 @@ it force a fork of the engine? (DSPy is NOT this — don't conflate.)
 
 - How a reasoning trace becomes a runnable procedure (ties to `lib-ai`).
 - What triggers a re-learn / update; does a human approve flow changes?
+
+## Current Layout
+
+```text
+domain/      # procedure models and scope
+runtime/     # engine protocol, run context, and handlers
+backends/    # LangGraph default backend
+adapters/    # optional Temporal and Prefect adapters
+```
+
+The original flat module paths remain compatibility imports.

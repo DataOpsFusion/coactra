@@ -88,6 +88,12 @@ class SqliteOrgStore:
                     raise CrossTenantError(
                         f"seat_id={seat_id} not in tenant {tenant_id!r}"
                     )
+            if department_id is not None:
+                department = s.get(Department, department_id)
+                if department is None or department.tenant_id != tenant_id:
+                    raise CrossTenantError(
+                        f"department_id={department_id} not in tenant {tenant_id!r}"
+                    )
             s.add(
                 Membership(
                     tenant_id=tenant_id,
@@ -463,6 +469,12 @@ class SqliteOrgStore:
                 if seat is None or seat.tenant_id != tenant_id:
                     raise CrossTenantError(
                         f"seat_id={seat_id} not in tenant {tenant_id!r}"
+                    )
+            if node_id is not None:
+                node = s.get(Department, node_id)
+                if node is None or node.tenant_id != tenant_id:
+                    raise CrossTenantError(
+                        f"node_id={node_id} not in tenant {tenant_id!r}"
                     )
             existing = s.exec(
                 select(Membership).where(

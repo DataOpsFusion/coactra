@@ -12,8 +12,14 @@ from coactra.workspace import (
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
 
-def _ws(tmp_path, **kw):
-    return Workspace(backend=LocalFilesystemBackend(base_dir=tmp_path), scope=SCOPE, **kw)
+def _ws(tmp_path, *, allow_unsafe_exec=False, **kw):
+    return Workspace(
+        backend=LocalFilesystemBackend(
+            base_dir=tmp_path, allow_unsafe_exec=allow_unsafe_exec
+        ),
+        scope=SCOPE,
+        **kw,
+    )
 
 
 def test_write_and_read(tmp_path):
@@ -23,7 +29,7 @@ def test_write_and_read(tmp_path):
 
 
 def test_run_returns_exec_result(tmp_path):
-    ws = _ws(tmp_path)
+    ws = _ws(tmp_path, allow_unsafe_exec=True)
     res = ws.run("echo hi")
     assert res.exit_code == 0
     assert "hi" in res.stdout

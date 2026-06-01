@@ -102,7 +102,10 @@ class Mem0Backend:
         return [_to_recollection(r) for r in _results_list(payload)]
 
     async def dump(self, scope: Scope) -> list[Recollection]:
-        payload = await asyncio.to_thread(self._client.get_all, **_scope_kwargs(scope))
+        payload = await asyncio.to_thread(
+            self._client.get_all,
+            filters=_scope_kwargs(scope),
+        )
         return [_to_recollection(r) for r in _results_list(payload)]
 
     async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:

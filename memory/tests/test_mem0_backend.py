@@ -32,8 +32,8 @@ class FakeMem0:
         self.search_calls.append({"query": query, "filters": filters, "top_k": top_k})
         return self._search_payload
 
-    def get_all(self, **kwargs):
-        self.get_all_calls.append(kwargs)
+    def get_all(self, *, filters=None):
+        self.get_all_calls.append({"filters": filters})
         return {"results": [{"id": "g1", "memory": "stored fact", "metadata": {}}]}
 
 
@@ -107,9 +107,11 @@ async def test_dump_calls_get_all_with_scope_and_maps_results():
     out = await be.dump(SCOPE)
 
     assert fake.get_all_calls[0] == {
-        "user_id": "acme",  # tenant always present in the scope key (isolation)
-        "agent_id": "builder",
-        "run_id": "sess1",
+        "filters": {
+            "user_id": "acme",  # tenant always present in the scope key (isolation)
+            "agent_id": "builder",
+            "run_id": "sess1",
+        },
     }
     assert [r.text for r in out] == ["stored fact"]
     assert all(isinstance(r, Recollection) for r in out)
