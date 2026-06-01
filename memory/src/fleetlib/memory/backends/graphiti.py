@@ -36,15 +36,15 @@ _CAPS = {
 
 
 def _group_id(scope: Scope) -> str:
-    """Map Scope → graphiti group_id. tenant ALWAYS leads (isolation guarantee).
+    """Map Scope → a graphiti-LEGAL, injective group_id.
 
-    Uses the fixed 3-slot ``Scope.key`` encoding (``tenant:agent_or_*:session_or_*``)
-    so the map is INJECTIVE: a positional "skip None and join" would alias
-    ``Scope(t, agent="x")`` and ``Scope(t, session="x")`` onto the same id (a
-    cross-scope collision). ``Scope`` forbids ':' / '*' / empty in its fields, so no
-    two distinct scopes can ever produce the same group_id.
+    graphiti validates ``group_id`` against ``[A-Za-z0-9_-]`` only. The canonical
+    ``Scope.key`` uses ':' separators and '*' placeholders — both ILLEGAL there. We
+    hex-encode the key: the result is legal AND injective (distinct scopes → distinct
+    ids), so tenant isolation is preserved. ``Scope`` still forbids ':' / '*' / empty
+    in its fields, keeping ``key`` collision-resistant before encoding.
     """
-    return scope.key
+    return "fl" + scope.key.encode("utf-8").hex()
 
 
 def _edge_to_recollection(edge: Any, score: float) -> Recollection:
