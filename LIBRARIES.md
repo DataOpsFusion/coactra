@@ -4,6 +4,13 @@ Standalone, `pip install`-able libraries. Each has **one job**, a clean public
 interface, and its own tests. Built clean-room (not lifted from homelab-mcp).
 The main project later just installs + imports the ones it needs.
 
+> **BUILD STATUS (v0.1):** all 6 packages built + tested green — **247 tests passing**
+> (lib-ai 32, memory 35, workspace 43, workflow 47, organization 37, agent 53). The 5
+> sibling libs are fully standalone (no inter-`fleetlib` imports); only `agent` declares
+> the others as optional siblings (consumed via ports + fakes). Brand `fleetlib` is a
+> placeholder — rename before publish. Each lib has a `PLAN.md` (the TDD plan it was
+> built from).
+
 ## Design philosophy (north star — applies to every library, including future ones)
 
 - Each library is a **thin orchestration layer with a generalized interface over
@@ -97,9 +104,9 @@ reinvent mem0/langgraph by accident.
 | # | Library | One job | Depends on | Notes |
 |---|---------|---------|------------|-------|
 | 1 | **lib-ai** | The model brain. Call LLMs + the reasoning-reuse idea: capture how a model reasoned through a problem and replay it next time instead of re-reasoning. | — | Foundation. The differentiator. Everything else uses it. |
-| 2 | **memory** | Long-term facts. Write "what happened / what was learned", recall later. | (lib-ai, maybe) | Persistent knowledge store + retrieval. |
+| 2 | **memory** | Long-term facts. Write "what happened / what was learned", recall later. | — | Persistent knowledge store + retrieval. |
 | 3 | **workspace** | **Persistent agent desk.** Files/state/CLI that persist across sessions (ephemeral mode optional). | — | A place the agent lives — not disposable scratch. |
-| 4 | **workflow** | Procedures. Declarative steps → runnable graph (branch, approve, resume). | lib-ai | A stored procedure = a frozen reasoning path. |
+| 4 | **workflow** | Procedures. Declarative steps → runnable graph (branch, approve, resume). | — | A stored procedure = a frozen reasoning path. (Trace kept local — confirmed standalone at build.) |
 | 5 | **organization** | The company model. Roles, hierarchy, reporting, delegate / escalate / hire. | — | Who's who. |
 | 6 | **agent** | The runtime that wires 1–5 into a working agent. **MCP (tool transport) and A2A (agent-to-agent wire) live in here** as plumbing — not separate libs. | all of the above | Wraps an LLM SDK (OpenAI) + the transports. Only lib that depends on everything. |
 
