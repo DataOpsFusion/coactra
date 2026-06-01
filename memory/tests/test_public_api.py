@@ -1,33 +1,34 @@
 import fleetlib.memory as m
 
 
-def test_public_surface_is_complete():
+def test_public_surface_is_exact():
     expected = {
         "__version__",
+        "Memory",
+        "make_backend",
         "Scope",
+        "Recollection",
         "MemoryEvent",
-        "MemoryItem",
-        "Provenance",
-        "Capability",
         "MemoryBackend",
-        "InProcessBackend",
+        "Capability",
         "ExportReport",
         "export",
     }
-    assert expected <= set(m.__all__)
+    assert set(m.__all__) == expected
     for name in expected:
         assert hasattr(m, name), name
 
 
-def test_end_to_end_learn_recall_export():
-    src = m.InProcessBackend()
-    dst = m.InProcessBackend()
-    scope = m.Scope(tenant_id="acme", namespace="agent:1")
+async def test_end_to_end_remember_recall_export_via_facade():
+    mem = m.Memory(backend=m.make_backend("inprocess"))
+    dst = m.make_backend("inprocess")
+    scope = m.Scope(tenant="acme", agent="agent1")
 
-    src.learn(["the build broke on the linter step"], scope)
-    hits = src.recall("why did the build break", scope)
-    assert hits and "build broke" in hits[0].content
+    await mem.remember(["the build broke on the linter step"], scope)
+    hits = await mem.recall("why did the build break", scope)
+    assert hits and "build broke" in hits[0].text
+    assert isinstance(hits[0], m.Recollection)
 
-    report = m.export(src, dst, scope=scope)
+    report = await mem.export(to=dst, scope=scope)
     assert report.transferred == 1
     assert report.lossless is True

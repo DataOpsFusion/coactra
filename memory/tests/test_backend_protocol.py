@@ -1,21 +1,22 @@
-from fleetlib.memory import Capability, MemoryBackend, MemoryEvent, MemoryItem, Scope
+from fleetlib.memory import Capability, MemoryBackend, Recollection, Scope
+from fleetlib.memory.backends.base import event_text, normalize_events
 
 
 class _Dummy:
-    def capabilities(self) -> set[Capability]:
+    async def remember(self, events, scope: Scope) -> None:
+        return None
+
+    async def recall(self, query, scope, k=10) -> list[Recollection]:
+        return []
+
+    async def capabilities(self) -> set[Capability]:
         return {Capability.STORE}
 
-    def learn(self, events, scope: Scope) -> list[MemoryItem]:
+    async def dump(self, scope: Scope) -> list[Recollection]:
         return []
 
-    def recall(self, query, scope, capabilities=None, limit=10):
-        return []
-
-    def dump(self, scope: Scope) -> list[MemoryItem]:
-        return []
-
-    def ingest(self, items, scope: Scope) -> list[MemoryItem]:
-        return []
+    async def ingest(self, items, scope: Scope):
+        return None
 
 
 def test_protocol_is_runtime_checkable():
@@ -24,15 +25,18 @@ def test_protocol_is_runtime_checkable():
 
 def test_incomplete_class_is_not_a_backend():
     class Partial:
-        def learn(self, events, scope):
-            return []
+        async def remember(self, events, scope):
+            return None
 
     assert not isinstance(Partial(), MemoryBackend)
 
 
-def test_event_normalization_helper_accepts_str_and_event():
-    from fleetlib.memory.backend import normalize_events
+def test_event_text_flattens_str_and_chat_dict():
+    assert event_text("plain string") == "plain string"
+    assert event_text({"role": "user", "content": "hello"}) == "hello"
 
-    out = normalize_events(["a plain string", MemoryEvent(content="already an event")])
-    assert all(isinstance(e, MemoryEvent) for e in out)
-    assert out[0].content == "a plain string"
+
+def test_normalize_events_returns_concrete_list():
+    out = normalize_events(iter(["a", {"role": "user", "content": "b"}]))
+    assert isinstance(out, list)
+    assert len(out) == 2

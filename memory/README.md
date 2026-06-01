@@ -1,47 +1,94 @@
-# memory
+# fleetlib-memory
 
-> Charter only — captures the problem + vision. Full design comes later.
+> Long-term memory for agents — across sessions and long projects — as a **thin, clean
+> connector**, not a reimplemented store.
 
 ## The problem it solves
 
-A plain LLM call reasons and shows a result but doesn't *learn* — a human walks away
-from a conversation having learned (lessons, patterns, preferences). **Correction:**
-"agents are always stateless" is too strong — engines already consolidate this (LangMem
-extract/consolidate/update, Letta self-edited memory blocks, Mem0, Graphiti). The real
-gap is **no backend-neutral contract**: each engine has different semantics, so you get
-locked in and can't move learning between them.
+A plain LLM call reasons and shows a result but doesn't *learn*. Engines like **mem0**
+and **Graphiti** already do the hard part — extraction, consolidation, recall. The real
+gap is the lack of a **backend-neutral contract**: each engine has different semantics,
+so you get locked in and can't A/B or move learning between them.
 
-## The vision
+`fleetlib.memory` is that contract: a tiny, framework-agnostic facade over one async
+`MemoryBackend` Protocol. It does **not** build its own vector store — it connects to the
+engines that already work, and never lets an engine type leak into your code.
 
-A **learning** layer, not just a store. It **learns in-memory** during a session
-(consolidates what mattered, the way a human does after a conversation), and can then
-**extract / export that learning into any RAG or memory backend** — graphiti, mem0,
-vector DB, whatever. The in-memory learning is the universal part; the backend is
-swappable.
+## Install
 
-```python
-agent.memory("Write down the result")     # write, that easy
-agent.recall("what was the result?")       # comes back next session
-mem.flush(to=my_rag_backend)               # export learning to any system
+```bash
+pip install fleetlib-memory                 # in-process default, zero external deps
+pip install fleetlib-memory[mem0]           # + mem0 engine (needs an LLM + embedder)
+pip install fleetlib-memory[graphiti]       # + Graphiti engine (needs Neo4j + an LLM)
 ```
 
-## Wraps (swappable backends)
+## Usage
 
-mem0, graphiti/zep, letta, llama-index, qdrant, neo4j.
+```python
+from fleetlib.memory import Memory, make_backend, Scope, Recollection
 
-## Verdict (from research — see ../RESEARCH-VERDICTS.md)
+mem = Memory(backend=make_backend("inprocess"))   # "mem0" | "graphiti" too
+scope = Scope(tenant="acme", agent="builder", session=None)
 
-**WRAP + thin connector SPI. Do NOT replace the engines** — they already consolidate
-from conversations. Build a backend-neutral contract: `learn(events, scope)` /
-`recall(query, capabilities=...)` / `export(to=adapter)`. **Critical: `export()` is
-lossy** — graph vs vector vs Letta-block semantics differ — so use capability
-negotiation, provenance, and explicit unsupported-feature reports. Never promise
-lossless conversion.
+# remember — the engine auto-extracts/consolidates:
+await mem.remember(
+    [{"role": "user", "content": "We deploy with blue-green releases."}],
+    scope=scope,
+)
 
-## Open design points (later)
+# recall — always plain Recollection objects, never an engine type:
+hits: list[Recollection] = await mem.recall("how do we deploy?", scope=scope, k=5)
+for h in hits:
+    print(h.score, h.text)            # (text, score, source_id, when, metadata)
 
-- What's a "fact" vs a raw blob? How is it ranked / retrieved?
-- Scope: per-agent, per-session, shared?
-- **Distinct from `lib-ai` reasoning-capture** (decided): `memory` learns from the
-  *conversation* (summaries, lessons); `lib-ai` captures the *model's own reasoning*.
-  Different source, no shared store.
+# export — move a scope into another backend (LOSSY; off the headline):
+await mem.export(to=make_backend("inprocess"), scope=scope)
+```
+
+### Sync bridge
+
+For blocking callers / quick scripts, `Memory.sync` mirrors the same verbs:
+
+```python
+mem = Memory(backend=make_backend("inprocess"))
+mem.sync.remember(["the build broke on the linter step"], scope=scope)
+hits = mem.sync.recall("why did the build break", scope=scope)
+```
+
+(`Memory.sync.*` drives its own event loop, so call it from synchronous code — not from
+inside a running loop, where you should `await` the async methods instead.)
+
+## Concepts
+
+- **`Memory`** — async facade wrapping an *injected* backend (`remember` / `recall` /
+  `export`), plus `Memory.sync` for blocking callers.
+- **`make_backend(name, **config)`** — the DI selection point. `name` is
+  `"inprocess" | "mem0" | "graphiti"`. Unknown name → `ValueError`; a known name whose
+  engine extra isn't installed → `MissingExtraError`.
+- **`Scope(tenant, agent=None, session=None)`** — the tenant-scoped key on every call.
+  `tenant` is always encoded into the engine scope, so recall can never cross tenants
+  (mem0 `user_id`/`agent_id`/`run_id`; Graphiti `group_id`).
+- **`Recollection(text, score, source_id, when, metadata)`** — the only return shape. A
+  mem0/Graphiti object never crosses the boundary.
+- **`export()`** — lossy by design. It negotiates the source's and target's declared
+  `Capability` sets and reports every dropped feature in an `ExportReport`; it never
+  claims lossless conversion.
+
+## Backends
+
+| Backend | Engine | Notes |
+|---------|--------|-------|
+| `inprocess` | none | Default. Tenant-isolated dict, lexical recall, fully offline. The only backend testable with no external service. |
+| `mem0` | `mem0.Memory` | Sync engine driven via `asyncio.to_thread`. Vector recall + auto-consolidation. |
+| `graphiti` | `graphiti_core.Graphiti` | Native-async. Temporal knowledge graph; recalls relationship facts. |
+
+`mem0` and `graphiti` import their engines **lazily** — importing the package never
+requires the optional extras; only constructing an engine-backed backend does.
+
+## Boundary
+
+memory stores and recalls. It does **not** decide what an agent does with a memory,
+does not call models itself beyond what the engine needs, and does not message agents.
+The agent lib wraps `recall` into a tool; memory just answers.
+
+See `DESIGN.md` for the locked v0.2 design.
