@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fleetlib-memory"
+version = "0.1.0"
+description = "Backend-neutral memory connector SPI for AI agent fleets (learn / recall / lossy export)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = ["pydantic>=2.7"]
+
+[project.optional-dependencies]
+mem0 = ["mem0ai>=0.1"]
+graphiti = ["graphiti-core>=0.3"]
+letta = ["letta>=0.5"]
+dev = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
+packages = ["src/fleetlib"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/fleetlib", "README.md", "tests"]
