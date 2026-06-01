@@ -6,16 +6,14 @@ scope) purely in-process; PolicyGatedCollaborator gates a real A2A transport beh
 denied request never reaches the wire.
 
 DESIGN: collaboration targets are TENANT-QUALIFIED and DENIABLE. A target is an
-`AgentRef(tenant_id, agent_id)` — it carries its OWN tenant, so the policy can adjudicate
-cross-TENANT talk and DENY it. A bare-string agent id (e.g. a workflow `ask` step's
-`agent`) is lifted to an `AgentRef` in the CALLER's tenant (same-tenant-as-scope), so the
-intra-tenant path is unchanged while cross-tenant talk becomes expressible and deniable.
+`AgentRef(tenant_id, agent_id)` (from `domain.refs`) — it carries its OWN tenant, so the
+policy can adjudicate cross-TENANT talk and DENY it. A bare-string agent id (e.g. a
+workflow `ask` step's `agent`) is lifted to an `AgentRef` in the caller's tenant.
 
 Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies fleetlib.workflow's
 `Collaborator` (.ask(agent, question, state)) and `EscalationRouter` (.route(escalation,
-chain)) Protocols — the talk that workflow's `ask`/`escalate` steps deferred "to the agent
-layer". We do not import workflow; structural typing is the contract. The `ask` signature
-(name `agent`, arity, return) is preserved; only its first parameter is WIDENED to accept
+chain)) Protocols — verified verbatim against workflow/handlers.py. We do not import
+workflow; structural typing is the contract. The `ask` first parameter is WIDENED to
 `str | AgentRef`, which is structurally safe for a runtime_checkable Protocol.
 """
 
@@ -23,33 +21,11 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from pydantic import BaseModel, Field
-
-from fleetlib.agent.scope import Scope
+from fleetlib.agent.domain import AgentRef, Scope, as_ref
 
 
 class CollaborationDenied(RuntimeError):
     """Raised when policy refuses a talk request before it reaches the transport."""
-
-
-class AgentRef(BaseModel):
-    """A tenant-qualified collaboration / A2A target.
-
-    The target carries its OWN tenant, so a CollaborationPolicy can deny cross-tenant talk.
-    """
-
-    model_config = {"frozen": True}
-
-    tenant_id: str = Field(min_length=1)
-    agent_id: str = Field(min_length=1)
-
-
-def _as_ref(target: str | AgentRef, scope: Scope) -> AgentRef:
-    """Lift a bare-string agent id into a same-tenant-as-`scope` AgentRef; pass an AgentRef
-    through unchanged. A bare string therefore can never trip the cross-tenant gate."""
-    if isinstance(target, AgentRef):
-        return target
-    return AgentRef(tenant_id=scope.tenant_id, agent_id=target)
 
 
 @runtime_checkable
@@ -68,15 +44,15 @@ class A2ATransportPort(Protocol):
 
 class AllowSameTenant:
     """Default CollaborationPolicy — denies cross-TENANT talk; within one tenant, gates the
-    WHO-MAY-TALK-TO-WHOM pair.
+    WHO-MAY-TALK-TO-WHOM pair (deny-before-allow).
 
-    Two layered rules:
-      1. Cross-tenant DENIAL (unconditional): if the source and destination tenants differ,
-         return False BEFORE any allow-set check. This is the deniable cross-tenant boundary
-         — only expressible because a target is an `AgentRef` carrying its own tenant.
+    Two layered rules, in order:
+      1. Cross-tenant DENIAL (unconditional, evaluated FIRST): if source and destination
+         tenants differ, return False before any allow-set check. This is the deniable
+         cross-tenant boundary — only expressible because a target is an `AgentRef`
+         carrying its own tenant.
       2. Intra-tenant who-may-talk-to-whom:
-           - `allowed is None` (default): permit any intra-tenant pair (open default;
-             swap a stricter CollaborationPolicy to lock it down).
+           - `allowed is None` (default): permit any intra-tenant pair (open default).
            - `allowed` given: permit only the listed `(src_agent_id, dst_agent_id)` pairs.
     """
 
@@ -84,9 +60,9 @@ class AllowSameTenant:
         self._allowed = allowed
 
     def can_talk(self, src: str | AgentRef, dst: str | AgentRef, scope: Scope) -> bool:
-        src_ref = _as_ref(src, scope)
-        dst_ref = _as_ref(dst, scope)
-        # (1) cross-tenant denial — the deniable boundary the AgentRef makes expressible.
+        src_ref = as_ref(src, scope)
+        dst_ref = as_ref(dst, scope)
+        # (1) cross-tenant denial — deny-before-allow.
         if src_ref.tenant_id != dst_ref.tenant_id:
             return False
         # (2) intra-tenant who-may-talk-to-whom.
@@ -95,10 +71,18 @@ class AllowSameTenant:
         return (src_ref.agent_id, dst_ref.agent_id) in self._allowed
 
 
+class NullTransport:
+    """Default A2A transport — no wire configured; records nothing, returns empty."""
+
+    def send(self, dst: AgentRef, question: str, scope: Scope) -> str:
+        return ""
+
+
 class PolicyGatedCollaborator:
     """Gates an A2A transport behind a CollaborationPolicy.
 
-    Implements BOTH workflow seams by structural typing:
+    Implements BOTH workflow seams by structural typing (signatures verified against
+    fleetlib.workflow.handlers):
       ask(agent, question, state) -> str          (workflow.Collaborator)
       route(escalation, chain) -> decider id       (workflow.EscalationRouter)
 
@@ -122,18 +106,18 @@ class PolicyGatedCollaborator:
 
     def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:
         me_ref = AgentRef(tenant_id=self._scope.tenant_id, agent_id=self._me)
-        dst_ref = _as_ref(agent, self._scope)
+        dst_ref = as_ref(agent, self._scope)
         if not self._policy.can_talk(me_ref, dst_ref, self._scope):
             raise CollaborationDenied(
-                f"{me_ref.tenant_id}/{me_ref.agent_id} -> "
-                f"{dst_ref.tenant_id}/{dst_ref.agent_id} denied by policy"
+                f"{me_ref.qualified_name} -> {dst_ref.qualified_name} denied by policy"
             )
         return self._transport.send(dst_ref, question, self._scope)
 
     def route(self, escalation: Any, chain: list[str]) -> str:
         """Escalation walks UP the org-provided chain to its terminal decider. The chain
         is opaque to agent (organization owns who-reports-to-whom); we take the last id as
-        the terminal decider (human / SOTA), matching the sibling workflow default."""
+        the terminal decider (human / SOTA), matching the sibling workflow default
+        (TerminalHumanRouter)."""
         if not chain:
             raise CollaborationDenied(getattr(escalation, "reason", "unresolved"))
         return chain[-1]
