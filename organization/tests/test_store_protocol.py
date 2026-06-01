@@ -51,6 +51,52 @@ class _Dummy:
     def policy_ref(self, tenant_id: str, name: str, version: int | None = None):
         return None
 
+    # READ / directory APIs added in the v0.2 redesign — the swap contract grew.
+    def roots(self, tenant_id: str):
+        return []
+
+    def children_of(self, tenant_id: str, node_id: int):
+        return []
+
+    def node(self, tenant_id: str, id: int):
+        return None
+
+    def seat_of(self, tenant_id: str, member_id: int):
+        return None
+
+    def memberships(self, tenant_id: str, node_id: int, recursive: bool = False):
+        return []
+
+    def directory(self, tenant_id: str):
+        return None
+
+    def grant_node(self, tenant_id: str, node_id: int, action: str) -> None:
+        ...
+
+    def revoke_node(self, tenant_id: str, node_id: int, action: str) -> None:
+        ...
+
+    def grants_of(self, tenant_id: str, node_id: int):
+        return set()
+
+    def set_override(self, tenant_id, member_id, action, effect) -> None:
+        ...
+
+    def overrides_of(self, tenant_id: str, member_id: int):
+        return {}
+
+    def set_member_status(self, tenant_id, member_id, status) -> None:
+        ...
+
+    def set_block_inheritance(self, tenant_id, node_id, value) -> None:
+        ...
+
+    def place_member(self, tenant_id, member_id, node_id, seat_id) -> None:
+        ...
+
+    def clear_override(self, tenant_id, member_id, action) -> None:
+        ...
+
 
 def test_protocol_is_runtime_checkable():
     assert isinstance(_Dummy(), OrgStore)
