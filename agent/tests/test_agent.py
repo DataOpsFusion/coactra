@@ -1,10 +1,15 @@
+import asyncio
+
 import pytest
 
 from fleetlib.agent import (
-    Agent,
+    AgentRef,
     CollaborationDenied,
     DelegationGrant,
+    FakeMemory,
+    FakeWorkspace,
     Scope,
+    make_agent,
 )
 
 
@@ -23,7 +28,7 @@ class FakeTransport:
         self.sent = []
 
     def send(self, dst, question, scope):
-        self.sent.append(dst.agent_id)
+        self.sent.append((dst.tenant_id, dst.agent_id, question))
         return f"{dst.agent_id}:ack"
 
 
@@ -31,17 +36,18 @@ ACME = Scope(tenant_id="acme", namespace="agent:platform")
 
 
 def _agent(**kw):
-    base = dict(scope=ACME, me="agent:platform")
-    base.update(kw)
-    return Agent(**base)
+    return make_agent(scope=ACME, **kw)
 
 
-def test_agent_has_scope_and_default_ports():
+def test_make_agent_derives_me_from_namespace_and_wires_defaults():
     a = _agent()
     assert a.scope == ACME
-    # default fakes are wired in so the agent works out of the box
-    a.memory("the deploy passed")
-    assert a.recall("deploy") == ["the deploy passed"]
+    assert a.me == "agent:platform"  # derived from scope.namespace
+
+
+def test_make_agent_me_override():
+    a = make_agent(scope=ACME, me="agent:custom")
+    assert a.me == "agent:custom"
 
 
 def test_mount_mcp_is_not_visible_until_begin_turn():
@@ -51,6 +57,14 @@ def test_mount_mcp_is_not_visible_until_begin_turn():
     a.begin_turn()
     assert {t.qualified_name for t in a.tools_specs()} == {"fs.read_file"}
     assert a.tools() == ["fs.read_file"]
+
+
+def test_mcp_kwarg_stages_initial_mounts_invisible_until_begin_turn():
+    a = make_agent(scope=ACME, mcp={"fs": FakeServer(["read_file", "write_file"])})
+    assert a.tools() == []  # staged at construction but invisible
+    a.begin_turn()
+    assert set(a.tools()) == {"fs.read_file", "fs.write_file"}
+    assert set(a.tools_of("fs")) == {"fs.read_file", "fs.write_file"}
 
 
 def test_act_on_behalf_of_exchanges_without_passthrough():
@@ -75,10 +89,8 @@ def test_delegate_further_extends_the_actor_chain_through_the_protocol():
 
 def test_can_talk_uses_the_collaboration_policy():
     a = _agent(transport=FakeTransport())
-    # default policy (AllowSameTenant, no allow-set) permits intra-tenant talk
     assert a.can_talk("agent:security") is True
-    reply = a.ask("agent:security", "is it safe?")
-    assert reply == "agent:security:ack"
+    assert a.talk("agent:security", "is it safe?") == "agent:security:ack"
 
 
 def test_denied_talk_raises():
@@ -86,22 +98,59 @@ def test_denied_talk_raises():
         def can_talk(self, src, dst, scope):
             return False
 
-    a = _agent(transport=FakeTransport(), collaboration_policy=DenyAll())
+    a = _agent(transport=FakeTransport(), policy=DenyAll())
     assert a.can_talk("agent:security") is False
     with pytest.raises(CollaborationDenied):
-        a.ask("agent:security", "hi")
+        a.talk("agent:security", "hi")
 
 
-def test_agent_delegates_run_workflow_to_the_port():
+def test_cross_tenant_talk_denied_through_the_agent_facade():
+    t = FakeTransport()
+    a = _agent(transport=t)
+    with pytest.raises(CollaborationDenied):
+        a.talk(AgentRef(tenant_id="globex", agent_id="agent:x"), "hi")
+    assert t.sent == []  # gated before the wire
+
+
+def test_agent_memory_is_async_and_scoped():
     a = _agent()
-    out = a.run_procedure("deploy")
-    assert out == {"procedure": "deploy", "tenant": "acme", "ran": True}
+
+    async def scenario():
+        await a.remember(["the deploy passed"])
+        return await a.recall("deploy")
+
+    hits = asyncio.run(scenario())
+    assert [r["text"] for r in hits] == ["the deploy passed"]
 
 
-def test_scope_threads_into_every_subsystem():
+def test_agent_delegates_run_procedure_to_the_port():
+    a = _agent()
+    out = a.run_procedure("deploy", {"host": "web1"})
+    assert out == {"procedure": "deploy", "state": {"host": "web1"}, "ran": True}
+
+
+def test_think_forwards_to_ai_port():
+    a = _agent()
+    assert a.think("hello") == "completion:hello"
+
+
+def test_workspace_scope_isolation_via_shared_port_type():
     a = _agent()
     a.workspace_write("notes.md", "hello")
     assert a.workspace_read("notes.md") == "hello"
-    # a different-tenant agent cannot see it (isolation through the same fake store type)
-    other = Agent(scope=Scope(tenant_id="globex"), me="x", workspace=a._workspace)
+    # a different agent with its OWN workspace cannot see it
+    other = make_agent(scope=Scope(tenant_id="globex"), workspace=FakeWorkspace())
     assert other.workspace_read("notes.md") == ""
+
+
+def test_injected_port_is_the_one_called():
+    # DI proof: the agent calls the injected memory, not a fresh default.
+    injected = FakeMemory()
+    a = _agent(memory=injected)
+
+    async def scenario():
+        await a.remember(["x marks the spot"])
+
+    asyncio.run(scenario())
+    # the data landed in the INJECTED instance's store, keyed by scope
+    assert injected._store[ACME.key] == ["x marks the spot"]
