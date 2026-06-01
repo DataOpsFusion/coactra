@@ -1,21 +1,23 @@
-from fleetlib.memory import InProcessBackend, Scope
+from fleetlib.memory import Scope
+from fleetlib.memory.backends.inprocess import InProcessBackend
 
-ACME = Scope(tenant_id="acme", namespace="shared")
-GLOBEX = Scope(tenant_id="globex", namespace="shared")
-ACME_OTHER_NS = Scope(tenant_id="acme", namespace="agent:2")
+ACME = Scope(tenant="acme", agent="shared")
+GLOBEX = Scope(tenant="globex", agent="shared")
+ACME_OTHER = Scope(tenant="acme", agent="agent2")
 
 
-def test_tenant_cannot_read_other_tenants_items():
+async def test_tenant_cannot_read_other_tenants_items():
     be = InProcessBackend()
-    be.learn(["acme secret"], ACME)
-    be.learn(["globex secret"], GLOBEX)
+    await be.remember(["acme secret"], ACME)
+    await be.remember(["globex secret"], GLOBEX)
 
-    assert {i.content for i in be.dump(ACME)} == {"acme secret"}
-    assert {i.content for i in be.dump(GLOBEX)} == {"globex secret"}
-    assert be.recall("secret", GLOBEX)[0].content == "globex secret"
+    assert {r.text for r in await be.dump(ACME)} == {"acme secret"}
+    assert {r.text for r in await be.dump(GLOBEX)} == {"globex secret"}
+    hits = await be.recall("secret", GLOBEX)
+    assert hits[0].text == "globex secret"
 
 
-def test_namespaces_isolate_within_a_tenant():
+async def test_agents_isolate_within_a_tenant():
     be = InProcessBackend()
-    be.learn(["ns1 note"], ACME)
-    assert be.dump(ACME_OTHER_NS) == []
+    await be.remember(["agent1 note"], ACME)
+    assert await be.dump(ACME_OTHER) == []

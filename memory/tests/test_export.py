@@ -1,24 +1,16 @@
-import pytest
+from fleetlib.memory import Capability, ExportReport, MemoryBackend, Scope, export
+from fleetlib.memory.backends.inprocess import InProcessBackend
 
-from fleetlib.memory import (
-    Capability,
-    ExportReport,
-    InProcessBackend,
-    MemoryBackend,
-    Scope,
-    export,
-)
-
-SCOPE = Scope(tenant_id="acme", namespace="agent:1")
+SCOPE = Scope(tenant="acme", agent="agent1")
 
 
 class _GraphBackend:
-    """A fake source that claims graph + temporal capabilities the target lacks."""
+    """A fake source claiming graph + temporal capabilities the target lacks."""
 
     def __init__(self):
         self._inner = InProcessBackend()
 
-    def capabilities(self):
+    async def capabilities(self):
         return {
             Capability.STORE,
             Capability.GRAPH_EDGES,
@@ -26,79 +18,77 @@ class _GraphBackend:
             Capability.PROVENANCE,
         }
 
-    def learn(self, events, scope):
-        return self._inner.learn(events, scope)
+    async def remember(self, events, scope):
+        await self._inner.remember(events, scope)
 
-    def recall(self, query, scope, capabilities=None, limit=10):
-        return self._inner.recall(query, scope, capabilities, limit)
+    async def recall(self, query, scope, k=10):
+        return await self._inner.recall(query, scope, k)
 
-    def dump(self, scope):
-        return self._inner.dump(scope)
+    async def dump(self, scope):
+        return await self._inner.dump(scope)
 
-    def ingest(self, items, scope):
-        return self._inner.ingest(items, scope)
+    async def ingest(self, items, scope):
+        return await self._inner.ingest(items, scope)
 
 
-def test_export_returns_report_and_moves_items():
+async def test_export_moves_items_and_reports():
     src = _GraphBackend()
     dst = InProcessBackend()
-    src.learn(["a relationship between A and B", "an event at noon"], SCOPE)
+    await src.remember(["a relationship between A and B", "an event at noon"], SCOPE)
 
-    report = export(src, dst, scope=SCOPE)
-
+    report = await export(src, dst, scope=SCOPE)
     assert isinstance(report, ExportReport)
     assert report.transferred == 2
-    assert {i.content for i in dst.dump(SCOPE)} == {
+    assert {r.text for r in await dst.dump(SCOPE)} == {
         "a relationship between A and B",
         "an event at noon",
     }
 
 
-def test_export_reports_dropped_features_and_is_never_lossless():
-    src = _GraphBackend()              # GRAPH_EDGES + TEMPORAL
-    dst = InProcessBackend()           # neither
-    src.learn(["x"], SCOPE)
+async def test_export_reports_dropped_features_and_is_never_lossless():
+    src = _GraphBackend()  # GRAPH_EDGES + TEMPORAL
+    dst = InProcessBackend()  # neither
+    await src.remember(["x"], SCOPE)
 
-    report = export(src, dst, scope=SCOPE)
-
+    report = await export(src, dst, scope=SCOPE)
     assert Capability.GRAPH_EDGES in report.dropped_capabilities
     assert Capability.TEMPORAL in report.dropped_capabilities
     assert report.lossless is False
     assert any("GRAPH_EDGES" in w for w in report.warnings)
 
 
-def test_export_preserves_provenance_lineage():
+async def test_export_preserves_lineage_and_does_not_mutate_source():
     src = _GraphBackend()
     dst = InProcessBackend()
-    src.learn(["traceable"], SCOPE)
+    await src.remember(["traceable"], SCOPE)
 
-    export(src, dst, scope=SCOPE)
-    moved = dst.dump(SCOPE)[0]
-    assert moved.provenance.exported_from is not None
-    # export must COPY, not alias: the source's own item is untouched.
-    assert src.dump(SCOPE)[0].provenance.exported_from is None
+    await export(src, dst, scope=SCOPE)
+    moved = (await dst.dump(SCOPE))[0]
+    assert moved.metadata.get("exported_from") is not None
+    # COPY, not alias: the source item is untouched.
+    assert "exported_from" not in (await src.dump(SCOPE))[0].metadata
 
 
-def test_same_capability_export_is_lossless():
+async def test_same_capability_export_is_lossless():
     src = InProcessBackend()
     dst = InProcessBackend()
-    src.learn(["plain note"], SCOPE)
+    await src.remember(["plain note"], SCOPE)
 
-    report = export(src, dst, scope=SCOPE)
+    report = await export(src, dst, scope=SCOPE)
     assert report.dropped_capabilities == set()
     assert report.lossless is True
 
 
-def test_export_is_scope_isolated():
+async def test_export_is_scope_isolated():
     src = InProcessBackend()
     dst = InProcessBackend()
-    other = Scope(tenant_id="acme", namespace="agent:2")
-    src.learn(["only in agent:1"], SCOPE)
-    src.learn(["only in agent:2"], other)
+    other = Scope(tenant="acme", agent="agent2")
+    await src.remember(["only in agent1"], SCOPE)
+    await src.remember(["only in agent2"], other)
 
-    export(src, dst, scope=SCOPE)
-    assert {i.content for i in dst.dump(SCOPE)} == {"only in agent:1"}
-    assert dst.dump(other) == []
+    await export(src, dst, scope=SCOPE)
+    assert {r.text for r in await dst.dump(SCOPE)} == {"only in agent1"}
+    assert await dst.dump(other) == []
 
 
 def test_backends_satisfy_protocol():
