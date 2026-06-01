@@ -1,8 +1,14 @@
+import importlib.util
+
 import pytest
 
 from fleetlib.memory import MemoryBackend, make_backend
 from fleetlib.memory.backends._errors import MissingExtraError
 from fleetlib.memory.backends.inprocess import InProcessBackend
+
+
+def _installed(mod: str) -> bool:
+    return importlib.util.find_spec(mod) is not None
 
 
 def test_make_inprocess_returns_backend():
@@ -16,13 +22,15 @@ def test_unknown_name_raises_value_error():
         make_backend("redis")
 
 
+@pytest.mark.skipif(_installed("mem0"), reason="mem0 IS installed; missing-extra path only holds when absent")
 def test_mem0_without_extra_raises_missing_extra():
-    # mem0ai is NOT installed in the offline test env → ctor raises MissingExtraError.
+    # When mem0ai is absent, constructing the backend raises MissingExtraError.
     with pytest.raises(MissingExtraError) as exc:
         make_backend("mem0")
     assert exc.value.extra == "mem0"
 
 
+@pytest.mark.skipif(_installed("graphiti_core"), reason="graphiti IS installed; missing-extra path only holds when absent")
 def test_graphiti_without_extra_raises_missing_extra():
     with pytest.raises(MissingExtraError) as exc:
         make_backend("graphiti")

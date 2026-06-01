@@ -52,7 +52,7 @@ async def test_remember_calls_add_episode_with_singular_group_id():
     assert call["episode_body"] == "A depends on B"
     # tenant ALWAYS leads the group_id (isolation); fixed 3-slot injective key,
     # singular on add_episode.
-    assert call["group_id"] == "acme:builder:*"
+    assert call["group_id"] == _group_id(SCOPE)
     assert "group_ids" not in call
 
 
@@ -60,15 +60,15 @@ async def test_recall_calls_search_with_plural_group_ids_and_num_results():
     fake = FakeGraphiti()
     valid = datetime(2026, 1, 2, tzinfo=timezone.utc)
     fake._edges = [
-        FakeEdge("A depends on B", "uuid-1", valid_at=valid, group_id="acme:builder:*"),
-        FakeEdge("B owns C", "uuid-2", group_id="acme:builder:*"),
+        FakeEdge("A depends on B", "uuid-1", valid_at=valid, group_id=_group_id(SCOPE)),
+        FakeEdge("B owns C", "uuid-2", group_id=_group_id(SCOPE)),
     ]
     be = GraphitiBackend(client=fake)
     out = await be.recall("dependencies", SCOPE, k=5)
 
     call = fake.search_calls[0]
     assert call["query"] == "dependencies"
-    assert call["group_ids"] == ["acme:builder:*"]  # plural list on search
+    assert call["group_ids"] == [_group_id(SCOPE)]  # plural list on search
     assert call["num_results"] == 5
 
     assert len(out) == 2
@@ -83,12 +83,12 @@ async def test_recall_calls_search_with_plural_group_ids_and_num_results():
 
 async def test_dump_searches_scope_group_and_maps_results():
     fake = FakeGraphiti()
-    fake._edges = [FakeEdge("A depends on B", "u1", group_id="acme:builder:*")]
+    fake._edges = [FakeEdge("A depends on B", "u1", group_id=_group_id(SCOPE))]
     be = GraphitiBackend(client=fake)
     out = await be.dump(SCOPE)
 
     call = fake.search_calls[0]
-    assert call["group_ids"] == ["acme:builder:*"]  # tenant leads the group key
+    assert call["group_ids"] == [_group_id(SCOPE)]  # tenant leads the group key
     assert [r.text for r in out] == ["A depends on B"]
     assert all(isinstance(r, Recollection) for r in out)
     assert out[0].metadata["source_backend"] == "graphiti"
@@ -103,7 +103,7 @@ async def test_ingest_adds_episodes_and_reports_transferred():
     # empty-text recollection is skipped; one episode written under the scope group_id.
     assert len(fake.add_calls) == 1
     assert fake.add_calls[0]["episode_body"] == "ported edge"
-    assert fake.add_calls[0]["group_id"] == "acme:builder:*"
+    assert fake.add_calls[0]["group_id"] == _group_id(SCOPE)
     assert report.transferred == 1
 
 
