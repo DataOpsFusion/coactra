@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fleetlib-organization"
-version = "0.1.0"
-description = "Multi-tenant fleet directory for AI agents — tenants, seats, memberships, reporting + escalation routing. No workflow execution."
+version = "0.2.0"
+description = "Multi-tenant, AD-inspired org model for AI fleets — composite OU tree, principals/seats, inherited permissions (block-inheritance + per-member overrides), repository-pattern persistence. No workflow execution."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
