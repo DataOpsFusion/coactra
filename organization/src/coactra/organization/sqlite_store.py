@@ -1,4 +1,4 @@
-"""Back-compat shim — ``SqliteOrgStore`` now lives in ``repository.sqlite_store``."""
+"""Deprecated compatibility import — ``SqliteOrgStore`` now lives in ``repository.sqlite_store``."""
 
 from __future__ import annotations
 

@@ -11,8 +11,30 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, MetaData
+from sqlalchemy.orm import registry as _Registry
 from sqlmodel import Field, SQLModel
+
+# Private MetaData / registry for this library's tables.
+#
+# WHY: SQLModel's default ``SQLModel.metadata`` is a process-global singleton shared
+# by EVERY SQLModel table in the interpreter — including a host application's own
+# tables (homelab-mcp also uses SQLModel). Registering our ``table=True`` classes
+# there means a second registration of the same table name (a re-import under a
+# different module identity, or a host app that also defines a ``tenant`` / ``member``
+# / ``department`` table) raises ``InvalidRequestError: Table '…' is already defined
+# for this MetaData instance``. Isolating our tables in their OWN MetaData makes the
+# library safe to instantiate any number of times in one process and impossible to
+# collide with unrelated host tables. ``engine.py`` must call ``create_all`` on THIS
+# metadata (not ``SQLModel.metadata``) for the tables to be created.
+org_metadata = MetaData()
+org_registry = _Registry(metadata=org_metadata)
+
+
+class OrgModel(SQLModel, registry=org_registry):
+    """Base for every directory table — binds them to the library-private metadata."""
+
+    metadata = org_metadata
 
 
 class MemberKind(str, Enum):
@@ -21,14 +43,14 @@ class MemberKind(str, Enum):
     agent = "agent"
 
 
-class Tenant(SQLModel, table=True):
+class Tenant(OrgModel, table=True):
     """An isolated fleet. Everything below it is scoped by tenant_id."""
 
     tenant_id: str = Field(primary_key=True)
     name: str = ""
 
 
-class Department(SQLModel, table=True):
+class Department(OrgModel, table=True):
     """An OU node in the org tree — the persistence row for a domain ``Organization``.
 
     ``parent_id`` makes the tree (None => a tenant-root node); ``block_inheritance`` is
@@ -43,7 +65,7 @@ class Department(SQLModel, table=True):
     block_inheritance: bool = False
 
 
-class Seat(SQLModel, table=True):
+class Seat(OrgModel, table=True):
     """A role/seat — WHAT a member does. 'domain' is the optional ownership hint
     used to answer 'who owns this?'. ``permissions`` is the role's permission set,
     persisted as a JSON-encoded list of action tokens (empty by default)."""
@@ -60,7 +82,7 @@ class MemberStatus(str, Enum):
     suspended = "suspended"
 
 
-class Member(SQLModel, table=True):
+class Member(OrgModel, table=True):
     """A human / service / agent that occupies seats within one tenant.
 
     ``status`` is the lifecycle flag (active vs suspended); it defaults to active so the
@@ -74,7 +96,7 @@ class Member(SQLModel, table=True):
     status: MemberStatus = MemberStatus.active
 
 
-class Membership(SQLModel, table=True):
+class Membership(OrgModel, table=True):
     """Member ↔ node/seat placement. ``seat_id`` is OPTIONAL — a principal may sit on a
     node without holding a role (a seatless placement). ``department_id`` is OPTIONAL too
     (flat fleet = None)."""
@@ -86,7 +108,7 @@ class Membership(SQLModel, table=True):
     department_id: int | None = None
 
 
-class ReportingEdge(SQLModel, table=True):
+class ReportingEdge(OrgModel, table=True):
     """A 'reports_to' edge between two seats — the chain of command (optional)."""
 
     id: int | None = Field(default=None, primary_key=True)
@@ -95,7 +117,7 @@ class ReportingEdge(SQLModel, table=True):
     reports_to_seat_id: int  # the seat it escalates to
 
 
-class EscalationRoute(SQLModel, table=True):
+class EscalationRoute(OrgModel, table=True):
     """An explicit override route: from a seat to a named decider, bypassing the
     reporting chain. Used when escalation should NOT follow the org tree."""
 
@@ -105,7 +127,7 @@ class EscalationRoute(SQLModel, table=True):
     to_seat_id: int
 
 
-class PolicyRef(SQLModel, table=True):
+class PolicyRef(OrgModel, table=True):
     """A versioned REFERENCE to a policy (not the policy engine). 'target' points at
     whatever consumes it; (tenant_id, name, version) identifies a version."""
 
@@ -116,7 +138,7 @@ class PolicyRef(SQLModel, table=True):
     target: str = ""
 
 
-class NodeGrant(SQLModel, table=True):
+class NodeGrant(OrgModel, table=True):
     """A node-level permission grant — an action conferred at one OU node, inherited
     down the tree (subject to block_inheritance). One row per (node, action)."""
 
@@ -126,7 +148,7 @@ class NodeGrant(SQLModel, table=True):
     action: str
 
 
-class MemberOverride(SQLModel, table=True):
+class MemberOverride(OrgModel, table=True):
     """A per-member explicit allow/deny on a single action (deny beats allow). One row
     per (member, action). The AD explicit-ACE analogue that wins over inheritance."""
 

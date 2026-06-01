@@ -10,10 +10,11 @@ from __future__ import annotations
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import create_engine
 
-# Importing models registers every table on SQLModel.metadata before create_all().
-from coactra.organization import models as _models  # noqa: F401
+# Importing models registers every table on the library-private ``org_metadata``
+# (NOT the global SQLModel.metadata) before create_all().
+from coactra.organization.models import org_metadata
 
 
 def make_engine(url: str = "sqlite://") -> Engine:
@@ -24,5 +25,7 @@ def make_engine(url: str = "sqlite://") -> Engine:
         if url in ("sqlite://", "sqlite:///:memory:"):
             kwargs["poolclass"] = StaticPool
     engine = create_engine(url, connect_args=connect_args, **kwargs)
-    SQLModel.metadata.create_all(engine)
+    # Create exactly this library's tables — on the private metadata, so a host
+    # application's SQLModel tables are neither created here nor collided with.
+    org_metadata.create_all(engine)
     return engine
