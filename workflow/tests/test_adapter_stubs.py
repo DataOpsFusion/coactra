@@ -1,8 +1,8 @@
 import pytest
 
-from fleetlib.workflow.adapters._stub import MissingExtraError
-from fleetlib.workflow.adapters.prefect import PrefectEngine
-from fleetlib.workflow.adapters.temporal import TemporalEngine
+from coactra.workflow.adapters._stub import MissingExtraError
+from coactra.workflow.adapters.prefect import PrefectEngine
+from coactra.workflow.adapters.temporal import TemporalEngine
 
 
 @pytest.mark.parametrize("cls,extra", [

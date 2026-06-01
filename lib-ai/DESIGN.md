@@ -1,4 +1,4 @@
-# fleetlib.ai — v0.2 (thinking-model-safe)
+# coactra.ai — v0.2 (thinking-model-safe)
 
 > Live testing against opencode zen (2026-06) proved two real gaps: the wrap shelf breaks
 > on "thinking"/reasoning models (which is the user's whole fleet — qwen3.6-plus,

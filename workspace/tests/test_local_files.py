@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.workspace import LocalFilesystemBackend, Scope
+from coactra.workspace import LocalFilesystemBackend, Scope
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 

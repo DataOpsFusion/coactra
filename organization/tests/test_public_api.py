@@ -1,4 +1,4 @@
-import fleetlib.organization as org
+import coactra.organization as org
 
 
 def test_public_surface_is_complete():

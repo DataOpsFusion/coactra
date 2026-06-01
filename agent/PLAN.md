@@ -1,4 +1,4 @@
-# fleetlib.agent Implementation Plan
+# coactra.agent Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -6,7 +6,7 @@
 
 **Architecture:** Three self-contained subsystems, each a `typing.Protocol` + ONE in-process working default, none touching the network on the default path. **(1) Mounting:** a `MountRegistry` holds *pending* and *active* tool sets; `mount_mcp(server, effective="next_turn")` stages a mount into pending and `begin_turn()` promotes pending→active and fires an `invalidate_tools_cache` callback — *that* is the observable "next safe turn" boundary (answering the charter's open question by defining it). A `ConflictPolicy` resolves naming collisions (default: namespace the incoming tool by mount id). **(2) Delegation:** `DelegationGrant(subject, actor)` + a `TokenExchanger` Protocol; `act_on_behalf_of(grant)` produces an `ExchangedIdentity` carrying a **nested actor chain** for multi-hop, and the in-process default proves the raw subject token NEVER appears downstream (the security keystone). The real Keycloak/RFC-8693 exchange is a stub. **(3) Collaboration:** `CollaborationPolicy.can_talk(src, dst, scope)` is pure in-process; a `PolicyGatedCollaborator` wraps an A2A transport behind the policy and **structurally satisfies workflow's `Collaborator`/`EscalationRouter` Protocols** (the concrete inter-lib seam workflow deferred to "the agent layer"). The `Agent` composition root threads a mandatory `Scope` (tenant_id + namespace, local shape) through all three plus the five injected sibling ports — it delegates, never re-implements (`agent.memory(...)` just calls the injected `MemoryPort`).
 
-**Tech Stack:** Python 3.12+, pydantic v2, hatchling (PEP 420 namespace package `fleetlib/agent/`, src layout), pytest. Sibling deps (`fleetlib-ai`, `fleetlib-memory`, `fleetlib-workspace`, `fleetlib-workflow`, `fleetlib-organization`) are declared in `pyproject.toml` per the charter (in a `siblings` optional-extra, NOT a hard dependency, so the wheel installs before any sibling publishes) but **never imported** — `lib-ai` and `organization` have no code yet, so each sibling is consumed through a local port Protocol + an in-process fake, exactly as the sibling `workflow` plan refused to import `fleetlib.ai` and used a local `ReasoningTrace`. Optional extras: `siblings` (the five fleetlib-* libs, declared-not-imported), `mcp` (fastmcp), `a2a` (a2a-sdk), `oauth` (token exchange) — stub adapters that raise on use; `dev`. (No `agents`/openai-agents extra yet — the toolset is exposed for whatever runner drives the model; wrapping the OpenAI Agents runner is deferred until built, YAGNI.) No default path depends on a live SDK or network.
+**Tech Stack:** Python 3.12+, pydantic v2, hatchling (PEP 420 namespace package `coactra/agent/`, src layout), pytest. Sibling deps (`coactra-ai`, `coactra-memory`, `coactra-workspace`, `coactra-workflow`, `coactra-organization`) are declared in `pyproject.toml` per the charter (in a `siblings` optional-extra, NOT a hard dependency, so the wheel installs before any sibling publishes) but **never imported** — `lib-ai` and `organization` have no code yet, so each sibling is consumed through a local port Protocol + an in-process fake, exactly as the sibling `workflow` plan refused to import `coactra.ai` and used a local `ReasoningTrace`. Optional extras: `siblings` (the five coactra-* libs, declared-not-imported), `mcp` (fastmcp), `a2a` (a2a-sdk), `oauth` (token exchange) — stub adapters that raise on use; `dev`. (No `agents`/openai-agents extra yet — the toolset is exposed for whatever runner drives the model; wrapping the OpenAI Agents runner is deferred until built, YAGNI.) No default path depends on a live SDK or network.
 
 ---
 
@@ -14,28 +14,28 @@
 
 | File | Single responsibility |
 |------|----------------------|
-| `pyproject.toml` | Distribution `fleetlib-agent`; hatchling targets the `fleetlib` namespace dir; hard runtime dep is `pydantic` ONLY; the five `fleetlib-*` siblings live in a `siblings` optional-extra (declared per charter, never imported, kept out of hard deps so the wheel installs today); `[project.optional-dependencies]` for `siblings`/`mcp`/`a2a`/`agents`/`oauth`/`dev`. |
-| `src/fleetlib/agent/__init__.py` | Public API surface — re-exports every public name. NO `src/fleetlib/__init__.py` (namespace package). |
-| `src/fleetlib/agent/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/agent/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through every subsystem. |
-| `src/fleetlib/agent/tools.py` | `ToolSpec` (name + mount-id provenance) — the unit the mount registry tracks and the toolset exposes. |
-| `src/fleetlib/agent/mounting.py` | `ConflictPolicy` Protocol + `NamespaceByMountId` default + `MountConflictError`; `MCPServerPort` Protocol (`list_tools()`); `MountRegistry` — pending/active sets, `stage()`, `begin_turn()` promotion + invalidate callback, `active_tools()`. The mid-session-mount core. |
-| `src/fleetlib/agent/delegation.py` | `DelegationGrant` (subject/actor), `ExchangedIdentity` (nested actor chain), `TokenExchanger` Protocol, `InProcessExchanger` default (no passthrough), `TokenPassthroughError`. RFC 8693 core. |
-| `src/fleetlib/agent/collaboration.py` | `CollaborationPolicy` Protocol + `AllowSameTenant` default (intra-tenant who-may-talk-to-whom; tenant boundary enforced upstream by `Scope`) + `CollaborationDenied`; `A2ATransportPort` Protocol; `PolicyGatedCollaborator` — gates talk by policy, structurally satisfies workflow's `Collaborator`/`EscalationRouter`. The collaboration-policy core. |
-| `src/fleetlib/agent/ports.py` | The five narrow sibling **port Protocols** (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`) + in-process fakes (`FakeAI`, `FakeMemory`, `FakeWorkspace`, `FakeWorkflow`, `FakeOrganization`). The un-tangling seam — no `fleetlib.*` sibling import. |
-| `src/fleetlib/agent/agent.py` | `Agent` composition root — holds `Scope` + the three subsystems + five ports; `mount_mcp()`, `begin_turn()`, `tools()`, `act_on_behalf_of()`, `can_talk()`, `memory()`/`recall()` delegating shims. Thin: delegates, never re-implements. |
-| `src/fleetlib/agent/adapters/__init__.py` | Adapters subpackage marker. |
-| `src/fleetlib/agent/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
-| `src/fleetlib/agent/adapters/fastmcp.py` | `FastMCPServer` stub (satisfies `MCPServerPort`) — raises `MissingExtraError` until the `mcp` extra. |
-| `src/fleetlib/agent/adapters/a2a.py` | `A2ATransport` stub (satisfies `A2ATransportPort`) — raises until the `a2a` extra. |
-| `src/fleetlib/agent/adapters/keycloak.py` | `KeycloakExchanger` stub (satisfies `TokenExchanger`) — raises until the `oauth` extra. |
-| `tests/test_packaging.py` | Asserts `import fleetlib.agent` works and `fleetlib` is a PEP 420 namespace package. |
+| `pyproject.toml` | Distribution `coactra-agent`; hatchling targets the `coactra` namespace dir; hard runtime dep is `pydantic` ONLY; the five `coactra-*` siblings live in a `siblings` optional-extra (declared per charter, never imported, kept out of hard deps so the wheel installs today); `[project.optional-dependencies]` for `siblings`/`mcp`/`a2a`/`agents`/`oauth`/`dev`. |
+| `src/coactra/agent/__init__.py` | Public API surface — re-exports every public name. NO `src/coactra/__init__.py` (namespace package). |
+| `src/coactra/agent/py.typed` | PEP 561 typing marker. |
+| `src/coactra/agent/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through every subsystem. |
+| `src/coactra/agent/tools.py` | `ToolSpec` (name + mount-id provenance) — the unit the mount registry tracks and the toolset exposes. |
+| `src/coactra/agent/mounting.py` | `ConflictPolicy` Protocol + `NamespaceByMountId` default + `MountConflictError`; `MCPServerPort` Protocol (`list_tools()`); `MountRegistry` — pending/active sets, `stage()`, `begin_turn()` promotion + invalidate callback, `active_tools()`. The mid-session-mount core. |
+| `src/coactra/agent/delegation.py` | `DelegationGrant` (subject/actor), `ExchangedIdentity` (nested actor chain), `TokenExchanger` Protocol, `InProcessExchanger` default (no passthrough), `TokenPassthroughError`. RFC 8693 core. |
+| `src/coactra/agent/collaboration.py` | `CollaborationPolicy` Protocol + `AllowSameTenant` default (intra-tenant who-may-talk-to-whom; tenant boundary enforced upstream by `Scope`) + `CollaborationDenied`; `A2ATransportPort` Protocol; `PolicyGatedCollaborator` — gates talk by policy, structurally satisfies workflow's `Collaborator`/`EscalationRouter`. The collaboration-policy core. |
+| `src/coactra/agent/ports.py` | The five narrow sibling **port Protocols** (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`) + in-process fakes (`FakeAI`, `FakeMemory`, `FakeWorkspace`, `FakeWorkflow`, `FakeOrganization`). The un-tangling seam — no `coactra.*` sibling import. |
+| `src/coactra/agent/agent.py` | `Agent` composition root — holds `Scope` + the three subsystems + five ports; `mount_mcp()`, `begin_turn()`, `tools()`, `act_on_behalf_of()`, `can_talk()`, `memory()`/`recall()` delegating shims. Thin: delegates, never re-implements. |
+| `src/coactra/agent/adapters/__init__.py` | Adapters subpackage marker. |
+| `src/coactra/agent/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
+| `src/coactra/agent/adapters/fastmcp.py` | `FastMCPServer` stub (satisfies `MCPServerPort`) — raises `MissingExtraError` until the `mcp` extra. |
+| `src/coactra/agent/adapters/a2a.py` | `A2ATransport` stub (satisfies `A2ATransportPort`) — raises until the `a2a` extra. |
+| `src/coactra/agent/adapters/keycloak.py` | `KeycloakExchanger` stub (satisfies `TokenExchanger`) — raises until the `oauth` extra. |
+| `tests/test_packaging.py` | Asserts `import coactra.agent` works and `coactra` is a PEP 420 namespace package. |
 | `tests/test_scope.py` | `Scope` equality/hashing/validation/key. |
 | `tests/test_tools.py` | `ToolSpec` shape + qualified-name provenance. |
 | `tests/test_mounting.py` | Pending vs active; **keystone**: a mid-turn mount is NOT visible this turn, IS after `begin_turn()`; conflict resolution; invalidate callback fires; tenant isolation. |
 | `tests/test_delegation.py` | Grant/exchange; multi-hop actor chain; **keystone**: raw subject token never appears downstream; passthrough attempt raises. |
 | `tests/test_collaboration.py` | Policy allow/deny; cross-tenant talk denied; `PolicyGatedCollaborator` satisfies workflow's `Collaborator`/`EscalationRouter` shape. |
-| `tests/test_ports.py` | The five port Protocols are runtime-checkable; fakes satisfy them; no `fleetlib.<sibling>` import. |
+| `tests/test_ports.py` | The five port Protocols are runtime-checkable; fakes satisfy them; no `coactra.<sibling>` import. |
 | `tests/test_agent.py` | `Agent` wires all of it; delegating shims call the ports; `Scope` threads through; end-to-end mount→begin_turn→tools. |
 | `tests/test_adapter_stubs.py` | fastmcp/a2a/keycloak stubs raise `MissingExtraError` and name the seam they satisfy. |
 | `tests/test_public_api.py` | Public surface lock + end-to-end composition. |
@@ -46,8 +46,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/agent/__init__.py`
-- Create: `src/fleetlib/agent/py.typed`
+- Create: `src/coactra/agent/__init__.py`
+- Create: `src/coactra/agent/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -58,22 +58,22 @@ import importlib
 
 
 def test_agent_imports():
-    mod = importlib.import_module("fleetlib.agent")
-    assert mod.__name__ == "fleetlib.agent"
+    mod = importlib.import_module("coactra.agent")
+    assert mod.__name__ == "coactra.agent"
 
 
-def test_fleetlib_is_namespace_package():
-    import fleetlib
+def test_coactra_is_namespace_package():
+    import coactra
 
     # PEP 420 namespace packages have no __file__ and a virtual __path__.
-    assert getattr(fleetlib, "__file__", None) is None
-    assert hasattr(fleetlib, "__path__")
+    assert getattr(coactra, "__file__", None) is None
+    assert hasattr(coactra, "__path__")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -84,7 +84,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-agent"
+name = "coactra-agent"
 version = "0.1.0"
 description = "Thin composition/policy layer that wires an AI agent over mature protocols — mid-session MCP mounting (next-safe-turn), RFC 8693 delegated identity (no token passthrough), and collaboration policy over A2A."
 readme = "README.md"
@@ -102,11 +102,11 @@ dependencies = [
 # memory/workspace/workflow ship no pyproject yet, so a hard dep would make the wheel
 # uninstallable. Install this extra once the siblings publish (or via the dev sources below).
 siblings = [
-    "fleetlib-ai",
-    "fleetlib-memory",
-    "fleetlib-workspace",
-    "fleetlib-workflow",
-    "fleetlib-organization",
+    "coactra-ai",
+    "coactra-memory",
+    "coactra-workspace",
+    "coactra-workflow",
+    "coactra-organization",
 ]
 mcp = ["fastmcp>=2"]
 a2a = ["a2a-sdk>=0.2"]
@@ -118,26 +118,26 @@ oauth = ["authlib>=1.3"]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
 
 # The siblings have no PyPI release yet; when present they resolve from the local monorepo.
 # uv-only (pip ignores this table); the default test path does not need them. Note the
 # lib-ai distribution lives in the `lib-ai/` directory, not `ai/`.
 [tool.uv.sources]
-fleetlib-ai = { path = "../lib-ai", editable = true }
-fleetlib-memory = { path = "../memory", editable = true }
-fleetlib-workspace = { path = "../workspace", editable = true }
-fleetlib-workflow = { path = "../workflow", editable = true }
-fleetlib-organization = { path = "../organization", editable = true }
+coactra-ai = { path = "../lib-ai", editable = true }
+coactra-memory = { path = "../memory", editable = true }
+coactra-workspace = { path = "../workspace", editable = true }
+coactra-workflow = { path = "../workflow", editable = true }
+coactra-organization = { path = "../organization", editable = true }
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py
-"""fleetlib.agent — the runtime that wires the five sibling capabilities into a working
+# src/coactra/agent/__init__.py
+"""coactra.agent — the runtime that wires the five sibling capabilities into a working
 agent, as a thin composition/POLICY layer ABOVE mature protocols (it does NOT fork them).
 
 It builds only the three session-level gaps the research verdict identified:
@@ -160,24 +160,24 @@ __version__ = "0.1.0"
 ```
 
 ```text
-# src/fleetlib/agent/py.typed
+# src/coactra/agent/py.typed
 ```
 
-(Do NOT create `src/fleetlib/__init__.py` — its absence is what makes `fleetlib` a namespace package.)
+(Do NOT create `src/coactra/__init__.py` — its absence is what makes `coactra` a namespace package.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pip install -e '.[dev]' && pytest tests/test_packaging.py -v`
 Expected: PASS (2 passed)
 
-> Note: this succeeds with no network — the five `fleetlib-*` siblings are NOT hard
+> Note: this succeeds with no network — the five `coactra-*` siblings are NOT hard
 > dependencies (they live in the `siblings` extra and are consumed via local port
 > Protocols, never imported). Only `pydantic` + `pytest`/`ruff` resolve here.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/agent/__init__.py src/fleetlib/agent/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/agent/__init__.py src/coactra/agent/py.typed tests/test_packaging.py
 git commit -m "feat(agent): namespace package scaffold + importable surface"
 ```
 
@@ -186,8 +186,8 @@ git commit -m "feat(agent): namespace package scaffold + importable surface"
 ## Task 2: Scope — the mandatory multi-tenant key
 
 **Files:**
-- Create: `src/fleetlib/agent/scope.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/scope.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_scope.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -197,7 +197,7 @@ git commit -m "feat(agent): namespace package scaffold + importable surface"
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.agent import Scope
+from coactra.agent import Scope
 
 
 def test_scope_default_namespace():
@@ -231,7 +231,7 @@ Expected: FAIL with `ImportError: cannot import name 'Scope'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/scope.py
+# src/coactra/agent/scope.py
 """Scope — the tenant-scoped key threaded through every subsystem of the agent.
 
 Defined LOCALLY (these are standalone distributions; no cross-library import). Same shape
@@ -259,8 +259,8 @@ class Scope(BaseModel):
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.scope import Scope
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.scope import Scope
 
 __all__ = [
     "__version__",
@@ -276,7 +276,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/scope.py src/fleetlib/agent/__init__.py tests/test_scope.py
+git add src/coactra/agent/scope.py src/coactra/agent/__init__.py tests/test_scope.py
 git commit -m "feat(agent): Scope — mandatory multi-tenant key (tenant_id + namespace)"
 ```
 
@@ -285,8 +285,8 @@ git commit -m "feat(agent): Scope — mandatory multi-tenant key (tenant_id + na
 ## Task 3: ToolSpec — the unit the mount registry tracks
 
 **Files:**
-- Create: `src/fleetlib/agent/tools.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/tools.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_tools.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -296,7 +296,7 @@ git commit -m "feat(agent): Scope — mandatory multi-tenant key (tenant_id + na
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.agent import ToolSpec
+from coactra.agent import ToolSpec
 
 
 def test_toolspec_minimal():
@@ -323,7 +323,7 @@ Expected: FAIL with `ImportError: cannot import name 'ToolSpec'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/tools.py
+# src/coactra/agent/tools.py
 """ToolSpec — the unit the MountRegistry tracks and the agent's toolset exposes.
 
 Carries its mount-id provenance so conflict resolution can namespace a tool by the mount
@@ -351,9 +351,9 @@ class ToolSpec(BaseModel):
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.scope import Scope
-from fleetlib.agent.tools import ToolSpec
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.scope import Scope
+from coactra.agent.tools import ToolSpec
 
 __all__ = [
     "__version__",
@@ -370,7 +370,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/tools.py src/fleetlib/agent/__init__.py tests/test_tools.py
+git add src/coactra/agent/tools.py src/coactra/agent/__init__.py tests/test_tools.py
 git commit -m "feat(agent): ToolSpec — mount-tagged tool unit with qualified-name provenance"
 ```
 
@@ -379,8 +379,8 @@ git commit -m "feat(agent): ToolSpec — mount-tagged tool unit with qualified-n
 ## Task 4: MountRegistry — mid-session mount exposed on the NEXT SAFE TURN (keystone #1)
 
 **Files:**
-- Create: `src/fleetlib/agent/mounting.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/mounting.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_mounting.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -389,7 +389,7 @@ git commit -m "feat(agent): ToolSpec — mount-tagged tool unit with qualified-n
 # tests/test_mounting.py
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     MCPServerPort,
     MountConflictError,
     MountRegistry,
@@ -488,7 +488,7 @@ Expected: FAIL with `ImportError: cannot import name 'MountRegistry'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/mounting.py
+# src/coactra/agent/mounting.py
 """Mid-session MCP capability mounting — the first session-level gap.
 
 MCP already supports live tool changes (tools.listChanged, FastMCP live mounting, OpenAI
@@ -507,8 +507,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
-from fleetlib.agent.scope import Scope
-from fleetlib.agent.tools import ToolSpec
+from coactra.agent.scope import Scope
+from coactra.agent.tools import ToolSpec
 
 
 class MountConflictError(RuntimeError):
@@ -580,16 +580,16 @@ class MountRegistry:
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.mounting import (
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.mounting import (
     ConflictPolicy,
     MCPServerPort,
     MountConflictError,
     MountRegistry,
     NamespaceByMountId,
 )
-from fleetlib.agent.scope import Scope
-from fleetlib.agent.tools import ToolSpec
+from coactra.agent.scope import Scope
+from coactra.agent.tools import ToolSpec
 
 __all__ = [
     "__version__",
@@ -611,7 +611,7 @@ Expected: PASS (8 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/mounting.py src/fleetlib/agent/__init__.py tests/test_mounting.py
+git add src/coactra/agent/mounting.py src/coactra/agent/__init__.py tests/test_mounting.py
 git commit -m "feat(agent): MountRegistry — mid-session mount exposed on the next safe turn (+ conflict + invalidate)"
 ```
 
@@ -620,8 +620,8 @@ git commit -m "feat(agent): MountRegistry — mid-session mount exposed on the n
 ## Task 5: Delegation — RFC 8693 token exchange, NEVER passthrough (keystone #2)
 
 **Files:**
-- Create: `src/fleetlib/agent/delegation.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/delegation.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_delegation.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -630,7 +630,7 @@ git commit -m "feat(agent): MountRegistry — mid-session mount exposed on the n
 # tests/test_delegation.py
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     DelegationGrant,
     ExchangedIdentity,
     InProcessExchanger,
@@ -703,7 +703,7 @@ Expected: FAIL with `ImportError: cannot import name 'DelegationGrant'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/delegation.py
+# src/coactra/agent/delegation.py
 """Delegated identity via RFC 8693 token exchange — the second session-level gap.
 
 MCP OAuth supports on-behalf-of but EXPLICITLY FORBIDS token passthrough. So an agent
@@ -723,7 +723,7 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from fleetlib.agent.scope import Scope
+from coactra.agent.scope import Scope
 
 
 class TokenPassthroughError(RuntimeError):
@@ -813,8 +813,8 @@ class InProcessExchanger:
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.delegation import (
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.delegation import (
     DelegationGrant,
     ExchangedIdentity,
     InProcessExchanger,
@@ -836,7 +836,7 @@ Expected: PASS (6 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/delegation.py src/fleetlib/agent/__init__.py tests/test_delegation.py
+git add src/coactra/agent/delegation.py src/coactra/agent/__init__.py tests/test_delegation.py
 git commit -m "feat(agent): RFC 8693 delegated identity — exchange + multi-hop chain, never passthrough"
 ```
 
@@ -845,8 +845,8 @@ git commit -m "feat(agent): RFC 8693 delegated identity — exchange + multi-hop
 ## Task 6: Collaboration policy over A2A (keystone #3 — and the workflow seam)
 
 **Files:**
-- Create: `src/fleetlib/agent/collaboration.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/collaboration.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_collaboration.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -855,7 +855,7 @@ git commit -m "feat(agent): RFC 8693 delegated identity — exchange + multi-hop
 # tests/test_collaboration.py
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     A2ATransportPort,
     AllowSameTenant,
     CollaborationDenied,
@@ -924,7 +924,7 @@ def test_allow_set_narrows_who_may_talk_to_whom():
 def test_collaborator_satisfies_workflows_collaborator_shape():
     # The concrete inter-lib seam: workflow's `ask` step calls a Collaborator with
     # .ask(agent, question, state). PolicyGatedCollaborator structurally matches it, so it
-    # drops straight into a fleetlib.workflow RunContext without an adapter.
+    # drops straight into a coactra.workflow RunContext without an adapter.
     c = PolicyGatedCollaborator(
         transport=FakeTransport(), policy=AllowSameTenant(), scope=ACME, me="agent:a"
     )
@@ -953,7 +953,7 @@ Expected: FAIL with `ImportError: cannot import name 'CollaborationPolicy'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/collaboration.py
+# src/coactra/agent/collaboration.py
 """Collaboration policy over A2A — the third session-level gap.
 
 A2A is mature (tasks/multi-turn/streaming/push/artifacts); it does NOT decide WHO may talk
@@ -961,7 +961,7 @@ to WHOM, WHEN. That policy is the gap. CollaborationPolicy answers can_talk(src,
 scope) purely in-process; PolicyGatedCollaborator gates a real A2A transport behind it so a
 denied request never reaches the wire.
 
-Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies fleetlib.workflow's
+Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies coactra.workflow's
 `Collaborator` (.ask(agent, question, state)) and `EscalationRouter` (.route(escalation,
 chain)) Protocols — the talk that workflow's `ask`/`escalate` steps deferred "to the agent
 layer". We do not import workflow; structural typing is the contract.
@@ -971,7 +971,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from fleetlib.agent.scope import Scope
+from coactra.agent.scope import Scope
 
 
 class CollaborationDenied(RuntimeError):
@@ -1051,8 +1051,8 @@ class PolicyGatedCollaborator:
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.collaboration import (
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.collaboration import (
     A2ATransportPort,
     AllowSameTenant,
     CollaborationDenied,
@@ -1074,7 +1074,7 @@ Expected: PASS (7 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/collaboration.py src/fleetlib/agent/__init__.py tests/test_collaboration.py
+git add src/coactra/agent/collaboration.py src/coactra/agent/__init__.py tests/test_collaboration.py
 git commit -m "feat(agent): collaboration policy over A2A — policy-gated talk satisfying workflow's seams"
 ```
 
@@ -1083,16 +1083,16 @@ git commit -m "feat(agent): collaboration policy over A2A — policy-gated talk 
 ## Task 7: Sibling port Protocols + in-process fakes (the un-tangling seam)
 
 **Files:**
-- Create: `src/fleetlib/agent/ports.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/ports.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_ports.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_ports.py
-import fleetlib.agent.ports as ports_module
-from fleetlib.agent import (
+import coactra.agent.ports as ports_module
+from coactra.agent import (
     AIPort,
     FakeAI,
     FakeMemory,
@@ -1123,9 +1123,9 @@ def test_ports_module_does_not_import_sibling_internals():
 
     src = inspect.getsource(ports_module)
     for sibling in ("ai", "memory", "workflow", "workspace", "organization"):
-        # catch BOTH `import fleetlib.<sibling>` and `from fleetlib.<sibling> import ...`
-        assert f"import fleetlib.{sibling}" not in src
-        assert f"from fleetlib.{sibling}" not in src
+        # catch BOTH `import coactra.<sibling>` and `from coactra.<sibling> import ...`
+        assert f"import coactra.{sibling}" not in src
+        assert f"from coactra.{sibling}" not in src
 
 
 def test_fake_memory_is_tenant_scoped():
@@ -1153,15 +1153,15 @@ Expected: FAIL with `ImportError: cannot import name 'AIPort'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/ports.py
+# src/coactra/agent/ports.py
 """The five sibling PORTS — the un-tangling seam.
 
 agent wires ai/memory/workspace/workflow/organization, but consuming a sibling's CODE
 would re-tangle the libraries (and lib-ai/organization have no code yet). So each sibling
 is consumed through a NARROW local port Protocol with an in-process fake default — exactly
-as the sibling `workflow` plan refused to import `fleetlib.ai` and used a local shape. The
+as the sibling `workflow` plan refused to import `coactra.ai` and used a local shape. The
 real wiring (swap a fake for an adapter around the published sibling) happens downstream;
-this library never imports `fleetlib.<sibling>`.
+this library never imports `coactra.<sibling>`.
 
 Each port is deliberately tiny: only the surface the Agent facade actually calls.
 """
@@ -1170,20 +1170,20 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from fleetlib.agent.scope import Scope
+from coactra.agent.scope import Scope
 
 
 @runtime_checkable
 class AIPort(Protocol):
     def complete(self, prompt: str) -> str:
-        """Run one model completion (fleetlib.ai's job)."""
+        """Run one model completion (coactra.ai's job)."""
         ...
 
 
 @runtime_checkable
 class MemoryPort(Protocol):
     def learn(self, text: str, scope: Scope) -> None:
-        """Persist a learned fact within scope (fleetlib.memory's job)."""
+        """Persist a learned fact within scope (coactra.memory's job)."""
         ...
 
     def recall(self, query: str, scope: Scope) -> list[str]:
@@ -1194,7 +1194,7 @@ class MemoryPort(Protocol):
 @runtime_checkable
 class WorkspacePort(Protocol):
     def write(self, path: str, content: str, scope: Scope) -> None:
-        """Write a file to the agent's persistent desk (fleetlib.workspace's job)."""
+        """Write a file to the agent's persistent desk (coactra.workspace's job)."""
         ...
 
     def read(self, path: str, scope: Scope) -> str:
@@ -1205,14 +1205,14 @@ class WorkspacePort(Protocol):
 @runtime_checkable
 class WorkflowPort(Protocol):
     def run(self, name: str, scope: Scope) -> dict:
-        """Run a named procedure within scope (fleetlib.workflow's job)."""
+        """Run a named procedure within scope (coactra.workflow's job)."""
         ...
 
 
 @runtime_checkable
 class OrganizationPort(Protocol):
     def escalation_chain(self, agent_id: str, scope: Scope) -> list[str]:
-        """Return the escalation chain for agent_id (fleetlib.organization's job)."""
+        """Return the escalation chain for agent_id (coactra.organization's job)."""
         ...
 
 
@@ -1260,8 +1260,8 @@ class FakeOrganization:
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.ports import (
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.ports import (
     AIPort,
     FakeAI,
     FakeMemory,
@@ -1288,7 +1288,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/ports.py src/fleetlib/agent/__init__.py tests/test_ports.py
+git add src/coactra/agent/ports.py src/coactra/agent/__init__.py tests/test_ports.py
 git commit -m "feat(agent): five sibling port Protocols + in-process fakes (no sibling import)"
 ```
 
@@ -1297,8 +1297,8 @@ git commit -m "feat(agent): five sibling port Protocols + in-process fakes (no s
 ## Task 8: Agent — the thin composition root
 
 **Files:**
-- Create: `src/fleetlib/agent/agent.py`
-- Modify: `src/fleetlib/agent/__init__.py`
+- Create: `src/coactra/agent/agent.py`
+- Modify: `src/coactra/agent/__init__.py`
 - Test: `tests/test_agent.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1307,7 +1307,7 @@ git commit -m "feat(agent): five sibling port Protocols + in-process fakes (no s
 # tests/test_agent.py
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     Agent,
     CollaborationDenied,
     DelegationGrant,
@@ -1420,7 +1420,7 @@ Expected: FAIL with `ImportError: cannot import name 'Agent'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/agent.py
+# src/coactra/agent/agent.py
 """Agent — the thin composition root that wires the three subsystems + five sibling ports.
 
 It is DELIBERATELY thin: every capability call delegates to an injected port or a built
@@ -1432,20 +1432,20 @@ real adapters (fastmcp/a2a/keycloak + published siblings).
 
 from __future__ import annotations
 
-from fleetlib.agent.collaboration import (
+from coactra.agent.collaboration import (
     A2ATransportPort,
     AllowSameTenant,
     CollaborationPolicy,
     PolicyGatedCollaborator,
 )
-from fleetlib.agent.delegation import (
+from coactra.agent.delegation import (
     DelegationGrant,
     ExchangedIdentity,
     InProcessExchanger,
     TokenExchanger,
 )
-from fleetlib.agent.mounting import ConflictPolicy, MCPServerPort, MountRegistry
-from fleetlib.agent.ports import (
+from coactra.agent.mounting import ConflictPolicy, MCPServerPort, MountRegistry
+from coactra.agent.ports import (
     AIPort,
     FakeAI,
     FakeMemory,
@@ -1457,8 +1457,8 @@ from fleetlib.agent.ports import (
     WorkflowPort,
     WorkspacePort,
 )
-from fleetlib.agent.scope import Scope
-from fleetlib.agent.tools import ToolSpec
+from coactra.agent.scope import Scope
+from coactra.agent.tools import ToolSpec
 
 
 class Agent:
@@ -1574,8 +1574,8 @@ class _NullTransport:
 ```
 
 ```python
-# src/fleetlib/agent/__init__.py  (extend imports + __all__)
-from fleetlib.agent.agent import Agent
+# src/coactra/agent/__init__.py  (extend imports + __all__)
+from coactra.agent.agent import Agent
 # ...keep existing imports...
 
 # add "Agent" to __all__
@@ -1589,7 +1589,7 @@ Expected: PASS (8 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/agent.py src/fleetlib/agent/__init__.py tests/test_agent.py
+git add src/coactra/agent/agent.py src/coactra/agent/__init__.py tests/test_agent.py
 git commit -m "feat(agent): Agent composition root — wires mount/delegate/collaborate + sibling ports, scope-threaded"
 ```
 
@@ -1598,11 +1598,11 @@ git commit -m "feat(agent): Agent composition root — wires mount/delegate/coll
 ## Task 9: Optional-extra adapter stubs (fastmcp / a2a / keycloak)
 
 **Files:**
-- Create: `src/fleetlib/agent/adapters/__init__.py`
-- Create: `src/fleetlib/agent/adapters/_stub.py`
-- Create: `src/fleetlib/agent/adapters/fastmcp.py`
-- Create: `src/fleetlib/agent/adapters/a2a.py`
-- Create: `src/fleetlib/agent/adapters/keycloak.py`
+- Create: `src/coactra/agent/adapters/__init__.py`
+- Create: `src/coactra/agent/adapters/_stub.py`
+- Create: `src/coactra/agent/adapters/fastmcp.py`
+- Create: `src/coactra/agent/adapters/a2a.py`
+- Create: `src/coactra/agent/adapters/keycloak.py`
 - Test: `tests/test_adapter_stubs.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1611,10 +1611,10 @@ git commit -m "feat(agent): Agent composition root — wires mount/delegate/coll
 # tests/test_adapter_stubs.py
 import pytest
 
-from fleetlib.agent.adapters._stub import MissingExtraError
-from fleetlib.agent.adapters.a2a import A2ATransport
-from fleetlib.agent.adapters.fastmcp import FastMCPServer
-from fleetlib.agent.adapters.keycloak import KeycloakExchanger
+from coactra.agent.adapters._stub import MissingExtraError
+from coactra.agent.adapters.a2a import A2ATransport
+from coactra.agent.adapters.fastmcp import FastMCPServer
+from coactra.agent.adapters.keycloak import KeycloakExchanger
 
 
 @pytest.mark.parametrize(
@@ -1639,19 +1639,19 @@ def test_stubs_name_the_seam_they_will_satisfy():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_adapter_stubs.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.agent.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.agent.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/agent/adapters/__init__.py
+# src/coactra/agent/adapters/__init__.py
 """Optional-extra adapters. Stubs today — each names the Protocol seam it will satisfy and
 raises MissingExtraError until its extra (and a real implementation) land. The in-process
 defaults in the core package keep every default path testable without these."""
 ```
 
 ```python
-# src/fleetlib/agent/adapters/_stub.py
+# src/coactra/agent/adapters/_stub.py
 """Shared helper for optional-extra adapter stubs."""
 
 from __future__ import annotations
@@ -1664,17 +1664,17 @@ class MissingExtraError(RuntimeError):
 def require_extra(extra: str) -> None:
     raise MissingExtraError(
         f"adapter requires the optional '{extra}' extra and a real implementation; "
-        f"install with: pip install fleetlib-agent[{extra}] (stub not yet implemented)"
+        f"install with: pip install coactra-agent[{extra}] (stub not yet implemented)"
     )
 ```
 
 ```python
-# src/fleetlib/agent/adapters/fastmcp.py
+# src/coactra/agent/adapters/fastmcp.py
 """FastMCP adapter — STUB. Will satisfy MCPServerPort; raises until the mcp extra."""
 
 from __future__ import annotations
 
-from fleetlib.agent.adapters._stub import require_extra
+from coactra.agent.adapters._stub import require_extra
 
 
 class FastMCPServer:
@@ -1685,12 +1685,12 @@ class FastMCPServer:
 ```
 
 ```python
-# src/fleetlib/agent/adapters/a2a.py
+# src/coactra/agent/adapters/a2a.py
 """A2A adapter — STUB. Will satisfy A2ATransportPort; raises until the a2a extra."""
 
 from __future__ import annotations
 
-from fleetlib.agent.adapters._stub import require_extra
+from coactra.agent.adapters._stub import require_extra
 
 
 class A2ATransport:
@@ -1701,7 +1701,7 @@ class A2ATransport:
 ```
 
 ```python
-# src/fleetlib/agent/adapters/keycloak.py
+# src/coactra/agent/adapters/keycloak.py
 """Keycloak RFC 8693 token-exchange adapter — STUB. Will satisfy TokenExchanger; raises
 until the oauth extra. The real impl performs an RFC 8693 grant_type=token-exchange call
 (subject_token + actor_token) against the AS; it must NEVER forward the raw subject token
@@ -1709,7 +1709,7 @@ downstream."""
 
 from __future__ import annotations
 
-from fleetlib.agent.adapters._stub import require_extra
+from coactra.agent.adapters._stub import require_extra
 
 
 class KeycloakExchanger:
@@ -1727,7 +1727,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/agent/adapters tests/test_adapter_stubs.py
+git add src/coactra/agent/adapters tests/test_adapter_stubs.py
 git commit -m "feat(agent): fastmcp/a2a/keycloak adapter stubs (name the seam, raise on use)"
 ```
 
@@ -1742,7 +1742,7 @@ git commit -m "feat(agent): fastmcp/a2a/keycloak adapter stubs (name the seam, r
 
 ```python
 # tests/test_public_api.py
-import fleetlib.agent as a
+import coactra.agent as a
 
 
 def test_public_surface_is_complete():
@@ -1854,6 +1854,6 @@ git commit -m "test(agent): lock public API surface + end-to-end mount/delegate/
 3. **Open charter questions answered** — "where is the turn boundary?" → DEFINED observably as `begin_turn()` promoting pending→active (Task 4 keystone); "multi-hop RFC 8693 chain" → `exchange_from` (on the `TokenExchanger` Protocol, so it survives swapping in `KeycloakExchanger`) extends `act_chain`, exposed as `Agent.delegate_further` (Task 5/8); "who may talk to whom, when" → `CollaborationPolicy.can_talk` (Task 6). ✔
 4. **Security keystone** — the raw subject token never appears in the exchanged identity's token or repr, and an explicit passthrough attempt raises `TokenPassthroughError` (Task 5). ✔
 5. **Principles** — every feature is a `typing.Protocol` + ONE in-process working default; real SDKs (fastmcp/a2a/keycloak) are optional-extra stubs (Task 9); `Scope` (tenant_id + namespace) is mandatory on the Agent and threads into mount registry, exchange, collaboration, and every sibling-port call. Isolation is PROVEN where the default store can express it: memory and workspace fakes key by `scope.key`, so a different-tenant agent reads nothing (Tasks 7/8). Collaboration's default (`AllowSameTenant`) gates intra-tenant who-talks-to-whom only — the cross-TENANT boundary is enforced upstream by the `Scope` each call carries, NOT by this policy (a bare-string `dst` can't name a tenant); making cross-tenant denial expressible is a deferred design call (see concerns). The plan no longer claims a cross-tenant collaboration-denial test it can't honestly run. ✔
-6. **Un-tangling boundary** — the five siblings are consumed through narrow local port Protocols + fakes; `test_ports_module_does_not_import_sibling_internals` asserts no `import fleetlib.<sibling>` (Task 7). The one concrete inter-lib seam is honored structurally: `PolicyGatedCollaborator` satisfies workflow's `Collaborator`/`EscalationRouter` shapes (Task 6) and is exposed as `agent.collaborator` for a workflow `RunContext` (Task 8/10). ✔
-7. **Packaging** — PEP 420 namespace (no `src/fleetlib/__init__.py`, Task 1 asserts it), src layout, `py.typed`, hatchling; the five `fleetlib-*` siblings declared per the charter in a `siblings` optional-extra (NOT hard deps — keeps the wheel installable before they publish) and never imported (resolved via `[tool.uv.sources]` in dev); optional extras `siblings`/`mcp`/`a2a`/`oauth`/`dev`. ✔
+6. **Un-tangling boundary** — the five siblings are consumed through narrow local port Protocols + fakes; `test_ports_module_does_not_import_sibling_internals` asserts no `import coactra.<sibling>` (Task 7). The one concrete inter-lib seam is honored structurally: `PolicyGatedCollaborator` satisfies workflow's `Collaborator`/`EscalationRouter` shapes (Task 6) and is exposed as `agent.collaborator` for a workflow `RunContext` (Task 8/10). ✔
+7. **Packaging** — PEP 420 namespace (no `src/coactra/__init__.py`, Task 1 asserts it), src layout, `py.typed`, hatchling; the five `coactra-*` siblings declared per the charter in a `siblings` optional-extra (NOT hard deps — keeps the wheel installable before they publish) and never imported (resolved via `[tool.uv.sources]` in dev); optional extras `siblings`/`mcp`/`a2a`/`oauth`/`dev`. ✔
 8. **Type consistency** — `Scope.key`, `ToolSpec.qualified_name`, `MountRegistry.stage/begin_turn/active_tools`, `ConflictPolicy.resolve`, `DelegationGrant(subject_token/actor)`, `ExchangedIdentity.token/subject/act_chain/tenant_id`, `TokenExchanger.exchange`, `InProcessExchanger.exchange/exchange_from`, `CollaborationPolicy.can_talk`, `PolicyGatedCollaborator.ask/route`, the five `*Port`/`Fake*`, and `Agent(scope=, me=, …)` are used identically across all tasks. ✔

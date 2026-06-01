@@ -1,4 +1,4 @@
-from fleetlib.organization import PolicyRef, Tenant
+from coactra.organization import PolicyRef, Tenant
 
 
 def test_add_and_get_current_policy_version(store):

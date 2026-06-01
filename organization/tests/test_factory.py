@@ -2,8 +2,8 @@
 
 import pytest
 
-from fleetlib.organization import OrgStore, SqliteOrgStore, make_org_store
-from fleetlib.organization.errors import MissingExtraError
+from coactra.organization import OrgStore, SqliteOrgStore, make_org_store
+from coactra.organization.errors import MissingExtraError
 
 
 def test_default_config_is_sqlite_in_memory():

@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.workspace import (
+from coactra.workspace import (
     CapabilityManifest,
     CliPolicy,
     LocalFilesystemBackend,

@@ -1,9 +1,9 @@
 import pytest
 
-from fleetlib.agent.adapters._stub import MissingExtraError
-from fleetlib.agent.adapters.a2a import A2ATransport
-from fleetlib.agent.adapters.fastmcp import FastMCPServer
-from fleetlib.agent.adapters.keycloak import KeycloakExchanger
+from coactra.agent.adapters._stub import MissingExtraError
+from coactra.agent.adapters.a2a import A2ATransport
+from coactra.agent.adapters.fastmcp import FastMCPServer
+from coactra.agent.adapters.keycloak import KeycloakExchanger
 
 
 @pytest.mark.parametrize(

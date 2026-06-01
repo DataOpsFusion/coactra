@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.memory import Recollection, Scope
+from coactra.memory import Recollection, Scope
 
 
 def test_scope_minimal_tenant_only():

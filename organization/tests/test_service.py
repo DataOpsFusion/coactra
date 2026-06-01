@@ -6,7 +6,7 @@ round-trip must preserve: node tree, block_inheritance, node grants, members, se
 member status, and per-member overrides — proven by replaying can() on the rebuilt tree.
 """
 
-from fleetlib.organization import (
+from coactra.organization import (
     Organization,
     load_org,
     make_org_store,

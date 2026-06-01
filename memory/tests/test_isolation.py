@@ -1,5 +1,5 @@
-from fleetlib.memory import Scope
-from fleetlib.memory.backends.inprocess import InProcessBackend
+from coactra.memory import Scope
+from coactra.memory.backends.inprocess import InProcessBackend
 
 ACME = Scope(tenant="acme", agent="shared")
 GLOBEX = Scope(tenant="globex", agent="shared")

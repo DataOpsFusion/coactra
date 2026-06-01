@@ -1,5 +1,5 @@
-from fleetlib.memory import Capability, ExportReport, MemoryBackend, Scope, export
-from fleetlib.memory.backends.inprocess import InProcessBackend
+from coactra.memory import Capability, ExportReport, MemoryBackend, Scope, export
+from coactra.memory.backends.inprocess import InProcessBackend
 
 SCOPE = Scope(tenant="acme", agent="agent1")
 

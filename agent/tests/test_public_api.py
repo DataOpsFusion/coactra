@@ -1,6 +1,6 @@
 import asyncio
 
-import fleetlib.agent as a
+import coactra.agent as a
 
 
 def test_version_is_v2():
@@ -100,9 +100,9 @@ def test_end_to_end_composition():
 
 
 def _load_workflow_handlers():
-    # Load the REAL fleetlib.workflow.handlers module DIRECTLY by file path. handlers.py is
+    # Load the REAL coactra.workflow.handlers module DIRECTLY by file path. handlers.py is
     # leaf-importable (it imports only typing + pydantic), so this gives us the ACTUAL
-    # Protocols the inter-lib contract is defined against WITHOUT importing fleetlib.workflow
+    # Protocols the inter-lib contract is defined against WITHOUT importing coactra.workflow
     # (which pulls langgraph via langgraph_engine). The test can therefore never drift from
     # the real workflow contract — if workflow renames/reshapes a seam, this breaks.
     import importlib.util
@@ -112,7 +112,7 @@ def _load_workflow_handlers():
     # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/workflow/src/...
     repo_root = here.parents[2]
     handlers_path = (
-        repo_root / "workflow" / "src" / "fleetlib" / "workflow" / "handlers.py"
+        repo_root / "workflow" / "src" / "coactra" / "workflow" / "handlers.py"
     )
     assert handlers_path.is_file(), (
         f"real workflow handlers not found at {handlers_path}"
@@ -127,7 +127,7 @@ def _load_workflow_handlers():
 
 
 def test_collaborator_is_workflow_runcontext_ready():
-    # The agent's collaborator STRUCTURALLY satisfies fleetlib.workflow's Collaborator /
+    # The agent's collaborator STRUCTURALLY satisfies coactra.workflow's Collaborator /
     # EscalationRouter Protocols. We assert against the REAL Protocols loaded by file path
     # (no langgraph import) so this can't drift from workflow's actual contract.
     import inspect

@@ -1,4 +1,4 @@
-from fleetlib.workspace import LocalFilesystemBackend, Scope, Workspace
+from coactra.workspace import LocalFilesystemBackend, Scope, Workspace
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 

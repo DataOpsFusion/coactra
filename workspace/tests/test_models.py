@@ -1,4 +1,4 @@
-from fleetlib.workspace import CapabilityManifest, ExecResult
+from coactra.workspace import CapabilityManifest, ExecResult
 
 
 def test_exec_result_fields():

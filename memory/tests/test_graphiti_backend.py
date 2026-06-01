@@ -7,8 +7,8 @@ type leaks across the boundary (sentinel-edge proof).
 
 from datetime import datetime, timezone
 
-from fleetlib.memory import Recollection, Scope
-from fleetlib.memory.backends.graphiti import GraphitiBackend, _group_id
+from coactra.memory import Recollection, Scope
+from coactra.memory.backends.graphiti import GraphitiBackend, _group_id
 
 
 class FakeEdge:

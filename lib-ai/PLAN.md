@@ -1,4 +1,4 @@
-# fleetlib.ai Implementation Plan
+# coactra.ai Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -6,7 +6,7 @@
 
 **Architecture:** Two surfaces in one distribution. The **wrap shelf** (`client.ask` over LiteLLM, `structured()` over Instructor) is trivial passthrough — never re-implement provider routing or typing. The **novel core** is orchestration: `capture()` stores a `ReasoningTrace` (problem text + embedding + reasoning + outcome stats) into a tenant-scoped `ReasoningStore`; `recall_or_reason()` runs the pipeline `embed → bounded+quality-filtered retrieve → adaptive gate → replay | re-reason`. The gate is adaptive because `record_outcome(trace_id, success)` feeds observed correctness back into each trace, and the accept boundary is computed from neighbors' verified success — the *same* signal that powers the quality filter (one unified guard). Backends are swapped via `typing.Protocol`s with exactly one working default each.
 
-**Tech Stack:** Python 3.12+, hatchling (PEP 420 namespace package `fleetlib/ai/`), pydantic v2, litellm, instructor, numpy (cosine similarity + default embedding via `litellm.embedding`), pytest. chromadb is an optional, stubbed adapter.
+**Tech Stack:** Python 3.12+, hatchling (PEP 420 namespace package `coactra/ai/`), pydantic v2, litellm, instructor, numpy (cosine similarity + default embedding via `litellm.embedding`), pytest. chromadb is an optional, stubbed adapter.
 
 ---
 
@@ -15,18 +15,18 @@
 | File | Single responsibility |
 |------|----------------------|
 | `pyproject.toml` | Hatchling build of the PEP 420 namespace package; runtime deps (instructor, litellm, pydantic, numpy); optional-deps groups (`chroma`, `dev`). |
-| `src/fleetlib/ai/__init__.py` | Public surface (matches Task 9 `__all__`): `ask`, `structured`, `LiteLLMCompleter`, `LiteLLMEmbedding`, `cosine`, `ReasoningEngine`, `AdaptiveGate`, `InMemoryStore`, `ReasoningTrace`, `RecallResult`, `Decision`. `capture`/`recall_or_reason`/`record_outcome` are `ReasoningEngine` methods, not module functions. No `src/fleetlib/__init__.py` (namespace). |
-| `src/fleetlib/ai/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/ai/protocols.py` | `EmbeddingFn`, `Completer`, `ReasoningStore` Protocols — the swap seams (one default adapter each). |
-| `src/fleetlib/ai/models.py` | `ReasoningTrace` (pydantic) with outcome stats + `quality` property; `Decision` enum; `RecallResult` dataclass. |
-| `src/fleetlib/ai/client.py` | Wrap shelf: `ask()` (LiteLLM completion) and `structured()` (Instructor typed output). Default `Completer`. |
-| `src/fleetlib/ai/embedding.py` | Default `EmbeddingFn` over `litellm.embedding`; `cosine()` numpy helper. |
-| `src/fleetlib/ai/store.py` | `InMemoryStore` — the one default `ReasoningStore`, tenant-partitioned, bounded quality-filtered retrieval. |
-| `src/fleetlib/ai/gate.py` | `AdaptiveGate` — accept boundary computed from neighbors' verified outcomes (vCache-style), not a static threshold. |
-| `src/fleetlib/ai/engine.py` | `ReasoningEngine` — `capture / recall_or_reason / record_outcome` orchestration; the three replay-vs-re-reason branches. |
-| `src/fleetlib/ai/adapters/__init__.py` | Adapter namespace. |
-| `src/fleetlib/ai/adapters/chroma.py` | Optional `ChromaStore` stub adapter (raises if `chromadb` missing). |
-| `tests/test_packaging.py` | Namespace import + no `src/fleetlib/__init__.py`. |
+| `src/coactra/ai/__init__.py` | Public surface (matches Task 9 `__all__`): `ask`, `structured`, `LiteLLMCompleter`, `LiteLLMEmbedding`, `cosine`, `ReasoningEngine`, `AdaptiveGate`, `InMemoryStore`, `ReasoningTrace`, `RecallResult`, `Decision`. `capture`/`recall_or_reason`/`record_outcome` are `ReasoningEngine` methods, not module functions. No `src/coactra/__init__.py` (namespace). |
+| `src/coactra/ai/py.typed` | PEP 561 typing marker. |
+| `src/coactra/ai/protocols.py` | `EmbeddingFn`, `Completer`, `ReasoningStore` Protocols — the swap seams (one default adapter each). |
+| `src/coactra/ai/models.py` | `ReasoningTrace` (pydantic) with outcome stats + `quality` property; `Decision` enum; `RecallResult` dataclass. |
+| `src/coactra/ai/client.py` | Wrap shelf: `ask()` (LiteLLM completion) and `structured()` (Instructor typed output). Default `Completer`. |
+| `src/coactra/ai/embedding.py` | Default `EmbeddingFn` over `litellm.embedding`; `cosine()` numpy helper. |
+| `src/coactra/ai/store.py` | `InMemoryStore` — the one default `ReasoningStore`, tenant-partitioned, bounded quality-filtered retrieval. |
+| `src/coactra/ai/gate.py` | `AdaptiveGate` — accept boundary computed from neighbors' verified outcomes (vCache-style), not a static threshold. |
+| `src/coactra/ai/engine.py` | `ReasoningEngine` — `capture / recall_or_reason / record_outcome` orchestration; the three replay-vs-re-reason branches. |
+| `src/coactra/ai/adapters/__init__.py` | Adapter namespace. |
+| `src/coactra/ai/adapters/chroma.py` | Optional `ChromaStore` stub adapter (raises if `chromadb` missing). |
+| `tests/test_packaging.py` | Namespace import + no `src/coactra/__init__.py`. |
 | `tests/test_client.py` | Wrap shelf with injected fake `Completer`. |
 | `tests/test_embedding.py` | Cosine + default embedding shape (mocked). |
 | `tests/test_store.py` | Tenant isolation, bounded cap, quality filtering. |
@@ -39,8 +39,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/ai/__init__.py`
-- Create: `src/fleetlib/ai/py.typed`
+- Create: `src/coactra/ai/__init__.py`
+- Create: `src/coactra/ai/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -52,20 +52,20 @@ import pathlib
 
 
 def test_namespace_package_imports():
-    mod = importlib.import_module("fleetlib.ai")
-    assert mod.__name__ == "fleetlib.ai"
+    mod = importlib.import_module("coactra.ai")
+    assert mod.__name__ == "coactra.ai"
 
 
 def test_no_top_level_init():
-    # PEP 420: fleetlib must NOT have its own __init__.py
+    # PEP 420: coactra must NOT have its own __init__.py
     root = pathlib.Path(__file__).resolve().parent.parent
-    assert not (root / "src" / "fleetlib" / "__init__.py").exists()
+    assert not (root / "src" / "coactra" / "__init__.py").exists()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -76,7 +76,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-ai"
+name = "coactra-ai"
 version = "0.1.0"
 description = "Model-call shelf + reasoning capture-replay for AI agent fleets."
 readme = "README.md"
@@ -94,7 +94,7 @@ chroma = ["chromadb>=0.5"]
 dev = ["pytest>=8.0"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fleetlib"]
+packages = ["src/coactra"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -102,14 +102,14 @@ testpaths = ["tests"]
 ```
 
 ```python
-# src/fleetlib/ai/__init__.py
-"""fleetlib.ai — model-call shelf + reasoning capture-replay."""
+# src/coactra/ai/__init__.py
+"""coactra.ai — model-call shelf + reasoning capture-replay."""
 
 __all__ = []
 ```
 
 ```text
-# src/fleetlib/ai/py.typed
+# src/coactra/ai/py.typed
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -120,7 +120,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/ai/__init__.py src/fleetlib/ai/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/ai/__init__.py src/coactra/ai/py.typed tests/test_packaging.py
 git commit -m "feat(ai): PEP 420 namespace package skeleton"
 ```
 
@@ -129,14 +129,14 @@ git commit -m "feat(ai): PEP 420 namespace package skeleton"
 ### Task 2: Protocols — the swap seams
 
 **Files:**
-- Create: `src/fleetlib/ai/protocols.py`
+- Create: `src/coactra/ai/protocols.py`
 - Test: `tests/test_protocols.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_protocols.py
-from fleetlib.ai.protocols import EmbeddingFn, ReasoningStore, Completer
+from coactra.ai.protocols import EmbeddingFn, ReasoningStore, Completer
 
 
 def test_protocols_are_runtime_checkable():
@@ -167,12 +167,12 @@ def test_reasoning_store_protocol_shape():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_protocols.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.protocols'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.protocols'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/protocols.py
+# src/coactra/ai/protocols.py
 """Swap seams: one Protocol per backend, exactly one default adapter each."""
 from __future__ import annotations
 
@@ -212,7 +212,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/protocols.py tests/test_protocols.py
+git add src/coactra/ai/protocols.py tests/test_protocols.py
 git commit -m "feat(ai): backend swap Protocols (embedding, completer, reasoning store)"
 ```
 
@@ -221,7 +221,7 @@ git commit -m "feat(ai): backend swap Protocols (embedding, completer, reasoning
 ### Task 3: Models — ReasoningTrace with outcome feedback
 
 **Files:**
-- Create: `src/fleetlib/ai/models.py`
+- Create: `src/coactra/ai/models.py`
 - Test: `tests/test_models.py`
 
 The outcome-feedback seam is load-bearing: `quality` is computed from observed correctness, and the *same* signal powers both the adaptive gate and the quality filter.
@@ -230,7 +230,7 @@ The outcome-feedback seam is load-bearing: `quality` is computed from observed c
 
 ```python
 # tests/test_models.py
-from fleetlib.ai.models import ReasoningTrace, Decision
+from coactra.ai.models import ReasoningTrace, Decision
 
 
 def test_trace_starts_neutral_quality():
@@ -257,12 +257,12 @@ def test_decision_enum_values():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_models.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.models'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.models'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/models.py
+# src/coactra/ai/models.py
 """Procedural-memory record + decision types."""
 from __future__ import annotations
 
@@ -317,7 +317,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/models.py tests/test_models.py
+git add src/coactra/ai/models.py tests/test_models.py
 git commit -m "feat(ai): ReasoningTrace record with learned quality from outcomes"
 ```
 
@@ -326,7 +326,7 @@ git commit -m "feat(ai): ReasoningTrace record with learned quality from outcome
 ### Task 4: Embedding — default EmbeddingFn + cosine
 
 **Files:**
-- Create: `src/fleetlib/ai/embedding.py`
+- Create: `src/coactra/ai/embedding.py`
 - Test: `tests/test_embedding.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -335,7 +335,7 @@ git commit -m "feat(ai): ReasoningTrace record with learned quality from outcome
 # tests/test_embedding.py
 from unittest.mock import patch
 
-from fleetlib.ai.embedding import cosine, LiteLLMEmbedding
+from coactra.ai.embedding import cosine, LiteLLMEmbedding
 
 
 def test_cosine_identical_is_one():
@@ -352,7 +352,7 @@ def test_cosine_zero_vector_is_safe():
 
 def test_default_embedding_uses_litellm():
     fake = {"data": [{"embedding": [0.1, 0.2, 0.3]}]}
-    with patch("fleetlib.ai.embedding.litellm.embedding", return_value=fake) as m:
+    with patch("coactra.ai.embedding.litellm.embedding", return_value=fake) as m:
         embed = LiteLLMEmbedding(model="text-embedding-3-small")
         out = embed("hello")
     assert out == [0.1, 0.2, 0.3]
@@ -362,12 +362,12 @@ def test_default_embedding_uses_litellm():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_embedding.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.embedding'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.embedding'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/embedding.py
+# src/coactra/ai/embedding.py
 """Default EmbeddingFn over litellm.embedding + numpy cosine."""
 from __future__ import annotations
 
@@ -402,7 +402,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/embedding.py tests/test_embedding.py
+git add src/coactra/ai/embedding.py tests/test_embedding.py
 git commit -m "feat(ai): default litellm embedding + numpy cosine"
 ```
 
@@ -411,15 +411,15 @@ git commit -m "feat(ai): default litellm embedding + numpy cosine"
 ### Task 5: InMemoryStore — tenant isolation, bounded + quality-filtered retrieval
 
 **Files:**
-- Create: `src/fleetlib/ai/store.py`
+- Create: `src/coactra/ai/store.py`
 - Test: `tests/test_store.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_store.py
-from fleetlib.ai.models import ReasoningTrace
-from fleetlib.ai.store import InMemoryStore
+from coactra.ai.models import ReasoningTrace
+from coactra.ai.store import InMemoryStore
 
 
 def _trace(id, vec, succ=0, fail=0):
@@ -465,17 +465,17 @@ def test_search_orders_by_similarity():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_store.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.store'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.store'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/store.py
+# src/coactra/ai/store.py
 """Default ReasoningStore: in-process, tenant-partitioned, bounded + quality-filtered."""
 from __future__ import annotations
 
-from fleetlib.ai.embedding import cosine
-from fleetlib.ai.models import ReasoningTrace
+from coactra.ai.embedding import cosine
+from coactra.ai.models import ReasoningTrace
 
 
 class InMemoryStore:
@@ -511,7 +511,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/store.py tests/test_store.py
+git add src/coactra/ai/store.py tests/test_store.py
 git commit -m "feat(ai): InMemoryStore with tenant isolation + bounded quality-filtered search"
 ```
 
@@ -520,7 +520,7 @@ git commit -m "feat(ai): InMemoryStore with tenant isolation + bounded quality-f
 ### Task 6: AdaptiveGate — accept boundary MOVES with outcomes
 
 **Files:**
-- Create: `src/fleetlib/ai/gate.py`
+- Create: `src/coactra/ai/gate.py`
 - Test: `tests/test_gate.py`
 
 This is the highest-risk task. The discriminating test asserts the accept boundary **moves** as verified outcomes accumulate — a static threshold would fail it. The gate is vCache-style: a candidate is accepted only when neighbour similarity clears a bar that is *lowered by verified success and raised by failure*.
@@ -529,8 +529,8 @@ This is the highest-risk task. The discriminating test asserts the accept bounda
 
 ```python
 # tests/test_gate.py
-from fleetlib.ai.gate import AdaptiveGate
-from fleetlib.ai.models import ReasoningTrace
+from coactra.ai.gate import AdaptiveGate
+from coactra.ai.models import ReasoningTrace
 
 
 def _trace(succ, fail):
@@ -578,12 +578,12 @@ def test_confidence_combines_similarity_and_quality():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_gate.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.gate'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.gate'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/gate.py
+# src/coactra/ai/gate.py
 """Adaptive (vCache-style) accept gate.
 
 Not a static threshold: the similarity a candidate must clear is adjusted by the
@@ -593,7 +593,7 @@ accumulate via ReasoningTrace.record(...)/quality.
 """
 from __future__ import annotations
 
-from fleetlib.ai.models import ReasoningTrace
+from coactra.ai.models import ReasoningTrace
 
 
 class AdaptiveGate:
@@ -626,7 +626,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/gate.py tests/test_gate.py
+git add src/coactra/ai/gate.py tests/test_gate.py
 git commit -m "feat(ai): adaptive vCache-style gate whose boundary moves with verified outcomes"
 ```
 
@@ -635,7 +635,7 @@ git commit -m "feat(ai): adaptive vCache-style gate whose boundary moves with ve
 ### Task 7: Client — the wrap shelf (LiteLLM + Instructor)
 
 **Files:**
-- Create: `src/fleetlib/ai/client.py`
+- Create: `src/coactra/ai/client.py`
 - Test: `tests/test_client.py`
 
 Stays trivial — passthrough only. No retries/streaming/gold-plating.
@@ -648,7 +648,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel
 
-from fleetlib.ai.client import ask, structured, LiteLLMCompleter
+from coactra.ai.client import ask, structured, LiteLLMCompleter
 
 
 def test_ask_passes_through_to_completer():
@@ -661,7 +661,7 @@ def test_ask_passes_through_to_completer():
 
 def test_litellm_completer_extracts_content():
     resp = {"choices": [{"message": {"content": "yo"}}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("gpt-4o-mini", [{"role": "user", "content": "x"}])
     assert out == "yo"
 
@@ -672,7 +672,7 @@ def test_structured_uses_instructor_response_model():
 
     fake_client = MagicMock()
     fake_client.chat.completions.create.return_value = Person(name="Ada")
-    with patch("fleetlib.ai.client.instructor.from_litellm", return_value=fake_client):
+    with patch("coactra.ai.client.instructor.from_litellm", return_value=fake_client):
         out = structured(Person, "who?", model="gpt-4o-mini")
     assert out == Person(name="Ada")
     _, kwargs = fake_client.chat.completions.create.call_args
@@ -682,12 +682,12 @@ def test_structured_uses_instructor_response_model():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_client.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.client'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.client'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/client.py
+# src/coactra/ai/client.py
 """Wrap shelf. LiteLLM routes; Instructor types. We add nothing but the seam."""
 from __future__ import annotations
 
@@ -697,7 +697,7 @@ import instructor
 import litellm
 from pydantic import BaseModel
 
-from fleetlib.ai.protocols import Completer
+from coactra.ai.protocols import Completer
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -747,7 +747,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/client.py tests/test_client.py
+git add src/coactra/ai/client.py tests/test_client.py
 git commit -m "feat(ai): wrap shelf — ask() over LiteLLM, structured() over Instructor"
 ```
 
@@ -756,7 +756,7 @@ git commit -m "feat(ai): wrap shelf — ask() over LiteLLM, structured() over In
 ### Task 8: ReasoningEngine — capture → gate → bounded-retrieve → replay-or-fallback
 
 **Files:**
-- Create: `src/fleetlib/ai/engine.py`
+- Create: `src/coactra/ai/engine.py`
 - Test: `tests/test_engine.py`
 
 The novel core. Three explicit branches: (A) high-confidence accepted candidate → **replay**; (B) candidate found but gate rejects → **re-reason**; (C) no quality candidate at all → **re-reason**. `record_outcome` feeds the trace, closing the adaptive loop. All tests inject fakes — zero network.
@@ -765,9 +765,9 @@ The novel core. Three explicit branches: (A) high-confidence accepted candidate 
 
 ```python
 # tests/test_engine.py
-from fleetlib.ai.engine import ReasoningEngine
-from fleetlib.ai.models import Decision
-from fleetlib.ai.store import InMemoryStore
+from coactra.ai.engine import ReasoningEngine
+from coactra.ai.models import Decision
+from coactra.ai.store import InMemoryStore
 
 
 class FixedEmbed:
@@ -857,12 +857,12 @@ def test_tenant_isolation_in_recall():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_engine.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.engine'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.engine'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/engine.py
+# src/coactra/ai/engine.py
 """The novel core: capture -> gate -> bounded retrieve -> replay-or-fallback.
 
 Guardrails (all enforced here):
@@ -876,9 +876,9 @@ from __future__ import annotations
 import uuid
 from typing import Callable
 
-from fleetlib.ai.gate import AdaptiveGate
-from fleetlib.ai.models import Decision, ReasoningTrace, RecallResult
-from fleetlib.ai.protocols import EmbeddingFn, ReasoningStore
+from coactra.ai.gate import AdaptiveGate
+from coactra.ai.models import Decision, ReasoningTrace, RecallResult
+from coactra.ai.protocols import EmbeddingFn, ReasoningStore
 
 Reasoner = Callable[[str], str]
 
@@ -958,7 +958,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/engine.py tests/test_engine.py
+git add src/coactra/ai/engine.py tests/test_engine.py
 git commit -m "feat(ai): ReasoningEngine — capture/gate/bounded-retrieve/replay-or-fallback core"
 ```
 
@@ -967,7 +967,7 @@ git commit -m "feat(ai): ReasoningEngine — capture/gate/bounded-retrieve/repla
 ### Task 9: Public surface + module-level convenience API
 
 **Files:**
-- Modify: `src/fleetlib/ai/__init__.py`
+- Modify: `src/coactra/ai/__init__.py`
 - Test: `tests/test_public_api.py`
 
 Expose a flat, importable surface: `ask` and `structured` (the wrap shelf), plus the reasoning core as a class — `ReasoningEngine` with `capture` / `recall_or_reason` / `record_outcome` methods. (The charter README sketches `reasoning.capture(...)` as a namespace; we ship the same capability as engine methods — a deliberate, documented deviation, not a separate `reasoning` module. The public `__all__` below is the contract.)
@@ -976,7 +976,7 @@ Expose a flat, importable surface: `ask` and `structured` (the wrap shelf), plus
 
 ```python
 # tests/test_public_api.py
-import fleetlib.ai as ai
+import coactra.ai as ai
 
 
 def test_public_exports_present():
@@ -1006,15 +1006,15 @@ def test_engine_constructible_from_public_api():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_public_api.py -v`
-Expected: FAIL with `AttributeError: module 'fleetlib.ai' has no attribute 'ask'`
+Expected: FAIL with `AttributeError: module 'coactra.ai' has no attribute 'ask'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/__init__.py
-"""fleetlib.ai — model-call shelf + reasoning capture-replay.
+# src/coactra/ai/__init__.py
+"""coactra.ai — model-call shelf + reasoning capture-replay.
 
-    import fleetlib.ai as ai
+    import coactra.ai as ai
     ai.ask("hi")                       # call any model (LiteLLM)
     ai.structured(Schema, "...")       # typed output (Instructor)
     eng = ai.ReasoningEngine(store=ai.InMemoryStore(),
@@ -1022,12 +1022,12 @@ Expected: FAIL with `AttributeError: module 'fleetlib.ai' has no attribute 'ask'
                              reasoner=lambda p: ai.ask(p))
     eng.recall_or_reason("tenant", problem)   # replay or re-reason
 """
-from fleetlib.ai.client import LiteLLMCompleter, ask, structured
-from fleetlib.ai.embedding import LiteLLMEmbedding, cosine
-from fleetlib.ai.engine import ReasoningEngine
-from fleetlib.ai.gate import AdaptiveGate
-from fleetlib.ai.models import Decision, ReasoningTrace, RecallResult
-from fleetlib.ai.store import InMemoryStore
+from coactra.ai.client import LiteLLMCompleter, ask, structured
+from coactra.ai.embedding import LiteLLMEmbedding, cosine
+from coactra.ai.engine import ReasoningEngine
+from coactra.ai.gate import AdaptiveGate
+from coactra.ai.models import Decision, ReasoningTrace, RecallResult
+from coactra.ai.store import InMemoryStore
 
 __all__ = [
     "ask",
@@ -1052,7 +1052,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/ai/__init__.py tests/test_public_api.py
+git add src/coactra/ai/__init__.py tests/test_public_api.py
 git commit -m "feat(ai): public API surface (ask/structured/ReasoningEngine + defaults)"
 ```
 
@@ -1061,8 +1061,8 @@ git commit -m "feat(ai): public API surface (ask/structured/ReasoningEngine + de
 ### Task 10: Optional Chroma adapter (stub) + full suite green
 
 **Files:**
-- Create: `src/fleetlib/ai/adapters/__init__.py`
-- Create: `src/fleetlib/ai/adapters/chroma.py`
+- Create: `src/coactra/ai/adapters/__init__.py`
+- Create: `src/coactra/ai/adapters/chroma.py`
 - Test: `tests/test_chroma_adapter.py`
 
 YAGNI: Protocol + one default (InMemoryStore) is the working backend. Chroma is a stub for the `[chroma]` extra — it must fail loudly if `chromadb` is absent, never silently.
@@ -1075,7 +1075,7 @@ YAGNI: Protocol + one default (InMemoryStore) is the working backend. Chroma is 
 # tests/test_chroma_adapter.py
 import pytest
 
-from fleetlib.ai.adapters.chroma import ChromaStore
+from coactra.ai.adapters.chroma import ChromaStore
 
 
 def test_chroma_store_requires_extra():
@@ -1085,7 +1085,7 @@ def test_chroma_store_requires_extra():
 
 
 def test_chroma_store_is_a_reasoning_store_type():
-    from fleetlib.ai.protocols import ReasoningStore
+    from coactra.ai.protocols import ReasoningStore
 
     # The class declares the Protocol methods even though it needs the extra.
     for method in ("put", "search", "get"):
@@ -1096,18 +1096,18 @@ def test_chroma_store_is_a_reasoning_store_type():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_chroma_adapter.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.ai.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.ai.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/ai/adapters/__init__.py
+# src/coactra/ai/adapters/__init__.py
 """Optional backend adapters (extras). The default backend is InMemoryStore."""
 ```
 
 ```python
-# src/fleetlib/ai/adapters/chroma.py
-"""Optional ChromaStore adapter — install with `pip install fleetlib-ai[chroma]`.
+# src/coactra/ai/adapters/chroma.py
+"""Optional ChromaStore adapter — install with `pip install coactra-ai[chroma]`.
 
 Stub: implements the ReasoningStore Protocol shape over a Chroma collection.
 Construction fails loudly if chromadb is not installed.
@@ -1116,8 +1116,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from fleetlib.ai.embedding import cosine
-from fleetlib.ai.models import ReasoningTrace
+from coactra.ai.embedding import cosine
+from coactra.ai.models import ReasoningTrace
 
 
 class ChromaStore:
@@ -1126,7 +1126,7 @@ class ChromaStore:
             import chromadb
         except ImportError as exc:  # pragma: no cover - exercised only without extra
             raise ImportError(
-                "ChromaStore requires the 'chroma' extra: pip install fleetlib-ai[chroma]"
+                "ChromaStore requires the 'chroma' extra: pip install coactra-ai[chroma]"
             ) from exc
         self._client = chromadb.Client(**client_kwargs)
         self._col = self._client.get_or_create_collection(collection)
@@ -1169,7 +1169,7 @@ Run: `pytest -v`
 Expected: PASS (all tests, ~28 passed)
 
 ```bash
-git add src/fleetlib/ai/adapters tests/test_chroma_adapter.py
+git add src/coactra/ai/adapters tests/test_chroma_adapter.py
 git commit -m "feat(ai): optional ChromaStore adapter stub (fails loudly without extra)"
 ```
 

@@ -1,4 +1,4 @@
-import fleetlib.workspace as w
+import coactra.workspace as w
 
 
 def test_public_surface_is_complete():

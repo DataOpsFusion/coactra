@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-memory"
+name = "coactra-memory"
 version = "0.2.0"
 description = "Thin, clean async connector to long-term memory engines (mem0 / Graphiti) behind one MemoryBackend Protocol."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "fleetlib authors" }]
+authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "memory", "mem0", "graphiti", "rag", "long-term-memory"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -29,13 +29,15 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["tests"]
 
 [project.urls]
-Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
+Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]

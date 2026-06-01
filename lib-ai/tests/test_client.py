@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel
 
-from fleetlib.ai.client import ask, structured, LiteLLMCompleter, make_completer, Client
+from coactra.ai.client import ask, structured, LiteLLMCompleter, make_completer, Client
 
 
 def test_ask_passes_through_to_completer():
@@ -16,7 +16,7 @@ def test_ask_passes_through_to_completer():
 
 def test_litellm_completer_extracts_content():
     resp = {"choices": [{"message": {"content": "yo"}}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("gpt-4o-mini", [{"role": "user", "content": "x"}])
     assert out == "yo"
 
@@ -27,7 +27,7 @@ def test_structured_uses_instructor_response_model():
 
     fake_client = MagicMock()
     fake_client.chat.completions.create.return_value = Person(name="Ada")
-    with patch("fleetlib.ai.client.instructor.from_litellm", return_value=fake_client):
+    with patch("coactra.ai.client.instructor.from_litellm", return_value=fake_client):
         out = structured(Person, "who?", model="gpt-4o-mini")
     assert out == Person(name="Ada")
     _, kwargs = fake_client.chat.completions.create.call_args
@@ -41,7 +41,7 @@ def test_completer_falls_back_to_reasoning_content_when_content_empty():
     """Thinking models put output in reasoning_content; content is empty/None."""
     msg = SimpleNamespace(content="", reasoning_content="the chain of thought", reasoning=None)
     resp = {"choices": [{"message": msg}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("openai/minimax-m3", [{"role": "user", "content": "x"}])
     assert out == "the chain of thought"
 
@@ -49,7 +49,7 @@ def test_completer_falls_back_to_reasoning_content_when_content_empty():
 def test_completer_falls_back_to_reasoning_field():
     msg = SimpleNamespace(content=None, reasoning_content=None, reasoning="alt reasoning field")
     resp = {"choices": [{"message": msg}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("openai/x", [{"role": "user", "content": "x"}])
     assert out == "alt reasoning field"
 
@@ -58,7 +58,7 @@ def test_completer_reasoning_in_model_extra():
     msg = SimpleNamespace(content="", reasoning_content=None, reasoning=None,
                           model_extra={"reasoning_content": "from model_extra"})
     resp = {"choices": [{"message": msg}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("openai/x", [{"role": "user", "content": "x"}])
     assert out == "from model_extra"
 
@@ -66,7 +66,7 @@ def test_completer_reasoning_in_model_extra():
 def test_completer_prefers_content_when_present():
     msg = SimpleNamespace(content="real answer", reasoning_content="thoughts", reasoning=None)
     resp = {"choices": [{"message": msg}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("openai/x", [{"role": "user", "content": "x"}])
     assert out == "real answer"
 
@@ -74,7 +74,7 @@ def test_completer_prefers_content_when_present():
 def test_completer_plain_dict_message_still_works():
     """Backwards-compat: plain dict message (no reasoning fields) must still work."""
     resp = {"choices": [{"message": {"content": "yo"}}]}
-    with patch("fleetlib.ai.client.litellm.completion", return_value=resp):
+    with patch("coactra.ai.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("gpt-4o-mini", [{"role": "user", "content": "x"}])
     assert out == "yo"
 
@@ -88,7 +88,7 @@ def test_structured_defaults_to_json_mode():
 
     fake_client = MagicMock()
     fake_client.chat.completions.create.return_value = Person(name="Ada")
-    with patch("fleetlib.ai.client.instructor.from_litellm", return_value=fake_client) as ffl:
+    with patch("coactra.ai.client.instructor.from_litellm", return_value=fake_client) as ffl:
         structured(Person, "who?", model="openai/qwen3.6-plus")
     # default mode must be JSON (thinking-model-safe)
     _, kwargs = ffl.call_args
@@ -112,7 +112,7 @@ def test_structured_tools_falls_back_to_json_on_tool_choice_error():
     def from_litellm(_fn, *, mode):
         return tools_client if mode is _inst.Mode.TOOLS else json_client
 
-    with patch("fleetlib.ai.client.instructor.from_litellm", side_effect=from_litellm):
+    with patch("coactra.ai.client.instructor.from_litellm", side_effect=from_litellm):
         out = structured(Person, "who?", model="openai/qwen3.6-plus", mode=_inst.Mode.TOOLS)
     assert out == Person(name="Ada")
     json_client.chat.completions.create.assert_called_once()
@@ -127,7 +127,7 @@ def test_structured_tools_reraises_non_tool_choice_error():
     tools_client = MagicMock()
     tools_client.chat.completions.create.side_effect = Exception("some unrelated 500 error")
 
-    with patch("fleetlib.ai.client.instructor.from_litellm", return_value=tools_client):
+    with patch("coactra.ai.client.instructor.from_litellm", return_value=tools_client):
         try:
             structured(Person, "who?", model="openai/x", mode=_inst.Mode.TOOLS)
             assert False, "should have re-raised"
@@ -152,7 +152,7 @@ def test_make_completer_binds_api_base_and_key():
         return {"choices": [{"message": {"content": "ok"}}]}
 
     comp = make_completer(api_base="https://zen/v1", api_key="secret")
-    with patch("fleetlib.ai.client.litellm.completion", side_effect=fake_completion):
+    with patch("coactra.ai.client.litellm.completion", side_effect=fake_completion):
         out = comp.complete("openai/qwen3.6-plus", [{"role": "user", "content": "hi"}])
     assert out == "ok"
     assert captured["api_base"] == "https://zen/v1"
@@ -167,7 +167,7 @@ def test_make_completer_per_call_kwargs_override():
         return {"choices": [{"message": {"content": "ok"}}]}
 
     comp = make_completer(api_base="https://default/v1", api_key="k", temperature=0.0)
-    with patch("fleetlib.ai.client.litellm.completion", side_effect=fake_completion):
+    with patch("coactra.ai.client.litellm.completion", side_effect=fake_completion):
         comp.complete("openai/x", [{"role": "user", "content": "hi"}], temperature=0.9)
     assert captured["temperature"] == 0.9  # per-call wins
 
@@ -182,7 +182,7 @@ def test_make_completer_tolerates_bound_model():
         return {"choices": [{"message": {"content": "ok"}}]}
 
     comp = make_completer(model="openai/qwen3.6-plus", api_base="https://zen/v1", api_key="k")
-    with patch("fleetlib.ai.client.litellm.completion", side_effect=fake_completion):
+    with patch("coactra.ai.client.litellm.completion", side_effect=fake_completion):
         out = comp.complete("openai/qwen3.6-plus", [{"role": "user", "content": "hi"}])
     assert out == "ok"
     assert captured["model"] == "openai/qwen3.6-plus"
@@ -203,7 +203,7 @@ def test_client_structured_threads_config_to_standalone_structured():
         name: str
 
     c = Client(model="openai/qwen3.6-plus", api_base="https://zen/v1", api_key="secret")
-    with patch("fleetlib.ai.client.structured") as fake_structured:
+    with patch("coactra.ai.client.structured") as fake_structured:
         fake_structured.return_value = Person(name="Ada")
         out = c.structured(Person, "who?")
     assert out == Person(name="Ada")

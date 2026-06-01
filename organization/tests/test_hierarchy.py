@@ -1,4 +1,4 @@
-from fleetlib.organization import Department, Seat, Tenant
+from coactra.organization import Department, Seat, Tenant
 
 
 def _two_seats(store):
@@ -24,7 +24,7 @@ def test_seat_without_edge_has_no_manager(store):
 def test_department_can_be_created_and_used_in_assignment(store):
     store.add_tenant(Tenant(tenant_id="acme"))
     seat = store.add_seat("acme", Seat(tenant_id="acme", role="rnd"))
-    from fleetlib.organization import Member, MemberKind
+    from coactra.organization import Member, MemberKind
 
     member = store.add_member("acme", Member(tenant_id="acme", name="bob", kind=MemberKind.agent))
     dept = store.add_department("acme", Department(tenant_id="acme", name="R&D"))

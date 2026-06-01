@@ -1,4 +1,4 @@
-# fleetlib.memory — v0.2 (clean facade + real mem0/graphiti adapters)
+# coactra.memory — v0.2 (clean facade + real mem0/graphiti adapters)
 
 > The point: give an agent **long-term memory across sessions/long projects**. mem0 and
 > Graphiti ALREADY do extraction+consolidation+recall — so memory is a **thin, clean
@@ -16,7 +16,7 @@
 
 ## Public API (the clean, wrappable surface)
 ```python
-from fleetlib.memory import Memory, make_backend, Scope, Recollection
+from coactra.memory import Memory, make_backend, Scope, Recollection
 
 mem = Memory(backend=make_backend("mem0"))        # "graphiti" | "inprocess" too
 scope = Scope(tenant="acme", agent="builder", session=None)

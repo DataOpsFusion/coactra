@@ -1,4 +1,4 @@
-from fleetlib.ai.models import ReasoningTrace, Decision
+from coactra.ai.models import ReasoningTrace, Decision
 
 
 def test_trace_starts_neutral_quality():

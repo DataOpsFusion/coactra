@@ -2,9 +2,9 @@ import importlib.util
 
 import pytest
 
-from fleetlib.memory import MemoryBackend, make_backend
-from fleetlib.memory.backends._errors import MissingExtraError
-from fleetlib.memory.backends.inprocess import InProcessBackend
+from coactra.memory import MemoryBackend, make_backend
+from coactra.memory.backends._errors import MissingExtraError
+from coactra.memory.backends.inprocess import InProcessBackend
 
 
 def _installed(mod: str) -> bool:

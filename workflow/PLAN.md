@@ -1,4 +1,4 @@
-# fleetlib.workflow Implementation Plan
+# coactra.workflow Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -6,7 +6,7 @@
 
 **Architecture:** A `Procedure` is an ordered list of typed `Step`s (`task / branch / approve / ask / escalate`) — pydantic, runtime-editable. The `WorkflowEngine` `typing.Protocol` has exactly ONE working default: `LangGraphEngine`, which **delegates control flow to LangGraph natives** (`task`→node, `branch`→`add_conditional_edges`, then `.compile()`/`.invoke()`) — it never re-implements branching in a Python `for` loop, and a conformance test asserts the compiled artifact is a real LangGraph `CompiledStateGraph`. The keystone property (and the answer to the open research risk "is online learned control-flow bolt-on-able, or does it fork the engine?") is: **bolt-on-able, because the procedure is data** — `induce(trace)` produces a `Procedure` of the *same type* an author writes, the engine recompiles it, and runtime never touches LangGraph internals. `approve`/`ask`/`escalate` call **injected handler Protocols** (`Approver` / `Collaborator` / `EscalationRouter`) rather than baking in `interrupt()` or org/A2A logic — `workflow` owns *when/what*, `organization` routes *who/up-to-whom*, `agent` carries the *talk*. `Scope` (tenant_id + namespace) is mandatory on every run and threads through the store; isolation is real. Induction is **trace-faithful and deterministic; `update()` is manual; there is no auto-relearn** — we do not overclaim self-learning.
 
-**Tech Stack:** Python 3.12+, pydantic v2, langgraph, hatchling (PEP 420 namespace package `fleetlib/workflow/`, src layout), pytest. The lib-ai dependency is deliberately NOT hard: `induce()` accepts a **local** minimal `ReasoningTrace` shape (own pydantic model), never a `fleetlib.ai` import — real fleetlib.ai interop is an agent-layer wiring concern. Optional extras: `temporal` / `prefect` (stub adapters that raise on use, mirroring the sibling memory plan).
+**Tech Stack:** Python 3.12+, pydantic v2, langgraph, hatchling (PEP 420 namespace package `coactra/workflow/`, src layout), pytest. The lib-ai dependency is deliberately NOT hard: `induce()` accepts a **local** minimal `ReasoningTrace` shape (own pydantic model), never a `coactra.ai` import — real coactra.ai interop is an agent-layer wiring concern. Optional extras: `temporal` / `prefect` (stub adapters that raise on use, mirroring the sibling memory plan).
 
 ---
 
@@ -14,21 +14,21 @@
 
 | File | Single responsibility |
 |------|----------------------|
-| `pyproject.toml` | Distribution `fleetlib-workflow`; hatchling targets the `fleetlib` namespace dir; runtime deps `pydantic`, `langgraph`; `[project.optional-dependencies]` for `temporal`/`prefect`/`dev`. |
-| `src/fleetlib/workflow/__init__.py` | Public API surface — re-exports `Scope`, `Step`, `Procedure`, `RunResult`, `WorkflowEngine`, `LangGraphEngine`, `ReasoningTrace`, `induce`, `Approver`, `Collaborator`, `EscalationRouter`, `Escalation`, `EscalationUnresolved`, `AutoApprove`, `RejectAll`, `TerminalHumanRouter`, `NullCollaborator`, `ProcedureStore`, `InMemoryProcedureStore`. NO `src/fleetlib/__init__.py` (namespace package). |
-| `src/fleetlib/workflow/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/workflow/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through runs and the store. |
-| `src/fleetlib/workflow/models.py` | `Step` (typed: `task`/`branch`/`approve`/`ask`/`escalate`), `Procedure` (ordered steps; `is_induced` flag), `RunResult`. The ONE shape shared by authored AND induced flows. |
-| `src/fleetlib/workflow/handlers.py` | The injected-Protocol seams: `Approver`, `Collaborator`, `EscalationRouter` Protocols + `Escalation`/`EscalationUnresolved` types + trivial honest defaults (`AutoApprove`, `RejectAll`, `NullCollaborator`, `TerminalHumanRouter`). |
-| `src/fleetlib/workflow/engine.py` | `WorkflowEngine` Protocol + `RunContext` (carries scope + handlers). The swap seam. |
-| `src/fleetlib/workflow/langgraph_engine.py` | `LangGraphEngine` — the ONE working default. Compiles a `Procedure` into a real LangGraph `StateGraph` (task→node, branch→conditional edges, approve/ask/escalate→handler-calling nodes), `.compile()`/`.invoke()`. |
-| `src/fleetlib/workflow/induction.py` | `ReasoningTrace` (local minimal shape) + `induce(trace) → Procedure` (AWM-style, trace-faithful, deterministic) + `update(procedure, trace)` manual hook. |
-| `src/fleetlib/workflow/store.py` | `ProcedureStore` Protocol + `InMemoryProcedureStore` — tenant-scoped save/get/list. The "reuse the flow" half; save/get/list only. |
-| `src/fleetlib/workflow/adapters/__init__.py` | Adapters subpackage marker. |
-| `src/fleetlib/workflow/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
-| `src/fleetlib/workflow/adapters/temporal.py` | `TemporalEngine` stub — declares it satisfies the engine seam; raises `MissingExtraError` until the `temporal` extra + impl land. |
-| `src/fleetlib/workflow/adapters/prefect.py` | `PrefectEngine` stub — raises until the `prefect` extra. |
-| `tests/test_packaging.py` | Asserts `import fleetlib.workflow` works and `fleetlib` is a PEP 420 namespace package. |
+| `pyproject.toml` | Distribution `coactra-workflow`; hatchling targets the `coactra` namespace dir; runtime deps `pydantic`, `langgraph`; `[project.optional-dependencies]` for `temporal`/`prefect`/`dev`. |
+| `src/coactra/workflow/__init__.py` | Public API surface — re-exports `Scope`, `Step`, `Procedure`, `RunResult`, `WorkflowEngine`, `LangGraphEngine`, `ReasoningTrace`, `induce`, `Approver`, `Collaborator`, `EscalationRouter`, `Escalation`, `EscalationUnresolved`, `AutoApprove`, `RejectAll`, `TerminalHumanRouter`, `NullCollaborator`, `ProcedureStore`, `InMemoryProcedureStore`. NO `src/coactra/__init__.py` (namespace package). |
+| `src/coactra/workflow/py.typed` | PEP 561 typing marker. |
+| `src/coactra/workflow/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through runs and the store. |
+| `src/coactra/workflow/models.py` | `Step` (typed: `task`/`branch`/`approve`/`ask`/`escalate`), `Procedure` (ordered steps; `is_induced` flag), `RunResult`. The ONE shape shared by authored AND induced flows. |
+| `src/coactra/workflow/handlers.py` | The injected-Protocol seams: `Approver`, `Collaborator`, `EscalationRouter` Protocols + `Escalation`/`EscalationUnresolved` types + trivial honest defaults (`AutoApprove`, `RejectAll`, `NullCollaborator`, `TerminalHumanRouter`). |
+| `src/coactra/workflow/engine.py` | `WorkflowEngine` Protocol + `RunContext` (carries scope + handlers). The swap seam. |
+| `src/coactra/workflow/langgraph_engine.py` | `LangGraphEngine` — the ONE working default. Compiles a `Procedure` into a real LangGraph `StateGraph` (task→node, branch→conditional edges, approve/ask/escalate→handler-calling nodes), `.compile()`/`.invoke()`. |
+| `src/coactra/workflow/induction.py` | `ReasoningTrace` (local minimal shape) + `induce(trace) → Procedure` (AWM-style, trace-faithful, deterministic) + `update(procedure, trace)` manual hook. |
+| `src/coactra/workflow/store.py` | `ProcedureStore` Protocol + `InMemoryProcedureStore` — tenant-scoped save/get/list. The "reuse the flow" half; save/get/list only. |
+| `src/coactra/workflow/adapters/__init__.py` | Adapters subpackage marker. |
+| `src/coactra/workflow/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
+| `src/coactra/workflow/adapters/temporal.py` | `TemporalEngine` stub — declares it satisfies the engine seam; raises `MissingExtraError` until the `temporal` extra + impl land. |
+| `src/coactra/workflow/adapters/prefect.py` | `PrefectEngine` stub — raises until the `prefect` extra. |
+| `tests/test_packaging.py` | Asserts `import coactra.workflow` works and `coactra` is a PEP 420 namespace package. |
 | `tests/test_scope.py` | `Scope` equality/hashing/validation/key. |
 | `tests/test_models.py` | Step typing, Procedure shape, authored vs induced are the same type. |
 | `tests/test_langgraph_engine.py` | Authored procedure runs; compiled artifact is a real LangGraph `CompiledStateGraph`; branch uses native conditional edges. |
@@ -44,8 +44,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/workflow/__init__.py`
-- Create: `src/fleetlib/workflow/py.typed`
+- Create: `src/coactra/workflow/__init__.py`
+- Create: `src/coactra/workflow/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -56,22 +56,22 @@ import importlib
 
 
 def test_workflow_imports():
-    mod = importlib.import_module("fleetlib.workflow")
-    assert mod.__name__ == "fleetlib.workflow"
+    mod = importlib.import_module("coactra.workflow")
+    assert mod.__name__ == "coactra.workflow"
 
 
-def test_fleetlib_is_namespace_package():
-    import fleetlib
+def test_coactra_is_namespace_package():
+    import coactra
 
     # PEP 420 namespace packages have no __file__ and a virtual __path__.
-    assert getattr(fleetlib, "__file__", None) is None
-    assert hasattr(fleetlib, "__path__")
+    assert getattr(coactra, "__file__", None) is None
+    assert hasattr(coactra, "__path__")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -82,7 +82,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-workflow"
+name = "coactra-workflow"
 version = "0.1.0"
 description = "Thin, learnable workflow layer over a durable engine (LangGraph) for AI agent fleets — procedure-as-data, induced or authored, with collaboration + escalation steps."
 readme = "README.md"
@@ -96,16 +96,16 @@ prefect = ["prefect>=3"]
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py
-"""fleetlib.workflow — a thin, learnable workflow layer over a durable engine.
+# src/coactra/workflow/__init__.py
+"""coactra.workflow — a thin, learnable workflow layer over a durable engine.
 
 A Procedure is a DATA STRUCTURE: an authored flow and an induced (learned) flow are the
 SAME type and run the SAME compile->run path on the default LangGraph engine. Steps may
@@ -122,10 +122,10 @@ __version__ = "0.1.0"
 ```
 
 ```text
-# src/fleetlib/workflow/py.typed
+# src/coactra/workflow/py.typed
 ```
 
-(Do NOT create `src/fleetlib/__init__.py` — its absence is what makes `fleetlib` a namespace package.)
+(Do NOT create `src/coactra/__init__.py` — its absence is what makes `coactra` a namespace package.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -135,7 +135,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/workflow/__init__.py src/fleetlib/workflow/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/workflow/__init__.py src/coactra/workflow/py.typed tests/test_packaging.py
 git commit -m "feat(workflow): namespace package scaffold + importable surface"
 ```
 
@@ -144,8 +144,8 @@ git commit -m "feat(workflow): namespace package scaffold + importable surface"
 ## Task 2: Scope — the mandatory multi-tenant key
 
 **Files:**
-- Create: `src/fleetlib/workflow/scope.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/scope.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_scope.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -155,7 +155,7 @@ git commit -m "feat(workflow): namespace package scaffold + importable surface"
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.workflow import Scope
+from coactra.workflow import Scope
 
 
 def test_scope_default_namespace():
@@ -189,7 +189,7 @@ Expected: FAIL with `ImportError: cannot import name 'Scope'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/scope.py
+# src/coactra/workflow/scope.py
 """Scope — the tenant-scoped key threaded through every run and the procedure store.
 
 Defined LOCALLY (these are standalone distributions; no cross-library import). Same shape
@@ -216,8 +216,8 @@ class Scope(BaseModel):
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (extend imports + __all__)
-from fleetlib.workflow.scope import Scope
+# src/coactra/workflow/__init__.py  (extend imports + __all__)
+from coactra.workflow.scope import Scope
 
 __all__ = [
     "__version__",
@@ -233,7 +233,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/scope.py src/fleetlib/workflow/__init__.py tests/test_scope.py
+git add src/coactra/workflow/scope.py src/coactra/workflow/__init__.py tests/test_scope.py
 git commit -m "feat(workflow): Scope — mandatory multi-tenant key (tenant_id + namespace)"
 ```
 
@@ -242,8 +242,8 @@ git commit -m "feat(workflow): Scope — mandatory multi-tenant key (tenant_id +
 ## Task 3: Models — Step, Procedure, RunResult (authored == induced shape)
 
 **Files:**
-- Create: `src/fleetlib/workflow/models.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/models.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_models.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -253,7 +253,7 @@ git commit -m "feat(workflow): Scope — mandatory multi-tenant key (tenant_id +
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.workflow import Procedure, RunResult, Step
+from coactra.workflow import Procedure, RunResult, Step
 
 
 def test_task_step_minimal():
@@ -318,7 +318,7 @@ Expected: FAIL with `ImportError: cannot import name 'Procedure'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/models.py
+# src/coactra/workflow/models.py
 """Procedure-as-data models.
 
 A Procedure is an ordered list of typed Steps. The SAME type is used whether a human
@@ -399,9 +399,9 @@ class RunResult(BaseModel):
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (extend imports + __all__)
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
+# src/coactra/workflow/__init__.py  (extend imports + __all__)
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
 
 __all__ = [
     "__version__",
@@ -420,7 +420,7 @@ Expected: PASS (7 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/models.py src/fleetlib/workflow/__init__.py tests/test_models.py
+git add src/coactra/workflow/models.py src/coactra/workflow/__init__.py tests/test_models.py
 git commit -m "feat(workflow): Step/Procedure/RunResult — one shape for authored + induced flows"
 ```
 
@@ -429,8 +429,8 @@ git commit -m "feat(workflow): Step/Procedure/RunResult — one shape for author
 ## Task 4: Handlers — the injected escalation/collaboration/approval seams
 
 **Files:**
-- Create: `src/fleetlib/workflow/handlers.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/handlers.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_handlers.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -439,7 +439,7 @@ git commit -m "feat(workflow): Step/Procedure/RunResult — one shape for author
 # tests/test_handlers.py
 import pytest
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -491,7 +491,7 @@ Expected: FAIL with `ImportError: cannot import name 'Approver'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/handlers.py
+# src/coactra/workflow/handlers.py
 """The injected seams for the three non-task step kinds.
 
 workflow owns WHEN/WHAT (it raises these and calls these handlers); it does NOT own who
@@ -575,8 +575,8 @@ class TerminalHumanRouter:
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (extend imports + __all__)
-from fleetlib.workflow.handlers import (
+# src/coactra/workflow/__init__.py  (extend imports + __all__)
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -587,8 +587,8 @@ from fleetlib.workflow.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
 
 __all__ = [
     "__version__",
@@ -616,7 +616,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/handlers.py src/fleetlib/workflow/__init__.py tests/test_handlers.py
+git add src/coactra/workflow/handlers.py src/coactra/workflow/__init__.py tests/test_handlers.py
 git commit -m "feat(workflow): Approver/Collaborator/EscalationRouter Protocols + honest defaults"
 ```
 
@@ -625,15 +625,15 @@ git commit -m "feat(workflow): Approver/Collaborator/EscalationRouter Protocols 
 ## Task 5: WorkflowEngine Protocol + RunContext (the swap seam)
 
 **Files:**
-- Create: `src/fleetlib/workflow/engine.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/engine.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_engine_protocol.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_engine_protocol.py
-from fleetlib.workflow import (
+from coactra.workflow import (
     AutoApprove,
     NullCollaborator,
     Procedure,
@@ -643,7 +643,7 @@ from fleetlib.workflow import (
     TerminalHumanRouter,
     WorkflowEngine,
 )
-from fleetlib.workflow.engine import RunContext
+from coactra.workflow.engine import RunContext
 
 
 def _ctx():
@@ -693,7 +693,7 @@ Expected: FAIL with `ImportError: cannot import name 'WorkflowEngine'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/engine.py
+# src/coactra/workflow/engine.py
 """WorkflowEngine — the swappable execution seam, plus the RunContext it consumes.
 
 ONE working default implements this: LangGraphEngine. Temporal/Prefect are stubs. The
@@ -707,7 +707,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from fleetlib.workflow.handlers import (
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -715,8 +715,8 @@ from fleetlib.workflow.handlers import (
     NullCollaborator,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.models import Procedure, RunResult
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.models import Procedure, RunResult
+from coactra.workflow.scope import Scope
 
 
 class RunContext(BaseModel):
@@ -741,9 +741,9 @@ class WorkflowEngine(Protocol):
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (extend imports + __all__)
-from fleetlib.workflow.engine import RunContext, WorkflowEngine
-from fleetlib.workflow.handlers import (
+# src/coactra/workflow/__init__.py  (extend imports + __all__)
+from coactra.workflow.engine import RunContext, WorkflowEngine
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -754,8 +754,8 @@ from fleetlib.workflow.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
 
 __all__ = [
     "__version__",
@@ -785,7 +785,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/engine.py src/fleetlib/workflow/__init__.py tests/test_engine_protocol.py
+git add src/coactra/workflow/engine.py src/coactra/workflow/__init__.py tests/test_engine_protocol.py
 git commit -m "feat(workflow): WorkflowEngine Protocol + RunContext (scope + injected handlers)"
 ```
 
@@ -794,8 +794,8 @@ git commit -m "feat(workflow): WorkflowEngine Protocol + RunContext (scope + inj
 ## Task 6: LangGraphEngine — compile a Procedure to a real LangGraph StateGraph
 
 **Files:**
-- Create: `src/fleetlib/workflow/langgraph_engine.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/langgraph_engine.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_langgraph_engine.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -804,7 +804,7 @@ git commit -m "feat(workflow): WorkflowEngine Protocol + RunContext (scope + inj
 # tests/test_langgraph_engine.py
 from langgraph.graph.state import CompiledStateGraph
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     LangGraphEngine,
     Procedure,
     RunContext,
@@ -888,7 +888,7 @@ Expected: FAIL with `ImportError: cannot import name 'LangGraphEngine'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/langgraph_engine.py
+# src/coactra/workflow/langgraph_engine.py
 """LangGraphEngine — the ONE working default WorkflowEngine.
 
 Control flow is DELEGATED to LangGraph natives, never re-implemented:
@@ -908,9 +908,9 @@ from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
-from fleetlib.workflow.engine import RunContext
-from fleetlib.workflow.handlers import Escalation
-from fleetlib.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.engine import RunContext
+from coactra.workflow.handlers import Escalation
+from coactra.workflow.models import Procedure, RunResult, Step
 
 TaskFn = Callable[[dict[str, Any]], dict[str, Any]]
 _PATH = "__path__"
@@ -1033,9 +1033,9 @@ class LangGraphEngine:
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (full file — extend imports + __all__)
-from fleetlib.workflow.engine import RunContext, WorkflowEngine
-from fleetlib.workflow.handlers import (
+# src/coactra/workflow/__init__.py  (full file — extend imports + __all__)
+from coactra.workflow.engine import RunContext, WorkflowEngine
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -1046,9 +1046,9 @@ from fleetlib.workflow.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.langgraph_engine import LangGraphEngine
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.langgraph_engine import LangGraphEngine
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
 
 __version__ = "0.1.0"
 
@@ -1087,7 +1087,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/langgraph_engine.py src/fleetlib/workflow/__init__.py tests/test_langgraph_engine.py
+git add src/coactra/workflow/langgraph_engine.py src/coactra/workflow/__init__.py tests/test_langgraph_engine.py
 git commit -m "feat(workflow): LangGraphEngine — compile Procedure to a real LangGraph StateGraph"
 ```
 
@@ -1106,7 +1106,7 @@ git commit -m "feat(workflow): LangGraphEngine — compile Procedure to a real L
 # tests/test_engine_handlers.py
 import pytest
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     EscalationUnresolved,
     LangGraphEngine,
     Procedure,
@@ -1218,15 +1218,15 @@ git commit -m "test(workflow): lock approve/ask/escalate through injected handle
 ## Task 8: Induction — trace → Procedure (the AWM-style loop) + the keystone
 
 **Files:**
-- Create: `src/fleetlib/workflow/induction.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/induction.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_induction.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_induction.py
-from fleetlib.workflow import (
+from coactra.workflow import (
     LangGraphEngine,
     Procedure,
     ReasoningTrace,
@@ -1329,7 +1329,7 @@ Expected: FAIL with `ImportError: cannot import name 'ReasoningTrace'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/induction.py
+# src/coactra/workflow/induction.py
 """AWM-style induction: turn a captured reasoning trace into a reusable Procedure.
 
 HONEST SCOPE (do not overclaim): induce() is a trace-faithful, deterministic projection
@@ -1338,8 +1338,8 @@ update() is a MANUAL hook applied when reality drifts — there is no background
 no statistical generalization here. The novelty is that the output is data, so the engine
 runs an induced flow on the exact same compile->run path as an authored one.
 
-ReasoningTrace is a LOCAL minimal shape on purpose: no import of fleetlib.ai. Real
-interop with fleetlib.ai's richer ReasoningTrace is an agent-layer wiring concern.
+ReasoningTrace is a LOCAL minimal shape on purpose: no import of coactra.ai. Real
+interop with coactra.ai's richer ReasoningTrace is an agent-layer wiring concern.
 """
 
 from __future__ import annotations
@@ -1348,7 +1348,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from fleetlib.workflow.models import Procedure, Step
+from coactra.workflow.models import Procedure, Step
 
 
 class ReasoningTrace(BaseModel):
@@ -1394,9 +1394,9 @@ def update(procedure: Procedure, trace: ReasoningTrace) -> Procedure:
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (full file — extend imports + __all__)
-from fleetlib.workflow.engine import RunContext, WorkflowEngine
-from fleetlib.workflow.handlers import (
+# src/coactra/workflow/__init__.py  (full file — extend imports + __all__)
+from coactra.workflow.engine import RunContext, WorkflowEngine
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -1407,10 +1407,10 @@ from fleetlib.workflow.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.induction import ReasoningTrace, induce, update
-from fleetlib.workflow.langgraph_engine import LangGraphEngine
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.induction import ReasoningTrace, induce, update
+from coactra.workflow.langgraph_engine import LangGraphEngine
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
 
 __version__ = "0.1.0"
 
@@ -1446,7 +1446,7 @@ Expected: PASS (6 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/induction.py src/fleetlib/workflow/__init__.py tests/test_induction.py
+git add src/coactra/workflow/induction.py src/coactra/workflow/__init__.py tests/test_induction.py
 git commit -m "feat(workflow): AWM-style induce()/update() — induced flows are the same data, same run path"
 ```
 
@@ -1455,8 +1455,8 @@ git commit -m "feat(workflow): AWM-style induce()/update() — induced flows are
 ## Task 9: ProcedureStore — tenant-scoped reuse (save / get / list)
 
 **Files:**
-- Create: `src/fleetlib/workflow/store.py`
-- Modify: `src/fleetlib/workflow/__init__.py`
+- Create: `src/coactra/workflow/store.py`
+- Modify: `src/coactra/workflow/__init__.py`
 - Test: `tests/test_store.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1465,7 +1465,7 @@ git commit -m "feat(workflow): AWM-style induce()/update() — induced flows are
 # tests/test_store.py
 import pytest
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     InMemoryProcedureStore,
     Procedure,
     ProcedureStore,
@@ -1473,7 +1473,7 @@ from fleetlib.workflow import (
     Step,
     induce,
 )
-from fleetlib.workflow import ReasoningTrace
+from coactra.workflow import ReasoningTrace
 
 ACME = Scope(tenant_id="acme", namespace="agent:1")
 GLOBEX = Scope(tenant_id="globex", namespace="agent:1")
@@ -1529,7 +1529,7 @@ Expected: FAIL with `ImportError: cannot import name 'InMemoryProcedureStore'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/store.py
+# src/coactra/workflow/store.py
 """ProcedureStore — the tenant-scoped library that makes "reuse the flow" real.
 
 Deliberately tiny: save / get / list, keyed by Scope. This is the easy piece to balloon,
@@ -1541,8 +1541,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from fleetlib.workflow.models import Procedure
-from fleetlib.workflow.scope import Scope
+from coactra.workflow.models import Procedure
+from coactra.workflow.scope import Scope
 
 
 @runtime_checkable
@@ -1580,9 +1580,9 @@ class InMemoryProcedureStore:
 ```
 
 ```python
-# src/fleetlib/workflow/__init__.py  (full file — extend imports + __all__)
-from fleetlib.workflow.engine import RunContext, WorkflowEngine
-from fleetlib.workflow.handlers import (
+# src/coactra/workflow/__init__.py  (full file — extend imports + __all__)
+from coactra.workflow.engine import RunContext, WorkflowEngine
+from coactra.workflow.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -1593,11 +1593,11 @@ from fleetlib.workflow.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from fleetlib.workflow.induction import ReasoningTrace, induce, update
-from fleetlib.workflow.langgraph_engine import LangGraphEngine
-from fleetlib.workflow.models import Procedure, RunResult, Step
-from fleetlib.workflow.scope import Scope
-from fleetlib.workflow.store import InMemoryProcedureStore, ProcedureStore
+from coactra.workflow.induction import ReasoningTrace, induce, update
+from coactra.workflow.langgraph_engine import LangGraphEngine
+from coactra.workflow.models import Procedure, RunResult, Step
+from coactra.workflow.scope import Scope
+from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
 
 __version__ = "0.1.0"
 
@@ -1635,7 +1635,7 @@ Expected: PASS (6 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/store.py src/fleetlib/workflow/__init__.py tests/test_store.py
+git add src/coactra/workflow/store.py src/coactra/workflow/__init__.py tests/test_store.py
 git commit -m "feat(workflow): InMemoryProcedureStore — tenant-scoped save/get/list reuse"
 ```
 
@@ -1644,10 +1644,10 @@ git commit -m "feat(workflow): InMemoryProcedureStore — tenant-scoped save/get
 ## Task 10: Optional-extra engine stubs (Temporal / Prefect, raise on use)
 
 **Files:**
-- Create: `src/fleetlib/workflow/adapters/__init__.py`
-- Create: `src/fleetlib/workflow/adapters/_stub.py`
-- Create: `src/fleetlib/workflow/adapters/temporal.py`
-- Create: `src/fleetlib/workflow/adapters/prefect.py`
+- Create: `src/coactra/workflow/adapters/__init__.py`
+- Create: `src/coactra/workflow/adapters/_stub.py`
+- Create: `src/coactra/workflow/adapters/temporal.py`
+- Create: `src/coactra/workflow/adapters/prefect.py`
 - Test: `tests/test_adapter_stubs.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1656,9 +1656,9 @@ git commit -m "feat(workflow): InMemoryProcedureStore — tenant-scoped save/get
 # tests/test_adapter_stubs.py
 import pytest
 
-from fleetlib.workflow.adapters._stub import MissingExtraError
-from fleetlib.workflow.adapters.prefect import PrefectEngine
-from fleetlib.workflow.adapters.temporal import TemporalEngine
+from coactra.workflow.adapters._stub import MissingExtraError
+from coactra.workflow.adapters.prefect import PrefectEngine
+from coactra.workflow.adapters.temporal import TemporalEngine
 
 
 @pytest.mark.parametrize("cls,extra", [
@@ -1678,18 +1678,18 @@ def test_stubs_name_the_engine_seam_they_will_satisfy():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_adapter_stubs.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.workflow.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.workflow.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workflow/adapters/__init__.py
+# src/coactra/workflow/adapters/__init__.py
 """Optional-extra engine adapters. Stubs today — each names the WorkflowEngine seam it
 will satisfy and raises MissingExtraError until its extra (and a real impl) land."""
 ```
 
 ```python
-# src/fleetlib/workflow/adapters/_stub.py
+# src/coactra/workflow/adapters/_stub.py
 """Shared helper for optional-extra engine stubs."""
 
 from __future__ import annotations
@@ -1702,17 +1702,17 @@ class MissingExtraError(RuntimeError):
 def require_extra(extra: str) -> None:
     raise MissingExtraError(
         f"engine requires the optional '{extra}' extra and a real implementation; "
-        f"install with: pip install fleetlib-workflow[{extra}] (stub not yet implemented)"
+        f"install with: pip install coactra-workflow[{extra}] (stub not yet implemented)"
     )
 ```
 
 ```python
-# src/fleetlib/workflow/adapters/temporal.py
+# src/coactra/workflow/adapters/temporal.py
 """Temporal adapter — STUB. Will satisfy WorkflowEngine; raises until the temporal extra."""
 
 from __future__ import annotations
 
-from fleetlib.workflow.adapters._stub import require_extra
+from coactra.workflow.adapters._stub import require_extra
 
 
 class TemporalEngine:
@@ -1723,12 +1723,12 @@ class TemporalEngine:
 ```
 
 ```python
-# src/fleetlib/workflow/adapters/prefect.py
+# src/coactra/workflow/adapters/prefect.py
 """Prefect adapter — STUB. Will satisfy WorkflowEngine; raises until the prefect extra."""
 
 from __future__ import annotations
 
-from fleetlib.workflow.adapters._stub import require_extra
+from coactra.workflow.adapters._stub import require_extra
 
 
 class PrefectEngine:
@@ -1746,7 +1746,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workflow/adapters tests/test_adapter_stubs.py
+git add src/coactra/workflow/adapters tests/test_adapter_stubs.py
 git commit -m "feat(workflow): Temporal/Prefect engine stubs (name the seam, raise on use)"
 ```
 
@@ -1761,7 +1761,7 @@ git commit -m "feat(workflow): Temporal/Prefect engine stubs (name the seam, rai
 
 ```python
 # tests/test_public_api.py
-import fleetlib.workflow as w
+import coactra.workflow as w
 
 
 def test_public_surface_is_complete():
@@ -1856,6 +1856,6 @@ git commit -m "test(workflow): lock public API surface + end-to-end author/run/s
 2. **Open research risk answered** — "is online learned control-flow bolt-on-able or fork-forcing?" → bolt-on-able, proven by the keystone test: an induced Procedure runs the *same* `LangGraphEngine.compile()→run()` path as an authored one with identical results (Task 8). ✔
 3. **THIN over LangGraph** — control flow delegated to LangGraph natives (nodes + `add_conditional_edges` + `.compile()`/`.invoke()`); conformance test asserts the artifact is a real `CompiledStateGraph` and branches use native conditional edges (Task 6). No re-implemented interpreter. ✔
 4. **Principles** — `WorkflowEngine` Protocol + ONE working default (LangGraph) + Temporal/Prefect stubs (Tasks 5/6/10); `Scope` on every run + isolation proven (Tasks 2/9); honest induction (no auto-relearn, `test_does_not_overclaim_learning_update_is_manual`). ✔
-5. **Boundary discipline** — workflow owns when/what; `organization` routes who (injected `EscalationRouter`, `test_workflow_holds_no_org_logic`); `agent` carries talk (injected `Collaborator`); no `fleetlib.ai` import — `induce()` takes a local `ReasoningTrace` (deps stay langgraph + pydantic). ✔
-6. **Packaging** — PEP 420 namespace (no `src/fleetlib/__init__.py`, Task 1 asserts it), src layout, `py.typed`, hatchling, optional extras `temporal`/`prefect`/`dev`. ✔
+5. **Boundary discipline** — workflow owns when/what; `organization` routes who (injected `EscalationRouter`, `test_workflow_holds_no_org_logic`); `agent` carries talk (injected `Collaborator`); no `coactra.ai` import — `induce()` takes a local `ReasoningTrace` (deps stay langgraph + pydantic). ✔
+6. **Packaging** — PEP 420 namespace (no `src/coactra/__init__.py`, Task 1 asserts it), src layout, `py.typed`, hatchling, optional extras `temporal`/`prefect`/`dev`. ✔
 7. **Type consistency** — `Scope.key`, `Step(kind=...)`, `Procedure.step()/entry/is_induced`, `RunResult.path/output`, `RunContext(scope/approver/collaborator/router/chain)`, `WorkflowEngine.run`, `LangGraphEngine.compile/run`, `ReasoningTrace.problem/steps`, `induce`/`update`, `ProcedureStore.save/get/list` used identically across tasks. ✔

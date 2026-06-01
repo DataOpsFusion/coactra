@@ -1,5 +1,5 @@
-from fleetlib.ai.models import ReasoningTrace
-from fleetlib.ai.store import InMemoryStore
+from coactra.ai.models import ReasoningTrace
+from coactra.ai.store import InMemoryStore
 
 
 def _trace(id, vec, succ=0, fail=0):

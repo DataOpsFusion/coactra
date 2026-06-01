@@ -1,4 +1,4 @@
-from fleetlib.ai.protocols import EmbeddingFn, ReasoningStore, Completer
+from coactra.ai.protocols import EmbeddingFn, ReasoningStore, Completer
 
 
 def test_protocols_are_runtime_checkable():

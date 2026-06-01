@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     DelegationGrant,
     ExchangedIdentity,
     Hop,
@@ -9,7 +9,7 @@ from fleetlib.agent import (
     TokenExchanger,
     TokenPassthroughError,
 )
-from fleetlib.agent.domain.identity import Hop as DomainHop
+from coactra.agent.domain.identity import Hop as DomainHop
 
 ACME = Scope(tenant_id="acme")
 

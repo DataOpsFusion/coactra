@@ -1,5 +1,5 @@
-from fleetlib.organization import CrossTenantError
-from fleetlib.organization.errors import MissingExtraError
+from coactra.organization import CrossTenantError
+from coactra.organization.errors import MissingExtraError
 
 
 def test_cross_tenant_error_is_value_error():

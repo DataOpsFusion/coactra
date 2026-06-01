@@ -1,6 +1,6 @@
-from fleetlib.ai.engine import ReasoningEngine
-from fleetlib.ai.models import Decision
-from fleetlib.ai.store import InMemoryStore
+from coactra.ai.engine import ReasoningEngine
+from coactra.ai.models import Decision
+from coactra.ai.store import InMemoryStore
 
 
 class FixedEmbed:

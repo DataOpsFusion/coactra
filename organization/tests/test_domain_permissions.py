@@ -8,7 +8,7 @@ In-memory only. Pins the exact algorithm from DESIGN.md:
 
 import pytest
 
-from fleetlib.organization import CrossTenantError, Organization
+from coactra.organization import CrossTenantError, Organization
 
 
 def _tree():

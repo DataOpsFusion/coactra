@@ -1,9 +1,9 @@
 import pytest
 
-from fleetlib.workspace.adapters._stub import MissingExtraError
-from fleetlib.workspace.adapters.daytona import DaytonaBackend
-from fleetlib.workspace.adapters.e2b import E2BBackend
-from fleetlib.workspace.adapters.openhands import OpenHandsBackend
+from coactra.workspace.adapters._stub import MissingExtraError
+from coactra.workspace.adapters.daytona import DaytonaBackend
+from coactra.workspace.adapters.e2b import E2BBackend
+from coactra.workspace.adapters.openhands import OpenHandsBackend
 
 
 @pytest.mark.parametrize(

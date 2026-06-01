@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.agent import Scope
+from coactra.agent import Scope
 
 
 def test_scope_default_namespace():

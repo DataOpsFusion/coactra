@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-workflow"
+name = "coactra-workflow"
 version = "0.1.0"
 description = "Thin, learnable workflow layer over a durable engine (LangGraph) for AI agent fleets — procedure-as-data, induced or authored, with collaboration + escalation steps."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "fleetlib authors" }]
+authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "workflow", "langgraph", "procedure", "orchestration"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,11 +28,15 @@ prefect = ["prefect>=3"]
 dev = ["pytest>=8"]
 
 [project.urls]
-Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
+Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

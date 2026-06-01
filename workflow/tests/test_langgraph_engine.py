@@ -1,6 +1,6 @@
 from langgraph.graph.state import CompiledStateGraph
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     LangGraphEngine,
     Procedure,
     RunContext,

@@ -9,8 +9,8 @@ import re
 
 import pytest
 
-from fleetlib.memory import Scope
-from fleetlib.memory.backends.graphiti import _group_id
+from coactra.memory import Scope
+from coactra.memory.backends.graphiti import _group_id
 
 _LEGAL = re.compile(r"[A-Za-z0-9_-]+")
 
