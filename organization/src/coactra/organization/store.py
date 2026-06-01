@@ -1,4 +1,4 @@
-"""Back-compat shim — the OrgStore Protocol now lives in ``repository.store``.
+"""Deprecated compatibility import — the OrgStore Protocol now lives in ``repository.store``.
 
 Kept so ``from coactra.organization.store import OrgStore`` (and ``Directory``)
 continue to resolve after the v0.2 layering split.
