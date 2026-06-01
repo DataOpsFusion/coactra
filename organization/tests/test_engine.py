@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from fleetlib.organization import Tenant, make_engine
+from coactra.organization import Tenant, make_engine
 
 
 def test_write_then_read_in_a_new_session_survives():

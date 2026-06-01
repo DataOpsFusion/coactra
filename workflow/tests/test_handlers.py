@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     Approver,
     AutoApprove,
     Collaborator,

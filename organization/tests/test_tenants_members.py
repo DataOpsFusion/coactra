@@ -1,4 +1,4 @@
-from fleetlib.organization import Member, MemberKind, Seat, Tenant
+from coactra.organization import Member, MemberKind, Seat, Tenant
 
 
 def test_flat_fleet_create_member_with_seat(store):

@@ -1,5 +1,5 @@
-from fleetlib.memory import Capability, MemoryBackend, Recollection, Scope
-from fleetlib.memory.backends.base import event_text, normalize_events
+from coactra.memory import Capability, MemoryBackend, Recollection, Scope
+from coactra.memory.backends.base import event_text, normalize_events
 
 
 class _Dummy:

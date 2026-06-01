@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.workflow import (
+from coactra.workflow import (
     InMemoryProcedureStore,
     Procedure,
     ProcedureStore,
@@ -8,7 +8,7 @@ from fleetlib.workflow import (
     Step,
     induce,
 )
-from fleetlib.workflow import ReasoningTrace
+from coactra.workflow import ReasoningTrace
 
 ACME = Scope(tenant_id="acme", namespace="agent:1")
 GLOBEX = Scope(tenant_id="globex", namespace="agent:1")

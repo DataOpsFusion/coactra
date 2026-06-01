@@ -1,4 +1,4 @@
-import fleetlib.memory as m
+import coactra.memory as m
 
 
 def test_public_surface_is_exact():

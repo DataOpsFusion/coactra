@@ -1,4 +1,4 @@
-# fleetlib.organization Implementation Plan
+# coactra.organization Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -14,18 +14,18 @@
 
 | File | Responsibility |
 |------|----------------|
-| `pyproject.toml` | Distribution `fleetlib-organization`; hatchling targets the `fleetlib` namespace dir; runtime deps `sqlmodel`, `pydantic`; `[project.optional-dependencies]` for `neo4j`/`dev`. |
-| `src/fleetlib/organization/__init__.py` | Public API surface — re-exports `MemberKind`, `Tenant`, `Department`, `Seat`, `Member`, `Membership`, `ReportingEdge`, `EscalationRoute`, `PolicyRef`, `OrgStore`, `SqliteOrgStore`, `CrossTenantError`, `make_engine`. NO `src/fleetlib/__init__.py` (namespace package). |
-| `src/fleetlib/organization/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/organization/models.py` | All SQLModel entities (`table=True`) — they double as the pydantic objects the Protocol passes/returns. `MemberKind` enum (human/service/agent). |
-| `src/fleetlib/organization/errors.py` | `CrossTenantError` (raised when an operation would span two tenants) + `MissingExtraError`. |
-| `src/fleetlib/organization/engine.py` | `make_engine(url="sqlite://")` — builds a sqlmodel engine with `StaticPool` + `check_same_thread=False`, runs `create_all`. The StaticPool detail is what keeps an in-memory DB alive across sessions. |
-| `src/fleetlib/organization/store.py` | `OrgStore` `typing.Protocol` — the tenant-scoped directory contract (every method takes `tenant_id` first). |
-| `src/fleetlib/organization/sqlite_store.py` | `SqliteOrgStore` — the ONE working default. Tenant/department/seat/member/membership CRUD, reporting edges, `escalate()` routing query, ownership lookup, policy-ref versioning. Every read filters by `tenant_id`; every cross-tenant write raises `CrossTenantError`. |
-| `src/fleetlib/organization/adapters/__init__.py` | Adapters subpackage marker. |
-| `src/fleetlib/organization/adapters/neo4j.py` | `Neo4jOrgStore` stub — graph-shaped backend; raises `MissingExtraError` until the `neo4j` extra + real impl land. |
+| `pyproject.toml` | Distribution `coactra-organization`; hatchling targets the `coactra` namespace dir; runtime deps `sqlmodel`, `pydantic`; `[project.optional-dependencies]` for `neo4j`/`dev`. |
+| `src/coactra/organization/__init__.py` | Public API surface — re-exports `MemberKind`, `Tenant`, `Department`, `Seat`, `Member`, `Membership`, `ReportingEdge`, `EscalationRoute`, `PolicyRef`, `OrgStore`, `SqliteOrgStore`, `CrossTenantError`, `make_engine`. NO `src/coactra/__init__.py` (namespace package). |
+| `src/coactra/organization/py.typed` | PEP 561 typing marker. |
+| `src/coactra/organization/models.py` | All SQLModel entities (`table=True`) — they double as the pydantic objects the Protocol passes/returns. `MemberKind` enum (human/service/agent). |
+| `src/coactra/organization/errors.py` | `CrossTenantError` (raised when an operation would span two tenants) + `MissingExtraError`. |
+| `src/coactra/organization/engine.py` | `make_engine(url="sqlite://")` — builds a sqlmodel engine with `StaticPool` + `check_same_thread=False`, runs `create_all`. The StaticPool detail is what keeps an in-memory DB alive across sessions. |
+| `src/coactra/organization/store.py` | `OrgStore` `typing.Protocol` — the tenant-scoped directory contract (every method takes `tenant_id` first). |
+| `src/coactra/organization/sqlite_store.py` | `SqliteOrgStore` — the ONE working default. Tenant/department/seat/member/membership CRUD, reporting edges, `escalate()` routing query, ownership lookup, policy-ref versioning. Every read filters by `tenant_id`; every cross-tenant write raises `CrossTenantError`. |
+| `src/coactra/organization/adapters/__init__.py` | Adapters subpackage marker. |
+| `src/coactra/organization/adapters/neo4j.py` | `Neo4jOrgStore` stub — graph-shaped backend; raises `MissingExtraError` until the `neo4j` extra + real impl land. |
 | `tests/conftest.py` | `store` fixture — a fresh in-memory `SqliteOrgStore` per test. |
-| `tests/test_packaging.py` | Asserts `import fleetlib.organization` works and `fleetlib` is a PEP 420 namespace package. |
+| `tests/test_packaging.py` | Asserts `import coactra.organization` works and `coactra` is a PEP 420 namespace package. |
 | `tests/test_engine.py` | `make_engine` write-then-read-in-a-new-session survives (proves StaticPool). |
 | `tests/test_models.py` | Entity construction, `MemberKind` values, optional `department_id` defaults to None. |
 | `tests/test_tenants_members.py` | Create tenant, add member with a seat, list — the flat-fleet baseline (zero departments, zero edges). |
@@ -43,8 +43,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/organization/__init__.py`
-- Create: `src/fleetlib/organization/py.typed`
+- Create: `src/coactra/organization/__init__.py`
+- Create: `src/coactra/organization/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -55,22 +55,22 @@ import importlib
 
 
 def test_organization_imports():
-    mod = importlib.import_module("fleetlib.organization")
+    mod = importlib.import_module("coactra.organization")
     assert mod is not None
 
 
-def test_fleetlib_is_namespace_package():
-    import fleetlib
+def test_coactra_is_namespace_package():
+    import coactra
 
     # PEP 420 namespace packages have no __file__ and expose a virtual __path__.
-    assert getattr(fleetlib, "__file__", None) is None
-    assert hasattr(fleetlib, "__path__")
+    assert getattr(coactra, "__file__", None) is None
+    assert hasattr(coactra, "__path__")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -81,7 +81,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-organization"
+name = "coactra-organization"
 version = "0.1.0"
 description = "Multi-tenant fleet directory for AI agents — tenants, seats, memberships, reporting + escalation routing. No workflow execution."
 readme = "README.md"
@@ -94,16 +94,16 @@ neo4j = ["neo4j>=5"]
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py
-"""fleetlib.organization — a multi-tenant fleet directory.
+# src/coactra/organization/__init__.py
+"""coactra.organization — a multi-tenant fleet directory.
 
 Models WHO belongs to which tenant, what seat they hold, who reports to whom, and
 WHERE an escalation goes. It answers "who owns this?" and "where does escalation go?"
@@ -119,10 +119,10 @@ __version__ = "0.1.0"
 ```
 
 ```text
-# src/fleetlib/organization/py.typed
+# src/coactra/organization/py.typed
 ```
 
-(Do NOT create `src/fleetlib/__init__.py` — its absence is what makes `fleetlib` a namespace package.)
+(Do NOT create `src/coactra/__init__.py` — its absence is what makes `coactra` a namespace package.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -132,7 +132,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/organization/__init__.py src/fleetlib/organization/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/organization/__init__.py src/coactra/organization/py.typed tests/test_packaging.py
 git commit -m "feat(organization): namespace package scaffold + importable surface"
 ```
 
@@ -141,16 +141,16 @@ git commit -m "feat(organization): namespace package scaffold + importable surfa
 ## Task 2: Errors — cross-tenant guard + missing-extra
 
 **Files:**
-- Create: `src/fleetlib/organization/errors.py`
-- Modify: `src/fleetlib/organization/__init__.py`
+- Create: `src/coactra/organization/errors.py`
+- Modify: `src/coactra/organization/__init__.py`
 - Test: folded into later tasks (no standalone test; exercised by isolation + stub tests)
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_errors.py
-from fleetlib.organization import CrossTenantError
-from fleetlib.organization.errors import MissingExtraError
+from coactra.organization import CrossTenantError
+from coactra.organization.errors import MissingExtraError
 
 
 def test_cross_tenant_error_is_value_error():
@@ -170,7 +170,7 @@ Expected: FAIL with `ImportError: cannot import name 'CrossTenantError'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/errors.py
+# src/coactra/organization/errors.py
 """Organization errors.
 
 CrossTenantError  — raised when an operation would link or read across a tenant
@@ -191,8 +191,8 @@ class MissingExtraError(RuntimeError):
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py  (extend imports + __all__)
-from fleetlib.organization.errors import CrossTenantError
+# src/coactra/organization/__init__.py  (extend imports + __all__)
+from coactra.organization.errors import CrossTenantError
 
 __all__ = [
     "__version__",
@@ -208,7 +208,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/errors.py src/fleetlib/organization/__init__.py tests/test_errors.py
+git add src/coactra/organization/errors.py src/coactra/organization/__init__.py tests/test_errors.py
 git commit -m "feat(organization): CrossTenantError + MissingExtraError"
 ```
 
@@ -217,15 +217,15 @@ git commit -m "feat(organization): CrossTenantError + MissingExtraError"
 ## Task 3: Models — the directory entities (flat-fleet first)
 
 **Files:**
-- Create: `src/fleetlib/organization/models.py`
-- Modify: `src/fleetlib/organization/__init__.py`
+- Create: `src/coactra/organization/models.py`
+- Modify: `src/coactra/organization/__init__.py`
 - Test: `tests/test_models.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_models.py
-from fleetlib.organization import (
+from coactra.organization import (
     Department,
     EscalationRoute,
     Member,
@@ -273,7 +273,7 @@ Expected: FAIL with `ImportError: cannot import name 'Department'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/models.py
+# src/coactra/organization/models.py
 """Directory entities.
 
 These SQLModel classes are BOTH the ORM tables (table=True) AND the plain pydantic
@@ -371,9 +371,9 @@ class PolicyRef(SQLModel, table=True):
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py  (extend imports + __all__)
-from fleetlib.organization.errors import CrossTenantError
-from fleetlib.organization.models import (
+# src/coactra/organization/__init__.py  (extend imports + __all__)
+from coactra.organization.errors import CrossTenantError
+from coactra.organization.models import (
     Department,
     EscalationRoute,
     Member,
@@ -408,7 +408,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/models.py src/fleetlib/organization/__init__.py tests/test_models.py
+git add src/coactra/organization/models.py src/coactra/organization/__init__.py tests/test_models.py
 git commit -m "feat(organization): directory entities (tenant/dept/seat/member/membership/edges/policy)"
 ```
 
@@ -417,8 +417,8 @@ git commit -m "feat(organization): directory entities (tenant/dept/seat/member/m
 ## Task 4: Engine factory — StaticPool keeps in-memory SQLite alive
 
 **Files:**
-- Create: `src/fleetlib/organization/engine.py`
-- Modify: `src/fleetlib/organization/__init__.py`
+- Create: `src/coactra/organization/engine.py`
+- Modify: `src/coactra/organization/__init__.py`
 - Test: `tests/test_engine.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -427,7 +427,7 @@ git commit -m "feat(organization): directory entities (tenant/dept/seat/member/m
 # tests/test_engine.py
 from sqlmodel import Session, select
 
-from fleetlib.organization import Tenant, make_engine
+from coactra.organization import Tenant, make_engine
 
 
 def test_write_then_read_in_a_new_session_survives():
@@ -458,7 +458,7 @@ Expected: FAIL with `ImportError: cannot import name 'make_engine'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/engine.py
+# src/coactra/organization/engine.py
 """Engine factory.
 
 make_engine() builds a sqlmodel engine and creates all tables. For the in-memory
@@ -474,7 +474,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, create_engine
 
 # Importing models registers every table on SQLModel.metadata before create_all().
-from fleetlib.organization import models as _models  # noqa: F401
+from coactra.organization import models as _models  # noqa: F401
 
 
 def make_engine(url: str = "sqlite://") -> Engine:
@@ -490,8 +490,8 @@ def make_engine(url: str = "sqlite://") -> Engine:
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py  (extend imports + __all__)
-from fleetlib.organization.engine import make_engine
+# src/coactra/organization/__init__.py  (extend imports + __all__)
+from coactra.organization.engine import make_engine
 
 # ...add "make_engine" to __all__ (place after the entity names)
 ```
@@ -504,7 +504,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/engine.py src/fleetlib/organization/__init__.py tests/test_engine.py
+git add src/coactra/organization/engine.py src/coactra/organization/__init__.py tests/test_engine.py
 git commit -m "feat(organization): make_engine — StaticPool in-memory SQLite + create_all"
 ```
 
@@ -513,15 +513,15 @@ git commit -m "feat(organization): make_engine — StaticPool in-memory SQLite +
 ## Task 5: OrgStore Protocol — the tenant-scoped directory contract
 
 **Files:**
-- Create: `src/fleetlib/organization/store.py`
-- Modify: `src/fleetlib/organization/__init__.py`
+- Create: `src/coactra/organization/store.py`
+- Modify: `src/coactra/organization/__init__.py`
 - Test: `tests/test_store_protocol.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_store_protocol.py
-from fleetlib.organization import (
+from coactra.organization import (
     Department,
     Member,
     OrgStore,
@@ -595,7 +595,7 @@ Expected: FAIL with `ImportError: cannot import name 'OrgStore'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/store.py
+# src/coactra/organization/store.py
 """OrgStore — the swappable directory SPI.
 
 Every method takes tenant_id (or a tenant-bearing entity) FIRST; multi-tenant scoping
@@ -609,7 +609,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from fleetlib.organization.models import Department, Member, PolicyRef, Seat, Tenant
+from coactra.organization.models import Department, Member, PolicyRef, Seat, Tenant
 
 
 @runtime_checkable
@@ -686,8 +686,8 @@ class OrgStore(Protocol):
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py  (extend imports + __all__)
-from fleetlib.organization.store import OrgStore
+# src/coactra/organization/__init__.py  (extend imports + __all__)
+from coactra.organization.store import OrgStore
 
 # ...add "OrgStore" to __all__
 ```
@@ -700,7 +700,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/store.py src/fleetlib/organization/__init__.py tests/test_store_protocol.py
+git add src/coactra/organization/store.py src/coactra/organization/__init__.py tests/test_store_protocol.py
 git commit -m "feat(organization): OrgStore Protocol — tenant-scoped directory contract"
 ```
 
@@ -709,9 +709,9 @@ git commit -m "feat(organization): OrgStore Protocol — tenant-scoped directory
 ## Task 6: SqliteOrgStore — tenants, seats, members, assignment (default, part 1)
 
 **Files:**
-- Create: `src/fleetlib/organization/sqlite_store.py`
+- Create: `src/coactra/organization/sqlite_store.py`
 - Create: `tests/conftest.py`
-- Modify: `src/fleetlib/organization/__init__.py`
+- Modify: `src/coactra/organization/__init__.py`
 - Test: `tests/test_tenants_members.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -720,7 +720,7 @@ git commit -m "feat(organization): OrgStore Protocol — tenant-scoped directory
 # tests/conftest.py
 import pytest
 
-from fleetlib.organization import SqliteOrgStore
+from coactra.organization import SqliteOrgStore
 
 
 @pytest.fixture
@@ -731,7 +731,7 @@ def store() -> SqliteOrgStore:
 
 ```python
 # tests/test_tenants_members.py
-from fleetlib.organization import Member, MemberKind, Seat, Tenant
+from coactra.organization import Member, MemberKind, Seat, Tenant
 
 
 def test_flat_fleet_create_member_with_seat(store):
@@ -760,7 +760,7 @@ Expected: FAIL with `ImportError: cannot import name 'SqliteOrgStore'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/sqlite_store.py
+# src/coactra/organization/sqlite_store.py
 """SqliteOrgStore — the ONE working default OrgStore.
 
 SQLite via sqlmodel. Tenant-isolated by FILTER DISCIPLINE: every read carries a
@@ -774,9 +774,9 @@ from __future__ import annotations
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, select
 
-from fleetlib.organization.engine import make_engine
-from fleetlib.organization.errors import CrossTenantError
-from fleetlib.organization.models import Member, Membership, Seat, Tenant
+from coactra.organization.engine import make_engine
+from coactra.organization.errors import CrossTenantError
+from coactra.organization.models import Member, Membership, Seat, Tenant
 
 
 class SqliteOrgStore:
@@ -847,8 +847,8 @@ class SqliteOrgStore:
 ```
 
 ```python
-# src/fleetlib/organization/__init__.py  (extend imports + __all__)
-from fleetlib.organization.sqlite_store import SqliteOrgStore
+# src/coactra/organization/__init__.py  (extend imports + __all__)
+from coactra.organization.sqlite_store import SqliteOrgStore
 
 # ...add "SqliteOrgStore" to __all__
 ```
@@ -861,7 +861,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/sqlite_store.py tests/conftest.py src/fleetlib/organization/__init__.py tests/test_tenants_members.py
+git add src/coactra/organization/sqlite_store.py tests/conftest.py src/coactra/organization/__init__.py tests/test_tenants_members.py
 git commit -m "feat(organization): SqliteOrgStore CRUD core — tenants/seats/members/assign (flat fleet)"
 ```
 
@@ -870,14 +870,14 @@ git commit -m "feat(organization): SqliteOrgStore CRUD core — tenants/seats/me
 ## Task 7: Hierarchy — departments + reporting edges (optional, first-class)
 
 **Files:**
-- Modify: `src/fleetlib/organization/sqlite_store.py`
+- Modify: `src/coactra/organization/sqlite_store.py`
 - Test: `tests/test_hierarchy.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_hierarchy.py
-from fleetlib.organization import Department, Seat, Tenant
+from coactra.organization import Department, Seat, Tenant
 
 
 def _two_seats(store):
@@ -903,7 +903,7 @@ def test_seat_without_edge_has_no_manager(store):
 def test_department_can_be_created_and_used_in_assignment(store):
     store.add_tenant(Tenant(tenant_id="acme"))
     seat = store.add_seat("acme", Seat(tenant_id="acme", role="rnd"))
-    from fleetlib.organization import Member, MemberKind
+    from coactra.organization import Member, MemberKind
 
     member = store.add_member("acme", Member(tenant_id="acme", name="bob", kind=MemberKind.agent))
     dept = store.add_department("acme", Department(tenant_id="acme", name="R&D"))
@@ -919,10 +919,10 @@ Expected: FAIL with `AttributeError: 'SqliteOrgStore' object has no attribute 'a
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/sqlite_store.py  — add imports + methods
+# src/coactra/organization/sqlite_store.py  — add imports + methods
 
 # add to the existing import line:
-from fleetlib.organization.models import (
+from coactra.organization.models import (
     Department,
     Member,
     Membership,
@@ -979,7 +979,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/sqlite_store.py tests/test_hierarchy.py
+git add src/coactra/organization/sqlite_store.py tests/test_hierarchy.py
 git commit -m "feat(organization): departments + reporting edges (optional hierarchy, manager_of)"
 ```
 
@@ -998,7 +998,7 @@ git commit -m "feat(organization): departments + reporting edges (optional hiera
 # tests/test_isolation.py
 import pytest
 
-from fleetlib.organization import (
+from coactra.organization import (
     CrossTenantError,
     Member,
     MemberKind,
@@ -1073,15 +1073,15 @@ git commit -m "test(organization): lock multi-tenant isolation — cross-tenant 
 ## Task 9: Escalation routing — query, never execution
 
 **Files:**
-- Modify: `src/fleetlib/organization/sqlite_store.py`
-- Modify: `src/fleetlib/organization/__init__.py` (nothing new exported; method on store)
+- Modify: `src/coactra/organization/sqlite_store.py`
+- Modify: `src/coactra/organization/__init__.py` (nothing new exported; method on store)
 - Test: `tests/test_escalation.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_escalation.py
-from fleetlib.organization import Seat, Tenant
+from coactra.organization import Seat, Tenant
 
 
 def _chain(store):
@@ -1135,10 +1135,10 @@ Expected: FAIL with `AttributeError: 'SqliteOrgStore' object has no attribute 'e
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/sqlite_store.py  — add import + methods
+# src/coactra/organization/sqlite_store.py  — add import + methods
 
 # extend the models import with EscalationRoute:
-from fleetlib.organization.models import (
+from coactra.organization.models import (
     Department,
     EscalationRoute,
     Member,
@@ -1203,7 +1203,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/sqlite_store.py tests/test_escalation.py
+git add src/coactra/organization/sqlite_store.py tests/test_escalation.py
 git commit -m "feat(organization): escalate()/resolve_decider() — routing queries, no execution"
 ```
 
@@ -1212,14 +1212,14 @@ git commit -m "feat(organization): escalate()/resolve_decider() — routing quer
 ## Task 10: Ownership — "who owns this?"
 
 **Files:**
-- Modify: `src/fleetlib/organization/sqlite_store.py`
+- Modify: `src/coactra/organization/sqlite_store.py`
 - Test: `tests/test_ownership.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_ownership.py
-from fleetlib.organization import Seat, Tenant
+from coactra.organization import Seat, Tenant
 
 
 def test_owner_of_matches_seat_by_domain(store):
@@ -1253,7 +1253,7 @@ Expected: FAIL with `AttributeError: 'SqliteOrgStore' object has no attribute 'o
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/sqlite_store.py  — add method
+# src/coactra/organization/sqlite_store.py  — add method
 
     # --- ownership ("who owns this?") ------------------------------------------
 
@@ -1277,7 +1277,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/sqlite_store.py tests/test_ownership.py
+git add src/coactra/organization/sqlite_store.py tests/test_ownership.py
 git commit -m "feat(organization): owner_of — domain-matched ownership lookup, tenant-scoped"
 ```
 
@@ -1286,14 +1286,14 @@ git commit -m "feat(organization): owner_of — domain-matched ownership lookup,
 ## Task 11: Versioned policy references
 
 **Files:**
-- Modify: `src/fleetlib/organization/sqlite_store.py`
+- Modify: `src/coactra/organization/sqlite_store.py`
 - Test: `tests/test_policy_refs.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_policy_refs.py
-from fleetlib.organization import PolicyRef, Tenant
+from coactra.organization import PolicyRef, Tenant
 
 
 def test_add_and_get_current_policy_version(store):
@@ -1329,10 +1329,10 @@ Expected: FAIL with `AttributeError: 'SqliteOrgStore' object has no attribute 'a
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/sqlite_store.py  — add import + methods
+# src/coactra/organization/sqlite_store.py  — add import + methods
 
 # extend the models import with PolicyRef:
-from fleetlib.organization.models import (
+from coactra.organization.models import (
     Department,
     EscalationRoute,
     Member,
@@ -1376,7 +1376,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/sqlite_store.py tests/test_policy_refs.py
+git add src/coactra/organization/sqlite_store.py tests/test_policy_refs.py
 git commit -m "feat(organization): versioned policy references (current vs specific version)"
 ```
 
@@ -1385,8 +1385,8 @@ git commit -m "feat(organization): versioned policy references (current vs speci
 ## Task 12: Neo4j adapter stub (SPI demonstration, raise on use)
 
 **Files:**
-- Create: `src/fleetlib/organization/adapters/__init__.py`
-- Create: `src/fleetlib/organization/adapters/neo4j.py`
+- Create: `src/coactra/organization/adapters/__init__.py`
+- Create: `src/coactra/organization/adapters/neo4j.py`
 - Test: `tests/test_adapter_stub.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1395,8 +1395,8 @@ git commit -m "feat(organization): versioned policy references (current vs speci
 # tests/test_adapter_stub.py
 import pytest
 
-from fleetlib.organization.adapters.neo4j import Neo4jOrgStore
-from fleetlib.organization.errors import MissingExtraError
+from coactra.organization.adapters.neo4j import Neo4jOrgStore
+from coactra.organization.errors import MissingExtraError
 
 
 def test_neo4j_stub_raises_until_extra_lands():
@@ -1407,12 +1407,12 @@ def test_neo4j_stub_raises_until_extra_lands():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_adapter_stub.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.organization.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.organization.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/organization/adapters/__init__.py
+# src/coactra/organization/adapters/__init__.py
 """Optional-extra OrgStore adapters. The Neo4j stub demonstrates the swap (reporting
 edges are graph-shaped) and raises MissingExtraError until its extra + a real impl land.
 sqlmodel -> Postgres needs only a different URL, so no extra stub is manufactured for it.
@@ -1420,20 +1420,20 @@ sqlmodel -> Postgres needs only a different URL, so no extra stub is manufacture
 ```
 
 ```python
-# src/fleetlib/organization/adapters/neo4j.py
+# src/coactra/organization/adapters/neo4j.py
 """Neo4j adapter — STUB. Reporting edges are naturally graph-shaped, so a graph store is
 the honest 'swap the backend' demonstration. Raises until the neo4j extra + impl land."""
 
 from __future__ import annotations
 
-from fleetlib.organization.errors import MissingExtraError
+from coactra.organization.errors import MissingExtraError
 
 
 class Neo4jOrgStore:
     def __init__(self, *args, **kwargs) -> None:
         raise MissingExtraError(
             "Neo4jOrgStore requires the optional 'neo4j' extra and a real implementation; "
-            "install with: pip install fleetlib-organization[neo4j] (stub not yet implemented)"
+            "install with: pip install coactra-organization[neo4j] (stub not yet implemented)"
         )
 ```
 
@@ -1445,7 +1445,7 @@ Expected: PASS (1 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/organization/adapters tests/test_adapter_stub.py
+git add src/coactra/organization/adapters tests/test_adapter_stub.py
 git commit -m "feat(organization): Neo4j adapter stub (graph-shaped backend, raises on use)"
 ```
 
@@ -1460,7 +1460,7 @@ git commit -m "feat(organization): Neo4j adapter stub (graph-shaped backend, rai
 
 ```python
 # tests/test_public_api.py
-import fleetlib.organization as org
+import coactra.organization as org
 
 
 def test_public_surface_is_complete():
@@ -1515,11 +1515,11 @@ Expected: FAIL (file/test not yet present), then PASS once added since the API a
 
 - [ ] **Step 3: Finalize `__init__.py` exports**
 
-Ensure `src/fleetlib/organization/__init__.py` re-exports the full surface:
+Ensure `src/coactra/organization/__init__.py` re-exports the full surface:
 
 ```python
-# src/fleetlib/organization/__init__.py
-"""fleetlib.organization — a multi-tenant fleet directory.
+# src/coactra/organization/__init__.py
+"""coactra.organization — a multi-tenant fleet directory.
 
 Models WHO belongs to which tenant, what seat they hold, who reports to whom, and
 WHERE an escalation goes. It answers "who owns this?" and "where does escalation go?"
@@ -1527,9 +1527,9 @@ WHERE an escalation goes. It answers "who owns this?" and "where does escalation
 that returns the next decider, it never runs or owns a work order.
 """
 
-from fleetlib.organization.engine import make_engine
-from fleetlib.organization.errors import CrossTenantError
-from fleetlib.organization.models import (
+from coactra.organization.engine import make_engine
+from coactra.organization.errors import CrossTenantError
+from coactra.organization.models import (
     Department,
     EscalationRoute,
     Member,
@@ -1540,8 +1540,8 @@ from fleetlib.organization.models import (
     Seat,
     Tenant,
 )
-from fleetlib.organization.sqlite_store import SqliteOrgStore
-from fleetlib.organization.store import OrgStore
+from coactra.organization.sqlite_store import SqliteOrgStore
+from coactra.organization.store import OrgStore
 
 __all__ = [
     "__version__",
@@ -1571,7 +1571,7 @@ Expected: PASS (all tests across all files green)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/test_public_api.py src/fleetlib/organization/__init__.py
+git add tests/test_public_api.py src/coactra/organization/__init__.py
 git commit -m "test(organization): lock public API surface + end-to-end directory walkthrough"
 ```
 
@@ -1585,5 +1585,5 @@ git commit -m "test(organization): lock public API surface + end-to-end director
 4. **Multi-tenant isolation is the core invariant, proven actively** — `_check` guard + `WHERE tenant_id = ?` on every read; cross-tenant read returns nothing AND cross-tenant assignment/edge **raises** `CrossTenantError` (Task 8). ✔
 5. **Flat fleet is the baseline** — `department_id` optional, no manager required; `test_flat_fleet_create_member_with_seat` + `test_seat_without_edge_has_no_manager` (Tasks 6–7). Hierarchy is additive and first-class (Task 7). ✔
 6. **Principles** — THIN (SQLModel entities double as Protocol objects, no engine reimplemented); `OrgStore` Protocol covers the FULL charter swap surface (tenants/seats/members/assign + departments/reporting/`manager_of` + escalation-route/`escalate` + ownership + policy-ref add/get) so a second backend must satisfy every charter deliverable, not just the flat-fleet subset (Task 5); ONE working default (`SqliteOrgStore`) + ONE honest stub (`Neo4jOrgStore`, Task 12); `tenant_id` first arg on every method. `_Dummy` in `test_store_protocol.py` mirrors the full surface; `resolve_decider` stays OFF the Protocol (convenience over `escalate`, YAGNI). ✔
-7. **Packaging** — PEP 420 namespace (no `src/fleetlib/__init__.py`, asserted in Task 1), src layout, `py.typed`, hatchling, `neo4j`/`dev` extras. ✔
+7. **Packaging** — PEP 420 namespace (no `src/coactra/__init__.py`, asserted in Task 1), src layout, `py.typed`, hatchling, `neo4j`/`dev` extras. ✔
 8. **Type/method consistency** — `tenant_id: str` first arg, `Seat.role`/`Seat.domain`, `MemberKind` (human/service/agent), `escalate -> Seat | None`, `owner_of -> Seat | None`, `policy_ref(version=None)`, `CrossTenantError` used identically across tasks. ✔

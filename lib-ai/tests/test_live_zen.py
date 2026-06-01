@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from fleetlib.ai.client import ask, structured, Client
+from coactra.ai.client import ask, structured, Client
 
 ZEN_BASE = "https://opencode.ai/zen/go/v1"
 _KEY_FILE = Path("/tmp/oc.key")

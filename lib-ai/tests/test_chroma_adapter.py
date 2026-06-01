@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.ai.adapters.chroma import ChromaStore
+from coactra.ai.adapters.chroma import ChromaStore
 
 
 def test_chroma_store_requires_extra():
@@ -10,7 +10,7 @@ def test_chroma_store_requires_extra():
 
 
 def test_chroma_store_is_a_reasoning_store_type():
-    from fleetlib.ai.protocols import ReasoningStore
+    from coactra.ai.protocols import ReasoningStore
 
     # The class declares the Protocol methods even though it needs the extra.
     for method in ("put", "search", "get"):

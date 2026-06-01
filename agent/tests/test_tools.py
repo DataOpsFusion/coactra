@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.agent import ToolSpec
+from coactra.agent import ToolSpec
 
 
 def test_toolspec_minimal():

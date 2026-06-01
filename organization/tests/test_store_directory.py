@@ -5,7 +5,7 @@ consumer reads the whole org through the PUBLIC api, never reaching into _engine
 All tenant-scoped.
 """
 
-from fleetlib.organization import (
+from coactra.organization import (
     Department,
     Member,
     MemberKind,

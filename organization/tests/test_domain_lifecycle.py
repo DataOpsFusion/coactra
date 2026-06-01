@@ -2,7 +2,7 @@
 
 import pytest
 
-from fleetlib.organization import CrossTenantError, Organization
+from coactra.organization import CrossTenantError, Organization
 
 
 def _tree():

@@ -1,5 +1,5 @@
-from fleetlib.memory import Capability, Recollection, Scope
-from fleetlib.memory.backends.inprocess import InProcessBackend
+from coactra.memory import Capability, Recollection, Scope
+from coactra.memory.backends.inprocess import InProcessBackend
 
 SCOPE = Scope(tenant="acme", agent="agent1")
 

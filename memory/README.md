@@ -1,4 +1,4 @@
-# fleetlib-memory
+# coactra-memory
 
 > Long-term memory for agents — across sessions and long projects — as a **thin, clean
 > connector**, not a reimplemented store.
@@ -10,22 +10,22 @@ and **Graphiti** already do the hard part — extraction, consolidation, recall.
 gap is the lack of a **backend-neutral contract**: each engine has different semantics,
 so you get locked in and can't A/B or move learning between them.
 
-`fleetlib.memory` is that contract: a tiny, framework-agnostic facade over one async
+`coactra.memory` is that contract: a tiny, framework-agnostic facade over one async
 `MemoryBackend` Protocol. It does **not** build its own vector store — it connects to the
 engines that already work, and never lets an engine type leak into your code.
 
 ## Install
 
 ```bash
-pip install fleetlib-memory                 # in-process default, zero external deps
-pip install fleetlib-memory[mem0]           # + mem0 engine (needs an LLM + embedder)
-pip install fleetlib-memory[graphiti]       # + Graphiti engine (needs Neo4j + an LLM)
+pip install coactra-memory                 # in-process default, zero external deps
+pip install coactra-memory[mem0]           # + mem0 engine (needs an LLM + embedder)
+pip install coactra-memory[graphiti]       # + Graphiti engine (needs Neo4j + an LLM)
 ```
 
 ## Usage
 
 ```python
-from fleetlib.memory import Memory, make_backend, Scope, Recollection
+from coactra.memory import Memory, make_backend, Scope, Recollection
 
 mem = Memory(backend=make_backend("inprocess"))   # "mem0" | "graphiti" too
 scope = Scope(tenant="acme", agent="builder", session=None)

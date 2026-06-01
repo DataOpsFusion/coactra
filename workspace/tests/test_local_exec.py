@@ -1,7 +1,7 @@
 """DESIGN OVERRIDE (locked): backend.exec takes an arg-list (argv: list[str]) and runs it
 with shell=False — never a shell string. Tests pass argv lists accordingly."""
 
-from fleetlib.workspace import ExecResult, LocalFilesystemBackend, Scope
+from coactra.workspace import ExecResult, LocalFilesystemBackend, Scope
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 

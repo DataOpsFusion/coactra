@@ -6,8 +6,8 @@ a root carries the tenant, children are OUs, members are principals living on a 
 
 import pytest
 
-from fleetlib.organization import CrossTenantError, Organization
-from fleetlib.organization.domain import MemberKind
+from coactra.organization import CrossTenantError, Organization
+from coactra.organization.domain import MemberKind
 
 
 def test_root_carries_tenant_and_name():

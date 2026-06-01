@@ -1,4 +1,4 @@
-import fleetlib.ai as ai
+import coactra.ai as ai
 
 
 def test_public_exports_present():

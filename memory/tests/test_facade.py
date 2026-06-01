@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from fleetlib.memory import ExportReport, Memory, Recollection, Scope, make_backend
+from coactra.memory import ExportReport, Memory, Recollection, Scope, make_backend
 
 SCOPE = Scope(tenant="acme", agent="agent1")
 

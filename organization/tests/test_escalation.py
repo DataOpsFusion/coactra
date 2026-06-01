@@ -1,4 +1,4 @@
-from fleetlib.organization import Seat, Tenant
+from coactra.organization import Seat, Tenant
 
 
 def _chain(store):

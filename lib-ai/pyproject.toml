@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-ai"
+name = "coactra-ai"
 version = "0.2.0"
 description = "Model-call shelf + reasoning capture-replay for AI agent fleets."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "fleetlib authors" }]
+authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "reasoning", "structured-output", "litellm", "instructor"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -32,10 +32,10 @@ chroma = ["chromadb>=0.5"]
 dev = ["pytest>=8.0"]
 
 [project.urls]
-Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
+Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fleetlib"]
+packages = ["src/coactra"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

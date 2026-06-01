@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from fleetlib.agent import (
+from coactra.agent import (
     AgentRef,
     CollaborationDenied,
     DelegationGrant,

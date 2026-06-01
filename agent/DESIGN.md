@@ -1,4 +1,4 @@
-# fleetlib.agent — v0.2 (clean composition root, ports, DSA)
+# coactra.agent — v0.2 (clean composition root, ports, DSA)
 
 > `agent` is the runtime that WIRES the other libs into a working agent. Verdict stands:
 > WRAP the mature protocols (A2A, MCP, OpenAI Agents SDK, MCP OAuth) + BUILD a thin
@@ -13,8 +13,8 @@
   (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`) — the
   agent NEVER imports sibling code. Ports are **injected** via a composition root.
 - **Ports mirror the real sibling facades** so wiring is a 3-line adapter, not glue:
-  - `MemoryPort.remember(events, scope) / recall(query, scope, k) -> list[...]` ← matches `fleetlib.memory`
-  - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `fleetlib.organization`
+  - `MemoryPort.remember(events, scope) / recall(query, scope, k) -> list[...]` ← matches `coactra.memory`
+  - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `coactra.organization`
   - `AIPort.ask(...) / structured(...)`, `WorkflowPort.run(procedure, state)`, `WorkspacePort.read/write/run`.
   Real wiring lives OUTSIDE this lib (or in an optional `bindings` extra); the core ships
   Protocol + in-process fakes so it's testable with zero siblings installed.
@@ -35,7 +35,7 @@
 ## Collaboration (keep v0.1, clean it)
 - Tenant-qualified `AgentRef(tenant_id, agent_id)` targets; `CollaborationPolicy` can DENY
   cross-tenant talk (deny-before-allow). `PolicyGatedCollaborator` structurally satisfies
-  `fleetlib.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
+  `coactra.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
   workflow run with no adapter) — verify signatures against the built workflow lib.
 
 ## Layers

@@ -1,4 +1,4 @@
-from fleetlib.organization import Seat, Tenant
+from coactra.organization import Seat, Tenant
 
 
 def test_owner_of_matches_seat_by_domain(store):

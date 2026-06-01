@@ -1,4 +1,4 @@
-from fleetlib.memory import Capability
+from coactra.memory import Capability
 
 
 def test_vocabulary_is_stable():

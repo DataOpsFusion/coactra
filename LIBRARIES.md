@@ -6,8 +6,8 @@ The main project later just installs + imports the ones it needs.
 
 > **BUILD STATUS (v0.1):** all 6 packages built + tested green — **247 tests passing**
 > (lib-ai 32, memory 35, workspace 43, workflow 47, organization 37, agent 53). The 5
-> sibling libs are fully standalone (no inter-`fleetlib` imports); only `agent` declares
-> the others as optional siblings (consumed via ports + fakes). Brand `fleetlib` is a
+> sibling libs are fully standalone (no inter-`coactra` imports); only `agent` declares
+> the others as optional siblings (consumed via ports + fakes). Brand `coactra` is a
 > placeholder — rename before publish. Each lib has a `PLAN.md` (the TDD plan it was
 > built from).
 

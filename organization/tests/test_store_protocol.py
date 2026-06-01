@@ -1,4 +1,4 @@
-from fleetlib.organization import (
+from coactra.organization import (
     Department,
     Member,
     OrgStore,

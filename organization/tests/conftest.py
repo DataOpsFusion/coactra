@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.organization import SqliteOrgStore
+from coactra.organization import SqliteOrgStore
 
 
 @pytest.fixture

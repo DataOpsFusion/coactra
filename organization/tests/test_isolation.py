@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.organization import (
+from coactra.organization import (
     CrossTenantError,
     Member,
     MemberKind,

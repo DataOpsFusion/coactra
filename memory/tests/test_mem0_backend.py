@@ -4,8 +4,8 @@ Proves: (1) correct engine method + scope mapping, (2) result → Recollection m
 (3) NO mem0 type leaks across the boundary (sentinel-object proof).
 """
 
-from fleetlib.memory import Recollection, Scope
-from fleetlib.memory.backends.mem0 import Mem0Backend
+from coactra.memory import Recollection, Scope
+from coactra.memory.backends.mem0 import Mem0Backend
 
 
 class _Mem0Sentinel:

@@ -1,6 +1,6 @@
 import pytest
 
-from fleetlib.workspace import CliPolicy, PolicyError
+from coactra.workspace import CliPolicy, PolicyError
 
 
 def test_default_policy_allows_everything():

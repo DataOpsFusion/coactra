@@ -1,5 +1,5 @@
-from fleetlib.ai.gate import AdaptiveGate
-from fleetlib.ai.models import ReasoningTrace
+from coactra.ai.gate import AdaptiveGate
+from coactra.ai.models import ReasoningTrace
 
 
 def _trace(succ, fail):

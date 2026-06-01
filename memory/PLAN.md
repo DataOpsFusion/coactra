@@ -1,4 +1,4 @@
-# fleetlib.memory Implementation Plan
+# coactra.memory Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -14,21 +14,21 @@
 
 | File | Responsibility |
 |------|----------------|
-| `pyproject.toml` | Distribution `fleetlib-memory`; hatchling targets the `fleetlib` namespace dir; runtime dep `pydantic`; `[project.optional-dependencies]` for `mem0`/`graphiti`/`letta`/`dev`. |
-| `src/fleetlib/memory/__init__.py` | Public API surface — re-exports `Scope`, `MemoryEvent`, `MemoryItem`, `Provenance`, `Capability`, `MemoryBackend`, `InProcessBackend`, `ExportReport`, `export`. NO `src/fleetlib/__init__.py` (namespace package). |
-| `src/fleetlib/memory/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/memory/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through every call. |
-| `src/fleetlib/memory/models.py` | `Provenance`, `MemoryEvent` (input), `MemoryItem` (stored, carries provenance + capabilities-it-uses). |
-| `src/fleetlib/memory/capabilities.py` | `Capability` enum — the ONE vocabulary shared by `export` AND `recall`. |
-| `src/fleetlib/memory/backend.py` | `MemoryBackend` `typing.Protocol` — `capabilities()`, `learn()`, `recall()`, `dump()`, `ingest()`. |
-| `src/fleetlib/memory/inprocess.py` | `InProcessBackend` — the ONE working default: tenant-isolated dict store, trivial dedup, lexical recall. |
-| `src/fleetlib/memory/export.py` | `ExportReport` + `export()` — capability negotiation, provenance preservation, explicit dropped/degraded-feature report. |
-| `src/fleetlib/memory/adapters/__init__.py` | Adapters subpackage marker. |
-| `src/fleetlib/memory/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
-| `src/fleetlib/memory/adapters/mem0.py` | `Mem0Backend` stub — declares its `Capability` set; raises `MissingExtraError` until the `mem0` extra + real impl land. |
-| `src/fleetlib/memory/adapters/graphiti.py` | `GraphitiBackend` stub — graph capabilities; raises until `graphiti` extra. |
-| `src/fleetlib/memory/adapters/letta.py` | `LettaBackend` stub — memory-block capabilities; raises until `letta` extra. |
-| `tests/test_packaging.py` | Asserts `import fleetlib.memory` works and `fleetlib` is a PEP 420 namespace package. |
+| `pyproject.toml` | Distribution `coactra-memory`; hatchling targets the `coactra` namespace dir; runtime dep `pydantic`; `[project.optional-dependencies]` for `mem0`/`graphiti`/`letta`/`dev`. |
+| `src/coactra/memory/__init__.py` | Public API surface — re-exports `Scope`, `MemoryEvent`, `MemoryItem`, `Provenance`, `Capability`, `MemoryBackend`, `InProcessBackend`, `ExportReport`, `export`. NO `src/coactra/__init__.py` (namespace package). |
+| `src/coactra/memory/py.typed` | PEP 561 typing marker. |
+| `src/coactra/memory/scope.py` | `Scope` value object — `tenant_id` + `namespace`; the multi-tenant key threaded through every call. |
+| `src/coactra/memory/models.py` | `Provenance`, `MemoryEvent` (input), `MemoryItem` (stored, carries provenance + capabilities-it-uses). |
+| `src/coactra/memory/capabilities.py` | `Capability` enum — the ONE vocabulary shared by `export` AND `recall`. |
+| `src/coactra/memory/backend.py` | `MemoryBackend` `typing.Protocol` — `capabilities()`, `learn()`, `recall()`, `dump()`, `ingest()`. |
+| `src/coactra/memory/inprocess.py` | `InProcessBackend` — the ONE working default: tenant-isolated dict store, trivial dedup, lexical recall. |
+| `src/coactra/memory/export.py` | `ExportReport` + `export()` — capability negotiation, provenance preservation, explicit dropped/degraded-feature report. |
+| `src/coactra/memory/adapters/__init__.py` | Adapters subpackage marker. |
+| `src/coactra/memory/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
+| `src/coactra/memory/adapters/mem0.py` | `Mem0Backend` stub — declares its `Capability` set; raises `MissingExtraError` until the `mem0` extra + real impl land. |
+| `src/coactra/memory/adapters/graphiti.py` | `GraphitiBackend` stub — graph capabilities; raises until `graphiti` extra. |
+| `src/coactra/memory/adapters/letta.py` | `LettaBackend` stub — memory-block capabilities; raises until `letta` extra. |
+| `tests/test_packaging.py` | Asserts `import coactra.memory` works and `coactra` is a PEP 420 namespace package. |
 | `tests/test_scope.py` | `Scope` equality/hashing/validation. |
 | `tests/test_models.py` | Event→item, provenance always present. |
 | `tests/test_capabilities.py` | Vocabulary stability + set algebra. |
@@ -43,8 +43,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/memory/__init__.py`
-- Create: `src/fleetlib/memory/py.typed`
+- Create: `src/coactra/memory/__init__.py`
+- Create: `src/coactra/memory/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -55,22 +55,22 @@ import importlib
 
 
 def test_memory_imports():
-    mod = importlib.import_module("fleetlib.memory")
+    mod = importlib.import_module("coactra.memory")
     assert mod is not None
 
 
-def test_fleetlib_is_namespace_package():
-    import fleetlib
+def test_coactra_is_namespace_package():
+    import coactra
 
     # PEP 420 namespace packages have no __file__ and an empty/virtual __path__ entry list.
-    assert getattr(fleetlib, "__file__", None) is None
-    assert hasattr(fleetlib, "__path__")
+    assert getattr(coactra, "__file__", None) is None
+    assert hasattr(coactra, "__path__")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -81,7 +81,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-memory"
+name = "coactra-memory"
 version = "0.1.0"
 description = "Backend-neutral memory connector SPI for AI agent fleets (learn / recall / lossy export)."
 readme = "README.md"
@@ -96,16 +96,16 @@ letta = ["letta>=0.5"]
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py
-"""fleetlib.memory — backend-neutral memory connector SPI.
+# src/coactra/memory/__init__.py
+"""coactra.memory — backend-neutral memory connector SPI.
 
 Learns from CONVERSATION (summaries / lessons), recalls later, and exports learning
 into any memory/RAG backend. export() is LOSSY by design: it negotiates capabilities,
@@ -121,10 +121,10 @@ __version__ = "0.1.0"
 ```
 
 ```text
-# src/fleetlib/memory/py.typed
+# src/coactra/memory/py.typed
 ```
 
-(Do NOT create `src/fleetlib/__init__.py` — its absence is what makes `fleetlib` a namespace package.)
+(Do NOT create `src/coactra/__init__.py` — its absence is what makes `coactra` a namespace package.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -134,7 +134,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/memory/__init__.py src/fleetlib/memory/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/memory/__init__.py src/coactra/memory/py.typed tests/test_packaging.py
 git commit -m "feat(memory): namespace package scaffold + importable surface"
 ```
 
@@ -143,8 +143,8 @@ git commit -m "feat(memory): namespace package scaffold + importable surface"
 ## Task 2: Scope — the mandatory multi-tenant key
 
 **Files:**
-- Create: `src/fleetlib/memory/scope.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/scope.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_scope.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -154,7 +154,7 @@ git commit -m "feat(memory): namespace package scaffold + importable surface"
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.memory import Scope
+from coactra.memory import Scope
 
 
 def test_scope_default_namespace():
@@ -188,7 +188,7 @@ Expected: FAIL with `ImportError: cannot import name 'Scope'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/scope.py
+# src/coactra/memory/scope.py
 """Scope — the tenant-scoped key threaded through every memory call.
 
 Isolation is first-class: nothing crosses a (tenant_id, namespace) boundary unless an
@@ -215,8 +215,8 @@ class Scope(BaseModel):
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (append to __all__ and add import)
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (append to __all__ and add import)
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -232,7 +232,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/scope.py src/fleetlib/memory/__init__.py tests/test_scope.py
+git add src/coactra/memory/scope.py src/coactra/memory/__init__.py tests/test_scope.py
 git commit -m "feat(memory): Scope — mandatory multi-tenant key (tenant_id + namespace)"
 ```
 
@@ -241,8 +241,8 @@ git commit -m "feat(memory): Scope — mandatory multi-tenant key (tenant_id + n
 ## Task 3: Models — events, items, provenance
 
 **Files:**
-- Create: `src/fleetlib/memory/models.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/models.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_models.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -251,7 +251,7 @@ git commit -m "feat(memory): Scope — mandatory multi-tenant key (tenant_id + n
 # tests/test_models.py
 from datetime import datetime, timezone
 
-from fleetlib.memory import MemoryEvent, MemoryItem, Provenance
+from coactra.memory import MemoryEvent, MemoryItem, Provenance
 
 
 def test_event_minimal():
@@ -286,7 +286,7 @@ Expected: FAIL with `ImportError: cannot import name 'MemoryEvent'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/models.py
+# src/coactra/memory/models.py
 """Memory data models.
 
 MemoryEvent  — raw input ("what happened / what was learned" in a conversation).
@@ -346,9 +346,9 @@ class MemoryItem(BaseModel):
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (extend imports + __all__)
-from fleetlib.memory.models import MemoryEvent, MemoryItem, Provenance
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (extend imports + __all__)
+from coactra.memory.models import MemoryEvent, MemoryItem, Provenance
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -367,7 +367,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/models.py src/fleetlib/memory/__init__.py tests/test_models.py
+git add src/coactra/memory/models.py src/coactra/memory/__init__.py tests/test_models.py
 git commit -m "feat(memory): MemoryEvent/MemoryItem/Provenance — items always carry lineage"
 ```
 
@@ -376,15 +376,15 @@ git commit -m "feat(memory): MemoryEvent/MemoryItem/Provenance — items always 
 ## Task 4: Capability vocabulary (shared by export AND recall)
 
 **Files:**
-- Create: `src/fleetlib/memory/capabilities.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/capabilities.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_capabilities.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_capabilities.py
-from fleetlib.memory import Capability
+from coactra.memory import Capability
 
 
 def test_vocabulary_is_stable():
@@ -416,7 +416,7 @@ Expected: FAIL with `ImportError: cannot import name 'Capability'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/capabilities.py
+# src/coactra/memory/capabilities.py
 """Capability — the ONE vocabulary used by BOTH export negotiation and recall shaping.
 
 A backend declares the subset it supports. export() intersects source and target sets;
@@ -440,10 +440,10 @@ class Capability(Enum):
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (extend imports + __all__)
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.models import MemoryEvent, MemoryItem, Provenance
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (extend imports + __all__)
+from coactra.memory.capabilities import Capability
+from coactra.memory.models import MemoryEvent, MemoryItem, Provenance
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -463,7 +463,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/capabilities.py src/fleetlib/memory/__init__.py tests/test_capabilities.py
+git add src/coactra/memory/capabilities.py src/coactra/memory/__init__.py tests/test_capabilities.py
 git commit -m "feat(memory): Capability vocabulary shared by export + recall"
 ```
 
@@ -472,15 +472,15 @@ git commit -m "feat(memory): Capability vocabulary shared by export + recall"
 ## Task 5: MemoryBackend Protocol (the SPI)
 
 **Files:**
-- Create: `src/fleetlib/memory/backend.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/backend.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_backend_protocol.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backend_protocol.py
-from fleetlib.memory import Capability, MemoryBackend, MemoryEvent, MemoryItem, Scope
+from coactra.memory import Capability, MemoryBackend, MemoryEvent, MemoryItem, Scope
 
 
 class _Dummy:
@@ -513,7 +513,7 @@ def test_incomplete_class_is_not_a_backend():
 
 
 def test_event_normalization_helper_accepts_str_and_event():
-    from fleetlib.memory.backend import normalize_events
+    from coactra.memory.backend import normalize_events
 
     out = normalize_events(["a plain string", MemoryEvent(content="already an event")])
     assert all(isinstance(e, MemoryEvent) for e in out)
@@ -528,7 +528,7 @@ Expected: FAIL with `ImportError: cannot import name 'MemoryBackend'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/backend.py
+# src/coactra/memory/backend.py
 """MemoryBackend — the swappable SPI.
 
 Every method takes a Scope; isolation is part of the contract, not the caller's job.
@@ -542,9 +542,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from typing import Protocol, runtime_checkable
 
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.models import MemoryEvent, MemoryItem
-from fleetlib.memory.scope import Scope
+from coactra.memory.capabilities import Capability
+from coactra.memory.models import MemoryEvent, MemoryItem
+from coactra.memory.scope import Scope
 
 
 def normalize_events(events: Iterable[str | MemoryEvent]) -> list[MemoryEvent]:
@@ -585,11 +585,11 @@ class MemoryBackend(Protocol):
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (extend imports + __all__)
-from fleetlib.memory.backend import MemoryBackend
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.models import MemoryEvent, MemoryItem, Provenance
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (extend imports + __all__)
+from coactra.memory.backend import MemoryBackend
+from coactra.memory.capabilities import Capability
+from coactra.memory.models import MemoryEvent, MemoryItem, Provenance
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -610,7 +610,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/backend.py src/fleetlib/memory/__init__.py tests/test_backend_protocol.py
+git add src/coactra/memory/backend.py src/coactra/memory/__init__.py tests/test_backend_protocol.py
 git commit -m "feat(memory): MemoryBackend Protocol — the swappable, scope-first SPI"
 ```
 
@@ -619,15 +619,15 @@ git commit -m "feat(memory): MemoryBackend Protocol — the swappable, scope-fir
 ## Task 6: InProcessBackend — learn + dedup (the default, part 1)
 
 **Files:**
-- Create: `src/fleetlib/memory/inprocess.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/inprocess.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_inprocess.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_inprocess.py
-from fleetlib.memory import Capability, InProcessBackend, MemoryEvent, Scope
+from coactra.memory import Capability, InProcessBackend, MemoryEvent, Scope
 
 SCOPE = Scope(tenant_id="acme", namespace="agent:1")
 
@@ -663,7 +663,7 @@ Expected: FAIL with `ImportError: cannot import name 'InProcessBackend'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/inprocess.py
+# src/coactra/memory/inprocess.py
 """InProcessBackend — the ONE working default adapter.
 
 Pydantic-only, no embeddings, no external service. Tenant-isolated dict keyed by
@@ -677,10 +677,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from fleetlib.memory.backend import normalize_events
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.models import MemoryEvent, MemoryItem
-from fleetlib.memory.scope import Scope
+from coactra.memory.backend import normalize_events
+from coactra.memory.capabilities import Capability
+from coactra.memory.models import MemoryEvent, MemoryItem
+from coactra.memory.scope import Scope
 
 _SOURCE = "inprocess"
 
@@ -736,12 +736,12 @@ class InProcessBackend:
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (extend imports + __all__)
-from fleetlib.memory.backend import MemoryBackend
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.inprocess import InProcessBackend
-from fleetlib.memory.models import MemoryEvent, MemoryItem, Provenance
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (extend imports + __all__)
+from coactra.memory.backend import MemoryBackend
+from coactra.memory.capabilities import Capability
+from coactra.memory.inprocess import InProcessBackend
+from coactra.memory.models import MemoryEvent, MemoryItem, Provenance
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -763,7 +763,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/inprocess.py src/fleetlib/memory/__init__.py tests/test_inprocess.py
+git add src/coactra/memory/inprocess.py src/coactra/memory/__init__.py tests/test_inprocess.py
 git commit -m "feat(memory): InProcessBackend learn/dump/ingest with content dedup"
 ```
 
@@ -772,7 +772,7 @@ git commit -m "feat(memory): InProcessBackend learn/dump/ingest with content ded
 ## Task 7: InProcessBackend — lexical, capability-shaped recall (default, part 2)
 
 **Files:**
-- Modify: `src/fleetlib/memory/inprocess.py`
+- Modify: `src/coactra/memory/inprocess.py`
 - Test: `tests/test_inprocess_recall.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -781,7 +781,7 @@ git commit -m "feat(memory): InProcessBackend learn/dump/ingest with content ded
 # tests/test_inprocess_recall.py
 import pytest
 
-from fleetlib.memory import Capability, InProcessBackend, Scope
+from coactra.memory import Capability, InProcessBackend, Scope
 
 SCOPE = Scope(tenant_id="acme", namespace="agent:1")
 
@@ -833,7 +833,7 @@ Expected: FAIL with `NotImplementedError`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/inprocess.py  — replace the recall() stub with:
+# src/coactra/memory/inprocess.py  — replace the recall() stub with:
 
     @staticmethod
     def _tokens(text: str) -> set[str]:
@@ -871,7 +871,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/inprocess.py tests/test_inprocess_recall.py
+git add src/coactra/memory/inprocess.py tests/test_inprocess_recall.py
 git commit -m "feat(memory): lexical, capability-validated recall on InProcessBackend"
 ```
 
@@ -888,7 +888,7 @@ git commit -m "feat(memory): lexical, capability-validated recall on InProcessBa
 
 ```python
 # tests/test_isolation.py
-from fleetlib.memory import InProcessBackend, Scope
+from coactra.memory import InProcessBackend, Scope
 
 ACME = Scope(tenant_id="acme", namespace="shared")
 GLOBEX = Scope(tenant_id="globex", namespace="shared")
@@ -937,8 +937,8 @@ git commit -m "test(memory): lock tenant + namespace isolation as a regression g
 ## Task 9: ExportReport + lossy export (the core differentiator)
 
 **Files:**
-- Create: `src/fleetlib/memory/export.py`
-- Modify: `src/fleetlib/memory/__init__.py`
+- Create: `src/coactra/memory/export.py`
+- Modify: `src/coactra/memory/__init__.py`
 - Test: `tests/test_export.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -947,7 +947,7 @@ git commit -m "test(memory): lock tenant + namespace isolation as a regression g
 # tests/test_export.py
 import pytest
 
-from fleetlib.memory import (
+from coactra.memory import (
     Capability,
     ExportReport,
     InProcessBackend,
@@ -1061,7 +1061,7 @@ Expected: FAIL with `ImportError: cannot import name 'ExportReport'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/export.py
+# src/coactra/memory/export.py
 """Lossy export with capability negotiation, provenance, and an honest report.
 
 export() NEVER promises lossless conversion. It intersects the source's and target's
@@ -1075,9 +1075,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from fleetlib.memory.backend import MemoryBackend
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.scope import Scope
+from coactra.memory.backend import MemoryBackend
+from coactra.memory.capabilities import Capability
+from coactra.memory.scope import Scope
 
 
 class ExportReport(BaseModel):
@@ -1127,13 +1127,13 @@ def export(source: MemoryBackend, target: MemoryBackend, *, scope: Scope) -> Exp
 ```
 
 ```python
-# src/fleetlib/memory/__init__.py  (extend imports + __all__)
-from fleetlib.memory.backend import MemoryBackend
-from fleetlib.memory.capabilities import Capability
-from fleetlib.memory.export import ExportReport, export
-from fleetlib.memory.inprocess import InProcessBackend
-from fleetlib.memory.models import MemoryEvent, MemoryItem, Provenance
-from fleetlib.memory.scope import Scope
+# src/coactra/memory/__init__.py  (extend imports + __all__)
+from coactra.memory.backend import MemoryBackend
+from coactra.memory.capabilities import Capability
+from coactra.memory.export import ExportReport, export
+from coactra.memory.inprocess import InProcessBackend
+from coactra.memory.models import MemoryEvent, MemoryItem, Provenance
+from coactra.memory.scope import Scope
 
 __all__ = [
     "__version__",
@@ -1157,7 +1157,7 @@ Expected: PASS (6 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/export.py src/fleetlib/memory/__init__.py tests/test_export.py
+git add src/coactra/memory/export.py src/coactra/memory/__init__.py tests/test_export.py
 git commit -m "feat(memory): lossy export — capability negotiation + provenance + ExportReport"
 ```
 
@@ -1166,11 +1166,11 @@ git commit -m "feat(memory): lossy export — capability negotiation + provenanc
 ## Task 10: Optional-extra adapter stubs (SPI demonstration, raise on use)
 
 **Files:**
-- Create: `src/fleetlib/memory/adapters/__init__.py`
-- Create: `src/fleetlib/memory/adapters/_stub.py`
-- Create: `src/fleetlib/memory/adapters/mem0.py`
-- Create: `src/fleetlib/memory/adapters/graphiti.py`
-- Create: `src/fleetlib/memory/adapters/letta.py`
+- Create: `src/coactra/memory/adapters/__init__.py`
+- Create: `src/coactra/memory/adapters/_stub.py`
+- Create: `src/coactra/memory/adapters/mem0.py`
+- Create: `src/coactra/memory/adapters/graphiti.py`
+- Create: `src/coactra/memory/adapters/letta.py`
 - Test: `tests/test_adapter_stubs.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1179,11 +1179,11 @@ git commit -m "feat(memory): lossy export — capability negotiation + provenanc
 # tests/test_adapter_stubs.py
 import pytest
 
-from fleetlib.memory import Capability
-from fleetlib.memory.adapters._stub import MissingExtraError
-from fleetlib.memory.adapters.graphiti import GraphitiBackend
-from fleetlib.memory.adapters.letta import LettaBackend
-from fleetlib.memory.adapters.mem0 import Mem0Backend
+from coactra.memory import Capability
+from coactra.memory.adapters._stub import MissingExtraError
+from coactra.memory.adapters.graphiti import GraphitiBackend
+from coactra.memory.adapters.letta import LettaBackend
+from coactra.memory.adapters.mem0 import Mem0Backend
 
 
 def test_stubs_declare_capabilities_without_the_extra():
@@ -1206,18 +1206,18 @@ def test_stub_instantiation_raises_until_extra_and_impl_land(cls, extra):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_adapter_stubs.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.memory.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.memory.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/memory/adapters/__init__.py
+# src/coactra/memory/adapters/__init__.py
 """Optional-extra backend adapters. Stubs today — each demonstrates the MemoryBackend
 SPI surface and raises MissingExtraError until its extra (and a real impl) land."""
 ```
 
 ```python
-# src/fleetlib/memory/adapters/_stub.py
+# src/coactra/memory/adapters/_stub.py
 """Shared helper for optional-extra adapter stubs."""
 
 from __future__ import annotations
@@ -1230,18 +1230,18 @@ class MissingExtraError(RuntimeError):
 def require_extra(extra: str) -> None:
     raise MissingExtraError(
         f"backend requires the optional '{extra}' extra and a real implementation; "
-        f"install with: pip install fleetlib-memory[{extra}] (stub not yet implemented)"
+        f"install with: pip install coactra-memory[{extra}] (stub not yet implemented)"
     )
 ```
 
 ```python
-# src/fleetlib/memory/adapters/mem0.py
+# src/coactra/memory/adapters/mem0.py
 """Mem0 adapter — STUB. Declares capabilities; raises until the mem0 extra + impl land."""
 
 from __future__ import annotations
 
-from fleetlib.memory.adapters._stub import require_extra
-from fleetlib.memory.capabilities import Capability
+from coactra.memory.adapters._stub import require_extra
+from coactra.memory.capabilities import Capability
 
 
 class Mem0Backend:
@@ -1256,13 +1256,13 @@ class Mem0Backend:
 ```
 
 ```python
-# src/fleetlib/memory/adapters/graphiti.py
+# src/coactra/memory/adapters/graphiti.py
 """Graphiti adapter — STUB. Declares graph/temporal capabilities; raises until graphiti extra."""
 
 from __future__ import annotations
 
-from fleetlib.memory.adapters._stub import require_extra
-from fleetlib.memory.capabilities import Capability
+from coactra.memory.adapters._stub import require_extra
+from coactra.memory.capabilities import Capability
 
 
 class GraphitiBackend:
@@ -1278,13 +1278,13 @@ class GraphitiBackend:
 ```
 
 ```python
-# src/fleetlib/memory/adapters/letta.py
+# src/coactra/memory/adapters/letta.py
 """Letta adapter — STUB. Declares memory-block capabilities; raises until letta extra."""
 
 from __future__ import annotations
 
-from fleetlib.memory.adapters._stub import require_extra
-from fleetlib.memory.capabilities import Capability
+from coactra.memory.adapters._stub import require_extra
+from coactra.memory.capabilities import Capability
 
 
 class LettaBackend:
@@ -1306,7 +1306,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/memory/adapters tests/test_adapter_stubs.py
+git add src/coactra/memory/adapters tests/test_adapter_stubs.py
 git commit -m "feat(memory): mem0/graphiti/letta adapter stubs (declare caps, raise on use)"
 ```
 
@@ -1321,7 +1321,7 @@ git commit -m "feat(memory): mem0/graphiti/letta adapter stubs (declare caps, ra
 
 ```python
 # tests/test_public_api.py
-import fleetlib.memory as m
+import coactra.memory as m
 
 
 def test_public_surface_is_complete():
@@ -1383,6 +1383,6 @@ git commit -m "test(memory): lock public API surface + end-to-end learn/recall/e
 
 1. **Charter coverage** — `learn`/`recall`/`export` present (Tasks 6/7/9); export is lossy with capability negotiation + provenance + unsupported-feature report (Task 9); never claims lossless on a real drop (`test_export_reports_dropped_features_and_is_never_lossless`). ✔
 2. **Principles** — THIN (default is a dict store, no engine reimplemented); Protocol + ONE working default + stubs (Tasks 5/6/7/10); Scope on every call and isolation proven (Task 8); opinionated default works out of the box (Task 11). ✔
-3. **Packaging** — PEP 420 namespace (no `src/fleetlib/__init__.py`, Task 1 test asserts it), src layout, `py.typed`, hatchling, optional extras. ✔
+3. **Packaging** — PEP 420 namespace (no `src/coactra/__init__.py`, Task 1 test asserts it), src layout, `py.typed`, hatchling, optional extras. ✔
 4. **Boundary** — memory learns from conversation; no shared store with lib-ai reasoning-capture (stated in module docstrings). ✔
 5. **Type consistency** — `Scope.key`, `MemoryItem.from_event(source_backend=...)`, `Provenance.exported_from`, `Capability` names, `MemoryBackend` (capabilities/learn/recall/dump/ingest), `ExportReport.lossless` used identically across tasks. ✔

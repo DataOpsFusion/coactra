@@ -1,4 +1,4 @@
-from fleetlib.workspace import Scope, open_workspace
+from coactra.workspace import Scope, open_workspace
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 

@@ -1,4 +1,4 @@
-# fleetlib.organization — v0.2 domain redesign (AD-inspired)
+# coactra.organization — v0.2 domain redesign (AD-inspired)
 
 > Redesign from a flat SQLModel directory into an OOP **domain model**: a composable,
 > multi-tenant org **tree** with real behavior — modeled on Active Directory's OU tree +
@@ -14,8 +14,8 @@
 - **DI everywhere:** the store is **injected**, never instantiated inline. A **factory**
   selects the backend. A composition root wires it.
 
-## AD → fleetlib mapping
-| AD | fleetlib.organization |
+## AD → coactra mapping
+| AD | coactra.organization |
 |----|----------------------|
 | Domain/Forest | `tenant` (isolation boundary) |
 | OU | `Organization` node (parent + children — a composite) |
@@ -42,7 +42,7 @@ service.py    # load_org(tenant, *, store) -> Organization ; save_org(org, *, st
 
 ## Domain API (illustrative — the real shape)
 ```python
-from fleetlib.organization import Organization, make_org_store, load_org, save_org
+from coactra.organization import Organization, make_org_store, load_org, save_org
 
 store = make_org_store("sqlite://")                 # factory + DI
 acme  = Organization.root(tenant="acme", name="Acme")

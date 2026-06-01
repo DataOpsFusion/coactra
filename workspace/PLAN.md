@@ -1,4 +1,4 @@
-# fleetlib.workspace Implementation Plan
+# coactra.workspace Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -6,7 +6,7 @@
 
 **Architecture:** Two layers. (1) `WorkspaceBackend` `typing.Protocol` — the dumb, swappable persistence + exec primitive: `write_file` / `read_file` / `list_files` / `delete_file` / `exec`, all rooted at a desk path it confines. The ONE working default is `LocalFilesystemBackend` (a persistent dir per `tenant_id/agent_id`); Daytona / E2B / OpenHands are optional-extra **stubs**. (2) `Workspace` facade — the "desk": wraps a backend + a `Scope`, and layers the charter value-add ON TOP — `run()` enforces `CliPolicy` then delegates to `backend.exec`; `handoff()`/`day_note()` persist a hand-off note; `compact()` caps the day-note by deterministic rules (no LLM, no `lib-ai`); `set_manifest()`/`manifest()` store a **passive** `CapabilityManifest` reference (workspace STORES it; the agent runtime does the actual MCP mounting). Boundary lines are load-bearing: no `mount()`, no roles/escalation, no summarizer dep.
 
-**Tech Stack:** Python 3.12+, pydantic v2, hatchling (PEP 420 namespace package `fleetlib/workspace/`, src layout), pytest. Runtime dep: `pydantic` only (sibling lib — depends on nothing else). Optional extras: `daytona` (`daytona-sdk`), `e2b` (`e2b`), `openhands` (no pinned dep — stub only), `dev`. Persistent by default; ephemeral is an opt-in mode.
+**Tech Stack:** Python 3.12+, pydantic v2, hatchling (PEP 420 namespace package `coactra/workspace/`, src layout), pytest. Runtime dep: `pydantic` only (sibling lib — depends on nothing else). Optional extras: `daytona` (`daytona-sdk`), `e2b` (`e2b`), `openhands` (no pinned dep — stub only), `dev`. Persistent by default; ephemeral is an opt-in mode.
 
 ---
 
@@ -14,21 +14,21 @@
 
 | File | Single responsibility |
 |------|----------------------|
-| `pyproject.toml` | Distribution `fleetlib-workspace`; hatchling targets the `fleetlib` namespace dir; runtime dep `pydantic`; `[project.optional-dependencies]` for `daytona`/`e2b`/`openhands`/`dev`. |
-| `src/fleetlib/workspace/__init__.py` | Public API surface — re-exports `Scope`, `ExecResult`, `CliPolicy`, `PolicyError`, `CapabilityManifest`, `WorkspaceBackend`, `LocalFilesystemBackend`, `Workspace`, `open_workspace`. NO `src/fleetlib/__init__.py` (namespace package). |
-| `src/fleetlib/workspace/py.typed` | PEP 561 typing marker. |
-| `src/fleetlib/workspace/scope.py` | `Scope` value object — `tenant_id` + `agent_id`; the per-agent/per-tenant key threaded through every call. |
-| `src/fleetlib/workspace/models.py` | `ExecResult` (exit_code/stdout/stderr) and `CapabilityManifest` (passive list of capability refs the agent runtime re-mounts). |
-| `src/fleetlib/workspace/policy.py` | `CliPolicy` — desk-local allow/deny command gate + `PolicyError`; NOT org policy. |
-| `src/fleetlib/workspace/backend.py` | `WorkspaceBackend` `typing.Protocol` — `root_for()`, `write_file()`, `read_file()`, `list_files()`, `delete_file()`, `exec()`. |
-| `src/fleetlib/workspace/local.py` | `LocalFilesystemBackend` — the ONE working default: persistent dir per scope, path-traversal confinement, real subprocess exec rooted at the desk. |
-| `src/fleetlib/workspace/desk.py` | `Workspace` facade + `open_workspace()` factory — write/read/run(policy)/handoff/day_note/compact/manifest, all scope-bound; ephemeral mode. |
-| `src/fleetlib/workspace/adapters/__init__.py` | Adapters subpackage marker. |
-| `src/fleetlib/workspace/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
-| `src/fleetlib/workspace/adapters/daytona.py` | `DaytonaBackend` stub — raises `MissingExtraError` until the `daytona` extra + real impl land. |
-| `src/fleetlib/workspace/adapters/e2b.py` | `E2BBackend` stub — raises until the `e2b` extra. |
-| `src/fleetlib/workspace/adapters/openhands.py` | `OpenHandsBackend` stub — raises until the `openhands` extra. |
-| `tests/test_packaging.py` | Asserts `import fleetlib.workspace` works and `fleetlib` is a PEP 420 namespace package. |
+| `pyproject.toml` | Distribution `coactra-workspace`; hatchling targets the `coactra` namespace dir; runtime dep `pydantic`; `[project.optional-dependencies]` for `daytona`/`e2b`/`openhands`/`dev`. |
+| `src/coactra/workspace/__init__.py` | Public API surface — re-exports `Scope`, `ExecResult`, `CliPolicy`, `PolicyError`, `CapabilityManifest`, `WorkspaceBackend`, `LocalFilesystemBackend`, `Workspace`, `open_workspace`. NO `src/coactra/__init__.py` (namespace package). |
+| `src/coactra/workspace/py.typed` | PEP 561 typing marker. |
+| `src/coactra/workspace/scope.py` | `Scope` value object — `tenant_id` + `agent_id`; the per-agent/per-tenant key threaded through every call. |
+| `src/coactra/workspace/models.py` | `ExecResult` (exit_code/stdout/stderr) and `CapabilityManifest` (passive list of capability refs the agent runtime re-mounts). |
+| `src/coactra/workspace/policy.py` | `CliPolicy` — desk-local allow/deny command gate + `PolicyError`; NOT org policy. |
+| `src/coactra/workspace/backend.py` | `WorkspaceBackend` `typing.Protocol` — `root_for()`, `write_file()`, `read_file()`, `list_files()`, `delete_file()`, `exec()`. |
+| `src/coactra/workspace/local.py` | `LocalFilesystemBackend` — the ONE working default: persistent dir per scope, path-traversal confinement, real subprocess exec rooted at the desk. |
+| `src/coactra/workspace/desk.py` | `Workspace` facade + `open_workspace()` factory — write/read/run(policy)/handoff/day_note/compact/manifest, all scope-bound; ephemeral mode. |
+| `src/coactra/workspace/adapters/__init__.py` | Adapters subpackage marker. |
+| `src/coactra/workspace/adapters/_stub.py` | `MissingExtraError` + `require_extra()` helper for optional-extra import guards. |
+| `src/coactra/workspace/adapters/daytona.py` | `DaytonaBackend` stub — raises `MissingExtraError` until the `daytona` extra + real impl land. |
+| `src/coactra/workspace/adapters/e2b.py` | `E2BBackend` stub — raises until the `e2b` extra. |
+| `src/coactra/workspace/adapters/openhands.py` | `OpenHandsBackend` stub — raises until the `openhands` extra. |
+| `tests/test_packaging.py` | Asserts `import coactra.workspace` works and `coactra` is a PEP 420 namespace package. |
 | `tests/test_scope.py` | `Scope` equality/hashing/validation + per-agent key. |
 | `tests/test_models.py` | `ExecResult` shape; `CapabilityManifest` is passive data (no `mount()`). |
 | `tests/test_policy.py` | Allow/deny gate raises `PolicyError` and never reaches exec. |
@@ -48,8 +48,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/fleetlib/workspace/__init__.py`
-- Create: `src/fleetlib/workspace/py.typed`
+- Create: `src/coactra/workspace/__init__.py`
+- Create: `src/coactra/workspace/py.typed`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -60,22 +60,22 @@ import importlib
 
 
 def test_workspace_imports():
-    mod = importlib.import_module("fleetlib.workspace")
+    mod = importlib.import_module("coactra.workspace")
     assert mod is not None
 
 
-def test_fleetlib_is_namespace_package():
-    import fleetlib
+def test_coactra_is_namespace_package():
+    import coactra
 
     # PEP 420 namespace packages have no __file__ and expose a virtual __path__.
-    assert getattr(fleetlib, "__file__", None) is None
-    assert hasattr(fleetlib, "__path__")
+    assert getattr(coactra, "__file__", None) is None
+    assert hasattr(coactra, "__path__")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_packaging.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra'`
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -86,7 +86,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fleetlib-workspace"
+name = "coactra-workspace"
 version = "0.1.0"
 description = "The persistent agent desk — a thin control layer over swappable sandbox backends (files / CLI policy / handoff / auto-compact / capability manifest)."
 readme = "README.md"
@@ -101,16 +101,16 @@ openhands = []  # no pinned dep yet; stub adapter only
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-# PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
-packages = ["src/fleetlib"]
+# PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
+packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/fleetlib", "README.md", "tests"]
+include = ["src/coactra", "README.md", "tests"]
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py
-"""fleetlib.workspace — the persistent agent desk.
+# src/coactra/workspace/__init__.py
+"""coactra.workspace — the persistent agent desk.
 
 A thin control layer ABOVE persistent sandbox backends (local filesystem by default;
 Daytona / E2B / OpenHands optional). The backend persists files + runs commands; this
@@ -127,10 +127,10 @@ __version__ = "0.1.0"
 ```
 
 ```text
-# src/fleetlib/workspace/py.typed
+# src/coactra/workspace/py.typed
 ```
 
-(Do NOT create `src/fleetlib/__init__.py` — its absence is what makes `fleetlib` a namespace package.)
+(Do NOT create `src/coactra/__init__.py` — its absence is what makes `coactra` a namespace package.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -138,16 +138,16 @@ Run: `pip install -e . && pytest tests/test_packaging.py -v`
 Expected: PASS (2 passed)
 
 > **Must be run, not assumed.** PEP 420 + hatchling *editable* installs do not always
-> yield `fleetlib.__file__ is None` (a `.pth` redirect vs. an import-hook finder differ).
-> If `test_fleetlib_is_namespace_package` fails here, the robust fix is to drop the
-> `__file__ is None` assertion and instead assert `fleetlib.__path__` is a namespace path
-> (e.g. `not isinstance(fleetlib.__path__, list)` / `"fleetlib" in repr(fleetlib.__path__)`).
+> yield `coactra.__file__ is None` (a `.pth` redirect vs. an import-hook finder differ).
+> If `test_coactra_is_namespace_package` fails here, the robust fix is to drop the
+> `__file__ is None` assertion and instead assert `coactra.__path__` is a namespace path
+> (e.g. `not isinstance(coactra.__path__, list)` / `"coactra" in repr(coactra.__path__)`).
 > Resolve this at Task 1 before building on top of it.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml src/fleetlib/workspace/__init__.py src/fleetlib/workspace/py.typed tests/test_packaging.py
+git add pyproject.toml src/coactra/workspace/__init__.py src/coactra/workspace/py.typed tests/test_packaging.py
 git commit -m "feat(workspace): namespace package scaffold + importable surface"
 ```
 
@@ -156,8 +156,8 @@ git commit -m "feat(workspace): namespace package scaffold + importable surface"
 ## Task 2: Scope — the per-tenant / per-agent desk key
 
 **Files:**
-- Create: `src/fleetlib/workspace/scope.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/scope.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_scope.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -167,7 +167,7 @@ git commit -m "feat(workspace): namespace package scaffold + importable surface"
 import pytest
 from pydantic import ValidationError
 
-from fleetlib.workspace import Scope
+from coactra.workspace import Scope
 
 
 def test_scope_fields():
@@ -203,7 +203,7 @@ Expected: FAIL with `ImportError: cannot import name 'Scope'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/scope.py
+# src/coactra/workspace/scope.py
 """Scope — the per-tenant / per-agent desk key threaded through every workspace call.
 
 The charter names the dimensions explicitly: a desk is "per agent/tenant". Isolation is
@@ -231,8 +231,8 @@ class Scope(BaseModel):
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -248,7 +248,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/scope.py src/fleetlib/workspace/__init__.py tests/test_scope.py
+git add src/coactra/workspace/scope.py src/coactra/workspace/__init__.py tests/test_scope.py
 git commit -m "feat(workspace): Scope — per-tenant/per-agent desk key"
 ```
 
@@ -257,15 +257,15 @@ git commit -m "feat(workspace): Scope — per-tenant/per-agent desk key"
 ## Task 3: Models — ExecResult + passive CapabilityManifest
 
 **Files:**
-- Create: `src/fleetlib/workspace/models.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/models.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_models.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_models.py
-from fleetlib.workspace import CapabilityManifest, ExecResult
+from coactra.workspace import CapabilityManifest, ExecResult
 
 
 def test_exec_result_fields():
@@ -301,7 +301,7 @@ Expected: FAIL with `ImportError: cannot import name 'CapabilityManifest'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/models.py
+# src/coactra/workspace/models.py
 """Workspace data models.
 
 ExecResult        — the typed result of a desk command (exit_code / stdout / stderr).
@@ -336,9 +336,9 @@ class CapabilityManifest(BaseModel):
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -356,7 +356,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/models.py src/fleetlib/workspace/__init__.py tests/test_models.py
+git add src/coactra/workspace/models.py src/coactra/workspace/__init__.py tests/test_models.py
 git commit -m "feat(workspace): ExecResult + passive CapabilityManifest (no mount)"
 ```
 
@@ -365,8 +365,8 @@ git commit -m "feat(workspace): ExecResult + passive CapabilityManifest (no moun
 ## Task 4: CliPolicy — the desk-local command gate
 
 **Files:**
-- Create: `src/fleetlib/workspace/policy.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/policy.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_policy.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -375,7 +375,7 @@ git commit -m "feat(workspace): ExecResult + passive CapabilityManifest (no moun
 # tests/test_policy.py
 import pytest
 
-from fleetlib.workspace import CliPolicy, PolicyError
+from coactra.workspace import CliPolicy, PolicyError
 
 
 def test_default_policy_allows_everything():
@@ -418,7 +418,7 @@ Expected: FAIL with `ImportError: cannot import name 'CliPolicy'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/policy.py
+# src/coactra/workspace/policy.py
 """CliPolicy — a desk-LOCAL command allow/deny gate.
 
 This is the charter's "CLI policy": which commands the agent may run inside its own desk.
@@ -454,10 +454,10 @@ class CliPolicy(BaseModel):
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.policy import CliPolicy, PolicyError
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.policy import CliPolicy, PolicyError
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -477,7 +477,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/policy.py src/fleetlib/workspace/__init__.py tests/test_policy.py
+git add src/coactra/workspace/policy.py src/coactra/workspace/__init__.py tests/test_policy.py
 git commit -m "feat(workspace): CliPolicy desk-local command gate (deny>allow, default-deny allowlist)"
 ```
 
@@ -486,15 +486,15 @@ git commit -m "feat(workspace): CliPolicy desk-local command gate (deny>allow, d
 ## Task 5: WorkspaceBackend Protocol (the swap seam)
 
 **Files:**
-- Create: `src/fleetlib/workspace/backend.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/backend.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_backend_protocol.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backend_protocol.py
-from fleetlib.workspace import ExecResult, Scope, WorkspaceBackend
+from coactra.workspace import ExecResult, Scope, WorkspaceBackend
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
@@ -539,7 +539,7 @@ Expected: FAIL with `ImportError: cannot import name 'WorkspaceBackend'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/backend.py
+# src/coactra/workspace/backend.py
 """WorkspaceBackend — the swappable persistence + exec primitive.
 
 A backend is DUMB on purpose: it persists files and runs commands rooted at one desk, and
@@ -553,8 +553,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from fleetlib.workspace.models import ExecResult
-from fleetlib.workspace.scope import Scope
+from coactra.workspace.models import ExecResult
+from coactra.workspace.scope import Scope
 
 
 @runtime_checkable
@@ -585,11 +585,11 @@ class WorkspaceBackend(Protocol):
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.backend import WorkspaceBackend
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.policy import CliPolicy, PolicyError
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.backend import WorkspaceBackend
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.policy import CliPolicy, PolicyError
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -610,7 +610,7 @@ Expected: PASS (2 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/backend.py src/fleetlib/workspace/__init__.py tests/test_backend_protocol.py
+git add src/coactra/workspace/backend.py src/coactra/workspace/__init__.py tests/test_backend_protocol.py
 git commit -m "feat(workspace): WorkspaceBackend Protocol — the dumb, scope-first swap seam"
 ```
 
@@ -619,8 +619,8 @@ git commit -m "feat(workspace): WorkspaceBackend Protocol — the dumb, scope-fi
 ## Task 6: LocalFilesystemBackend — files + traversal confinement (default, part 1)
 
 **Files:**
-- Create: `src/fleetlib/workspace/local.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/local.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_local_files.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -629,7 +629,7 @@ git commit -m "feat(workspace): WorkspaceBackend Protocol — the dumb, scope-fi
 # tests/test_local_files.py
 import pytest
 
-from fleetlib.workspace import LocalFilesystemBackend, Scope
+from coactra.workspace import LocalFilesystemBackend, Scope
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
@@ -677,7 +677,7 @@ Expected: FAIL with `ImportError: cannot import name 'LocalFilesystemBackend'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/local.py
+# src/coactra/workspace/local.py
 """LocalFilesystemBackend — the ONE working default backend.
 
 A persistent directory per desk: <base_dir>/<tenant_id>/<agent_id>/. Files survive across
@@ -691,8 +691,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from fleetlib.workspace.models import ExecResult
-from fleetlib.workspace.scope import Scope
+from coactra.workspace.models import ExecResult
+from coactra.workspace.scope import Scope
 
 
 class LocalFilesystemBackend:
@@ -738,12 +738,12 @@ class LocalFilesystemBackend:
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.backend import WorkspaceBackend
-from fleetlib.workspace.local import LocalFilesystemBackend
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.policy import CliPolicy, PolicyError
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.backend import WorkspaceBackend
+from coactra.workspace.local import LocalFilesystemBackend
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.policy import CliPolicy, PolicyError
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -765,7 +765,7 @@ Expected: PASS (5 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/local.py src/fleetlib/workspace/__init__.py tests/test_local_files.py
+git add src/coactra/workspace/local.py src/coactra/workspace/__init__.py tests/test_local_files.py
 git commit -m "feat(workspace): LocalFilesystemBackend files + path-traversal confinement"
 ```
 
@@ -774,14 +774,14 @@ git commit -m "feat(workspace): LocalFilesystemBackend files + path-traversal co
 ## Task 7: LocalFilesystemBackend — exec rooted at the desk (default, part 2)
 
 **Files:**
-- Modify: `src/fleetlib/workspace/local.py`
+- Modify: `src/coactra/workspace/local.py`
 - Test: `tests/test_local_exec.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_local_exec.py
-from fleetlib.workspace import ExecResult, LocalFilesystemBackend, Scope
+from coactra.workspace import ExecResult, LocalFilesystemBackend, Scope
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
@@ -817,7 +817,7 @@ Expected: FAIL with `NotImplementedError`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/local.py  — replace the exec() stub with:
+# src/coactra/workspace/local.py  — replace the exec() stub with:
 
     def exec(self, command: str, scope: Scope) -> ExecResult:
         root = self._root_path(scope)
@@ -843,7 +843,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/local.py tests/test_local_exec.py
+git add src/coactra/workspace/local.py tests/test_local_exec.py
 git commit -m "feat(workspace): LocalFilesystemBackend exec rooted at the desk -> ExecResult"
 ```
 
@@ -860,7 +860,7 @@ git commit -m "feat(workspace): LocalFilesystemBackend exec rooted at the desk -
 
 ```python
 # tests/test_isolation.py
-from fleetlib.workspace import LocalFilesystemBackend, Scope
+from coactra.workspace import LocalFilesystemBackend, Scope
 
 ACME_A = Scope(tenant_id="acme", agent_id="planner")
 ACME_B = Scope(tenant_id="acme", agent_id="builder")
@@ -907,8 +907,8 @@ git commit -m "test(workspace): lock tenant + agent desk isolation as a regressi
 ## Task 9: Workspace facade — write / read / run (policy) + manifest
 
 **Files:**
-- Create: `src/fleetlib/workspace/desk.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Create: `src/coactra/workspace/desk.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_desk.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -917,7 +917,7 @@ git commit -m "test(workspace): lock tenant + agent desk isolation as a regressi
 # tests/test_desk.py
 import pytest
 
-from fleetlib.workspace import (
+from coactra.workspace import (
     CapabilityManifest,
     CliPolicy,
     LocalFilesystemBackend,
@@ -972,7 +972,7 @@ Expected: FAIL with `ImportError: cannot import name 'Workspace'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/desk.py
+# src/coactra/workspace/desk.py
 """Workspace — the agent desk facade.
 
 Thin control layer over a WorkspaceBackend + a Scope. It adds the charter's value-add ON
@@ -986,10 +986,10 @@ from __future__ import annotations
 
 import json
 
-from fleetlib.workspace.backend import WorkspaceBackend
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.policy import CliPolicy
-from fleetlib.workspace.scope import Scope
+from coactra.workspace.backend import WorkspaceBackend
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.policy import CliPolicy
+from coactra.workspace.scope import Scope
 
 _MANIFEST_FILE = ".workspace/manifest.json"
 
@@ -1037,13 +1037,13 @@ class Workspace:
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (extend imports + __all__)
-from fleetlib.workspace.backend import WorkspaceBackend
-from fleetlib.workspace.desk import Workspace
-from fleetlib.workspace.local import LocalFilesystemBackend
-from fleetlib.workspace.models import CapabilityManifest, ExecResult
-from fleetlib.workspace.policy import CliPolicy, PolicyError
-from fleetlib.workspace.scope import Scope
+# src/coactra/workspace/__init__.py  (extend imports + __all__)
+from coactra.workspace.backend import WorkspaceBackend
+from coactra.workspace.desk import Workspace
+from coactra.workspace.local import LocalFilesystemBackend
+from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.policy import CliPolicy, PolicyError
+from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",
@@ -1066,7 +1066,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/desk.py src/fleetlib/workspace/__init__.py tests/test_desk.py
+git add src/coactra/workspace/desk.py src/coactra/workspace/__init__.py tests/test_desk.py
 git commit -m "feat(workspace): Workspace facade — write/read/run(policy) + manifest store"
 ```
 
@@ -1075,14 +1075,14 @@ git commit -m "feat(workspace): Workspace facade — write/read/run(policy) + ma
 ## Task 10: Handoff / day-note + rule-based auto-compact
 
 **Files:**
-- Modify: `src/fleetlib/workspace/desk.py`
+- Modify: `src/coactra/workspace/desk.py`
 - Test: `tests/test_handoff_compact.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_handoff_compact.py
-from fleetlib.workspace import LocalFilesystemBackend, Scope, Workspace
+from coactra.workspace import LocalFilesystemBackend, Scope, Workspace
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
@@ -1133,10 +1133,10 @@ Expected: FAIL with `AttributeError: 'Workspace' object has no attribute 'handof
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/desk.py  — add module constant near _MANIFEST_FILE:
+# src/coactra/workspace/desk.py  — add module constant near _MANIFEST_FILE:
 _HANDOFF_FILE = "HANDOFF.md"
 
-# src/fleetlib/workspace/desk.py  — add these methods to Workspace:
+# src/coactra/workspace/desk.py  — add these methods to Workspace:
 
     def _read_handoff_entries(self) -> list[str]:
         try:
@@ -1181,7 +1181,7 @@ Expected: PASS (4 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/desk.py tests/test_handoff_compact.py
+git add src/coactra/workspace/desk.py tests/test_handoff_compact.py
 git commit -m "feat(workspace): handoff/day-note + rule-based auto-compact (no LLM)"
 ```
 
@@ -1190,15 +1190,15 @@ git commit -m "feat(workspace): handoff/day-note + rule-based auto-compact (no L
 ## Task 11: Persistence by default + ephemeral mode + open_workspace()
 
 **Files:**
-- Modify: `src/fleetlib/workspace/desk.py`
-- Modify: `src/fleetlib/workspace/__init__.py`
+- Modify: `src/coactra/workspace/desk.py`
+- Modify: `src/coactra/workspace/__init__.py`
 - Test: `tests/test_persistence.py`
 
 - [ ] **Step 1: Write the failing test**
 
 ```python
 # tests/test_persistence.py
-from fleetlib.workspace import Scope, open_workspace
+from coactra.workspace import Scope, open_workspace
 
 SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
@@ -1242,12 +1242,12 @@ Expected: FAIL with `ImportError: cannot import name 'open_workspace'`
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/desk.py  — add at top of imports:
+# src/coactra/workspace/desk.py  — add at top of imports:
 import shutil
 import tempfile
 from pathlib import Path  # for the open_workspace() base_dir type
 
-# src/fleetlib/workspace/desk.py  — add to Workspace.__init__ signature + body:
+# src/coactra/workspace/desk.py  — add to Workspace.__init__ signature + body:
 #   add parameter `ephemeral: bool = False` after policy,
 #   and store `self._ephemeral = ephemeral`
 #   (full updated __init__ shown below for clarity)
@@ -1276,7 +1276,7 @@ from pathlib import Path  # for the open_workspace() base_dir type
             shutil.rmtree(self.root, ignore_errors=True)
 
 
-# src/fleetlib/workspace/desk.py  — append the factory at module level:
+# src/coactra/workspace/desk.py  — append the factory at module level:
 
 def open_workspace(
     *,
@@ -1290,7 +1290,7 @@ def open_workspace(
     Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
     ephemeral=True uses a throwaway temp dir cleaned up on close().
     """
-    from fleetlib.workspace.local import LocalFilesystemBackend
+    from coactra.workspace.local import LocalFilesystemBackend
 
     if ephemeral:
         base = tempfile.mkdtemp(prefix="fleet-ws-ephemeral-")
@@ -1301,9 +1301,9 @@ def open_workspace(
 ```
 
 ```python
-# src/fleetlib/workspace/__init__.py  (ADDITIVE — keep all earlier re-exports from
+# src/coactra/workspace/__init__.py  (ADDITIVE — keep all earlier re-exports from
 # Tasks 2–9; only the desk import line changes to add open_workspace)
-from fleetlib.workspace.desk import Workspace, open_workspace
+from coactra.workspace.desk import Workspace, open_workspace
 
 __all__ = [
     "__version__",
@@ -1327,7 +1327,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/desk.py src/fleetlib/workspace/__init__.py tests/test_persistence.py
+git add src/coactra/workspace/desk.py src/coactra/workspace/__init__.py tests/test_persistence.py
 git commit -m "feat(workspace): persistent-by-default + ephemeral mode + open_workspace()"
 ```
 
@@ -1336,11 +1336,11 @@ git commit -m "feat(workspace): persistent-by-default + ephemeral mode + open_wo
 ## Task 12: Optional-extra backend stubs (SPI demonstration, raise on use)
 
 **Files:**
-- Create: `src/fleetlib/workspace/adapters/__init__.py`
-- Create: `src/fleetlib/workspace/adapters/_stub.py`
-- Create: `src/fleetlib/workspace/adapters/daytona.py`
-- Create: `src/fleetlib/workspace/adapters/e2b.py`
-- Create: `src/fleetlib/workspace/adapters/openhands.py`
+- Create: `src/coactra/workspace/adapters/__init__.py`
+- Create: `src/coactra/workspace/adapters/_stub.py`
+- Create: `src/coactra/workspace/adapters/daytona.py`
+- Create: `src/coactra/workspace/adapters/e2b.py`
+- Create: `src/coactra/workspace/adapters/openhands.py`
 - Test: `tests/test_adapter_stubs.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1349,10 +1349,10 @@ git commit -m "feat(workspace): persistent-by-default + ephemeral mode + open_wo
 # tests/test_adapter_stubs.py
 import pytest
 
-from fleetlib.workspace.adapters._stub import MissingExtraError
-from fleetlib.workspace.adapters.daytona import DaytonaBackend
-from fleetlib.workspace.adapters.e2b import E2BBackend
-from fleetlib.workspace.adapters.openhands import OpenHandsBackend
+from coactra.workspace.adapters._stub import MissingExtraError
+from coactra.workspace.adapters.daytona import DaytonaBackend
+from coactra.workspace.adapters.e2b import E2BBackend
+from coactra.workspace.adapters.openhands import OpenHandsBackend
 
 
 @pytest.mark.parametrize(
@@ -1373,19 +1373,19 @@ def test_stub_instantiation_raises_until_extra_and_impl_land(cls, extra):
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_adapter_stubs.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'fleetlib.workspace.adapters'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'coactra.workspace.adapters'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-# src/fleetlib/workspace/adapters/__init__.py
+# src/coactra/workspace/adapters/__init__.py
 """Optional-extra backend adapters. Stubs today — each names the WorkspaceBackend it will
 become and raises MissingExtraError until its extra (and a real impl) land. Stubs do NOT
 import the real SDK at module top, so they import fine without the extra installed."""
 ```
 
 ```python
-# src/fleetlib/workspace/adapters/_stub.py
+# src/coactra/workspace/adapters/_stub.py
 """Shared helper for optional-extra adapter stubs."""
 
 from __future__ import annotations
@@ -1398,17 +1398,17 @@ class MissingExtraError(RuntimeError):
 def require_extra(extra: str) -> None:
     raise MissingExtraError(
         f"backend requires the optional '{extra}' extra and a real implementation; "
-        f"install with: pip install fleetlib-workspace[{extra}] (stub not yet implemented)"
+        f"install with: pip install coactra-workspace[{extra}] (stub not yet implemented)"
     )
 ```
 
 ```python
-# src/fleetlib/workspace/adapters/daytona.py
+# src/coactra/workspace/adapters/daytona.py
 """Daytona adapter — STUB. Persistent sandboxes + snapshots; raises until the daytona extra."""
 
 from __future__ import annotations
 
-from fleetlib.workspace.adapters._stub import require_extra
+from coactra.workspace.adapters._stub import require_extra
 
 
 class DaytonaBackend:
@@ -1417,12 +1417,12 @@ class DaytonaBackend:
 ```
 
 ```python
-# src/fleetlib/workspace/adapters/e2b.py
+# src/coactra/workspace/adapters/e2b.py
 """E2B adapter — STUB. Pause/resume fs + process; raises until the e2b extra."""
 
 from __future__ import annotations
 
-from fleetlib.workspace.adapters._stub import require_extra
+from coactra.workspace.adapters._stub import require_extra
 
 
 class E2BBackend:
@@ -1431,12 +1431,12 @@ class E2BBackend:
 ```
 
 ```python
-# src/fleetlib/workspace/adapters/openhands.py
+# src/coactra/workspace/adapters/openhands.py
 """OpenHands adapter — STUB. Persists conversation + tools + agent state; raises until the openhands extra."""
 
 from __future__ import annotations
 
-from fleetlib.workspace.adapters._stub import require_extra
+from coactra.workspace.adapters._stub import require_extra
 
 
 class OpenHandsBackend:
@@ -1452,7 +1452,7 @@ Expected: PASS (3 passed)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/fleetlib/workspace/adapters tests/test_adapter_stubs.py
+git add src/coactra/workspace/adapters tests/test_adapter_stubs.py
 git commit -m "feat(workspace): daytona/e2b/openhands adapter stubs (raise on use)"
 ```
 
@@ -1467,7 +1467,7 @@ git commit -m "feat(workspace): daytona/e2b/openhands adapter stubs (raise on us
 
 ```python
 # tests/test_public_api.py
-import fleetlib.workspace as w
+import coactra.workspace as w
 
 
 def test_public_surface_is_complete():
@@ -1536,5 +1536,5 @@ git commit -m "test(workspace): lock public API surface + end-to-end open/write/
 1. **Charter coverage** — persistent files (`write`/`read`, Task 9 + persistence Task 11); CLI policy (`run` gated by `CliPolicy`, Tasks 4/9); handoff/day-note (Task 10); auto-compact (Task 10, rule-based); capability MANIFEST stored as a reference (Tasks 3/9); persistent by default + ephemeral mode (Task 11); per-agent/tenant scope (Task 2, isolation Task 8). ✔
 2. **Principles** — THIN: backend is a dumb files+exec primitive, facade is the only value-add; no sandbox provider re-implemented (Tasks 5–7). Protocol + ONE working default (`LocalFilesystemBackend`) + stubs (Tasks 5/6/7/12). Scope on every call; isolation proven on a real filesystem incl. traversal confinement (Tasks 6/8). Opinionated default works out of the box (`open_workspace`, Tasks 11/13). ✔
 3. **Boundaries (load-bearing)** — MCP mounting NOT done here: `CapabilityManifest` is passive data, facade has no `mount()` (`test_manifest_is_passive_data_only`, `test_manifest_round_trip_is_stored_not_mounted`). Org policy NOT done here: `CliPolicy` is desk-local commands only, no roles/escalation (Task 4 docstring + tests). auto-compact is rule-based, no LLM / no lib-ai import (Task 10). Runtime dep is `pydantic` only — sibling lib depends on nothing else. ✔
-4. **Packaging** — PEP 420 namespace (no `src/fleetlib/__init__.py`, Task 1 test asserts it), src layout, `py.typed`, hatchling, optional extras `daytona`/`e2b`/`openhands`/`dev`; stubs import without the extra (`test_adapter_stubs`). ✔
+4. **Packaging** — PEP 420 namespace (no `src/coactra/__init__.py`, Task 1 test asserts it), src layout, `py.typed`, hatchling, optional extras `daytona`/`e2b`/`openhands`/`dev`; stubs import without the extra (`test_adapter_stubs`). ✔
 5. **Type consistency** — `Scope(tenant_id, agent_id).key`, `ExecResult.ok`, `CliPolicy.check`/`PolicyError`, `WorkspaceBackend` (root_for/write_file/read_file/list_files/delete_file/exec), `Workspace` (write/read/run/handoff/day_note/compact/set_manifest/manifest/root/close), `open_workspace(scope=…, base_dir=…, ephemeral=…)` used identically across tasks. ✔

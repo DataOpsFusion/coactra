@@ -1,8 +1,8 @@
 import asyncio
 import inspect
 
-import fleetlib.agent.ports as ports_pkg
-from fleetlib.agent import (
+import coactra.agent.ports as ports_pkg
+from coactra.agent import (
     AIPort,
     FakeAI,
     FakeMember,
@@ -35,8 +35,8 @@ def test_ports_package_does_not_import_sibling_internals():
     for module in (ports_pkg, *_submodules(ports_pkg)):
         src = inspect.getsource(module)
         for sibling in ("ai", "memory", "workflow", "workspace", "organization"):
-            assert f"import fleetlib.{sibling}" not in src
-            assert f"from fleetlib.{sibling}" not in src
+            assert f"import coactra.{sibling}" not in src
+            assert f"from coactra.{sibling}" not in src
 
 
 def _submodules(pkg):
@@ -49,7 +49,7 @@ def _submodules(pkg):
     return mods
 
 
-# --- AIPort (mirrors fleetlib.ai.ask / .structured) -----------------------------------
+# --- AIPort (mirrors coactra.ai.ask / .structured) -----------------------------------
 
 
 def test_fake_ai_ask_returns_a_completion():
@@ -67,7 +67,7 @@ def test_fake_ai_structured_builds_the_schema():
     assert out.verdict == "ok"
 
 
-# --- MemoryPort (ASYNC — mirrors fleetlib.memory.remember / .recall) -------------------
+# --- MemoryPort (ASYNC — mirrors coactra.memory.remember / .recall) -------------------
 
 
 def test_fake_memory_is_async_and_tenant_scoped():
