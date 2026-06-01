@@ -1,22 +1,5 @@
-"""Provider completion helpers."""
+"""Provider completion helpers.
 
-from coactra.ai.completion.client import (
-    BoundCompleter,
-    Client,
-    LiteLLMCompleter,
-    ask,
-    make_completer,
-    structured,
-)
-from coactra.ai.completion.embedding import LiteLLMEmbedding, cosine
-
-__all__ = [
-    "ask",
-    "structured",
-    "make_completer",
-    "Client",
-    "LiteLLMCompleter",
-    "BoundCompleter",
-    "LiteLLMEmbedding",
-    "cosine",
-]
+Import concrete helpers from ``client`` or ``embedding``. Keeping this package initializer
+lightweight lets the reasoning replay core load without provider SDKs installed.
+"""

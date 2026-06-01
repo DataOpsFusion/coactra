@@ -7,6 +7,7 @@ from coactra.agent.integrations import (
     OrganizationAdapter,
     WorkflowAdapter,
     WorkspaceAdapter,
+    WorkAdapter,
 )
 
 
@@ -130,3 +131,38 @@ def test_organization_adapts_property_based_manager_api():
     assert adapter.can("ada", "deploy") is True
     assert adapter.members(node) == ["ada"]
     assert adapter.manager(node) is manager
+
+
+class FakeWorkManager:
+    def __init__(self):
+        self.calls = []
+
+    def submit(self, order):
+        self.calls.append(("submit", order))
+        return order
+
+    def get(self, work_id, scope):
+        self.calls.append(("get", work_id, scope))
+        return work_id
+
+    def cancel(self, work_id, scope, *, reason=""):
+        self.calls.append(("cancel", work_id, scope, reason))
+        return reason
+
+
+def test_work_translates_agent_scope_for_lookup_and_cancel():
+    work = FakeWorkManager()
+    adapter = WorkAdapter(
+        work,
+        scope_factory=lambda scope: SimpleNamespace(
+            tenant_id=scope.tenant_id, namespace=scope.namespace
+        ),
+    )
+    scope = SimpleNamespace(tenant_id="acme", namespace="agent:platform")
+    order = object()
+
+    assert adapter.submit(order) is order
+    assert adapter.get("work-1", scope) == "work-1"
+    assert adapter.cancel("work-1", scope, reason="stop") == "stop"
+    assert work.calls[1][2].tenant_id == "acme"
+    assert work.calls[2][2].namespace == "agent:platform"

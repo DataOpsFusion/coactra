@@ -2,6 +2,7 @@ import pytest
 
 from coactra.organization import (
     CrossTenantError,
+    Department,
     Member,
     MemberKind,
     Seat,
@@ -47,3 +48,31 @@ def test_cross_tenant_reporting_edge_raises(store):
     globex_seat = store.add_seat("globex", Seat(tenant_id="globex", role="b"))
     with pytest.raises(CrossTenantError):
         store.reports_to("acme", seat_id=acme_seat.id, reports_to_seat_id=globex_seat.id)
+
+
+def test_cross_tenant_assignment_department_raises(store):
+    _two_tenants(store)
+    globex_node = store.add_department(
+        "globex", Department(tenant_id="globex", name="Operations")
+    )
+    acme_member = store.add_member(
+        "acme", Member(tenant_id="acme", name="alice", kind=MemberKind.agent)
+    )
+
+    with pytest.raises(CrossTenantError):
+        store.assign("acme", member_id=acme_member.id, department_id=globex_node.id)
+
+
+def test_cross_tenant_place_member_node_raises(store):
+    _two_tenants(store)
+    globex_node = store.add_department(
+        "globex", Department(tenant_id="globex", name="Operations")
+    )
+    acme_member = store.add_member(
+        "acme", Member(tenant_id="acme", name="alice", kind=MemberKind.agent)
+    )
+
+    with pytest.raises(CrossTenantError):
+        store.place_member(
+            "acme", member_id=acme_member.id, node_id=globex_node.id, seat_id=None
+        )

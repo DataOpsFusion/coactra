@@ -21,7 +21,7 @@ healthy over time:
 ```python
 ws = agent.workspace          # the agent's persistent desk
 ws.write("notes.md", ...)     # files stay between sessions
-ws.run("ls")                  # tools/cli, scoped to the desk
+ws.run("ls")                  # requires a sandbox backend, or trusted local opt-in
 ws.handoff("tomorrow: ...")   # day-note for the next session
 ```
 
@@ -42,3 +42,22 @@ the MCP mounting; `organization` owns hierarchy/policy; `workspace` just stores 
 
 - Where does `workspace` (working files) end and `memory` (recalled facts) begin?
 - Isolation per agent; cleanup / archival policy.
+
+## Current Layout
+
+```text
+backends/    # backend protocol and local filesystem default
+desk.py      # scope-bound Workspace facade
+policy.py    # desk-local CLI policy
+adapters/    # optional sandbox provider adapters
+```
+
+The original `backend.py` and `local.py` module paths remain compatibility imports.
+
+## Local Execution Safety
+
+`LocalFilesystemBackend` confines file operations to `<base>/<tenant>/<agent>`, but a
+local subprocess is not a filesystem jail. Local `exec()` therefore fails closed by
+default. For trusted development only, opt in with `allow_unsafe_local_exec=True` when
+calling `open_workspace(...)`, or `allow_unsafe_exec=True` when constructing the backend.
+Use a sandbox-backed adapter for mutually untrusted tenants in production.

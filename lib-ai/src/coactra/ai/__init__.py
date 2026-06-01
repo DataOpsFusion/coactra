@@ -23,6 +23,19 @@ try:
 except ImportError:  # pragma: no cover - only when litellm/instructor missing
     _WRAP_SHELF = False
 
+    def _missing_wrap_shelf(*args, **kwargs):
+        raise ImportError("coactra.ai completion helpers require litellm and instructor")
+
+    class _MissingProviderSDK:
+        def __init__(self, *args, **kwargs) -> None:
+            _missing_wrap_shelf()
+
+    ask = _missing_wrap_shelf
+    structured = _missing_wrap_shelf
+    make_completer = _missing_wrap_shelf
+    Client = _MissingProviderSDK
+    LiteLLMCompleter = _MissingProviderSDK
+
 from coactra.ai.completion.embedding import LiteLLMEmbedding, cosine
 from coactra.ai.replay.engine import ReasoningEngine
 from coactra.ai.replay.gate import AdaptiveGate

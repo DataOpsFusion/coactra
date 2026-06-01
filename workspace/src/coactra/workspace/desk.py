@@ -19,7 +19,7 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
-from coactra.workspace.backend import WorkspaceBackend
+from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.models import CapabilityManifest, ExecResult
 from coactra.workspace.policy import CliPolicy
 from coactra.workspace.scope import Scope
@@ -123,17 +123,22 @@ def open_workspace(
     base_dir: str | Path | None = None,
     policy: CliPolicy | None = None,
     ephemeral: bool = False,
+    allow_unsafe_local_exec: bool = False,
 ) -> Workspace:
     """Open the default (LocalFilesystem) desk for scope.
 
     Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
-    ephemeral=True uses a throwaway temp dir cleaned up on close().
+    ephemeral=True uses a throwaway temp dir cleaned up on close(). Local subprocesses are
+    not jailed; pass allow_unsafe_local_exec=True only for trusted local development.
     """
-    from coactra.workspace.local import LocalFilesystemBackend
+    from coactra.workspace.backends.local import LocalFilesystemBackend
 
     if ephemeral:
         base = tempfile.mkdtemp(prefix="fleet-ws-ephemeral-")
     else:
         base = base_dir or ".fleet-workspaces"
-    backend = LocalFilesystemBackend(base_dir=base)
+    backend = LocalFilesystemBackend(
+        base_dir=base,
+        allow_unsafe_exec=allow_unsafe_local_exec,
+    )
     return Workspace(backend=backend, scope=scope, policy=policy, ephemeral=ephemeral)

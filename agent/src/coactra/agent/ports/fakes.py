@@ -135,3 +135,24 @@ class FakeOrganization:
 
     def manager(self, node: FakeOrgNode) -> FakeOrgNode | None:
         return node.parent
+
+
+class FakeWork:
+    """Tenant-isolated WorkPort fake for dependency-light composition tests."""
+
+    def __init__(self) -> None:
+        self._orders: dict[tuple[str, str], Any] = {}
+
+    def submit(self, order: Any) -> Any:
+        self._orders[(order.scope.key, order.id)] = order
+        return order
+
+    def get(self, work_id: str, scope: Scope) -> Any:
+        return self._orders.get((scope.key, work_id))
+
+    def cancel(self, work_id: str, scope: Scope, *, reason: str = "") -> Any:
+        order = self.get(work_id, scope)
+        if order is not None:
+            order.status = "cancelled"
+            order.error = reason or None
+        return order

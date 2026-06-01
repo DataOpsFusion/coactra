@@ -11,7 +11,7 @@ from __future__ import annotations
 from coactra.organization.engine import make_engine
 from coactra.organization.repository.neo4j_store import Neo4jOrgStore
 from coactra.organization.repository.sqlite_store import SqliteOrgStore
-from coactra.organization.store import OrgStore
+from coactra.organization.repository.store import OrgStore
 
 
 def make_org_store(config: str = "sqlite://") -> OrgStore:

@@ -1,6 +1,6 @@
-"""ports/ — the five narrow sibling Protocols + their in-process fakes.
+"""ports/ — the six narrow sibling Protocols + their in-process fakes.
 
-The agent consumes ai/memory/workspace/workflow/organization ONLY through these
+The agent consumes ai/memory/workspace/workflow/organization/work ONLY through these
 Protocols; it never imports `coactra.<sibling>`. Each port mirrors the real sibling
 facade so live wiring is a thin adapter. Each ships a faithful in-process fake default.
 """
@@ -13,6 +13,7 @@ from coactra.agent.ports.fakes import (
     FakeOrgNode,
     FakeWorkflow,
     FakeWorkspace,
+    FakeWork,
 )
 from coactra.agent.ports.protocols import (
     AIPort,
@@ -20,6 +21,7 @@ from coactra.agent.ports.protocols import (
     OrganizationPort,
     WorkflowPort,
     WorkspacePort,
+    WorkPort,
 )
 
 __all__ = [
@@ -28,11 +30,13 @@ __all__ = [
     "WorkspacePort",
     "WorkflowPort",
     "OrganizationPort",
+    "WorkPort",
     "FakeAI",
     "FakeMemory",
     "FakeWorkspace",
     "FakeWorkflow",
     "FakeOrganization",
+    "FakeWork",
     "FakeOrgNode",
     "FakeMember",
 ]

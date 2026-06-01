@@ -11,6 +11,7 @@ from coactra.agent.integrations.adapters import (
     OrganizationAdapter,
     WorkflowAdapter,
     WorkspaceAdapter,
+    WorkAdapter,
 )
 
 
@@ -28,6 +29,8 @@ def make_coactra_agent(
     workspace: Any,
     workflow_engine: Any,
     organization: Any,
+    work: Any | None = None,
+    work_scope_factory: Any | None = None,
     workflow_scope: Any | None = None,
     workflow_chain: Sequence[str] | None = None,
     workflow_approver: Any | None = None,
@@ -59,6 +62,7 @@ def make_coactra_agent(
         workspace=WorkspaceAdapter(workspace),
         workflow=workflow,
         organization=OrganizationAdapter(organization),
+        work=WorkAdapter(work, scope_factory=work_scope_factory) if work is not None else None,
         **agent_kwargs,
     )
     workflow.set_collaboration(agent.collaborator)

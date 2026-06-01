@@ -1,5 +1,8 @@
 # coactra.workflow Implementation Plan
 
+> **Current layout note:** the original flat module paths below remain compatibility imports.
+> Canonical code now lives under `domain/`, `runtime/`, and `backends/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a publishable, thin workflow layer where a **procedure is a data structure** — an *authored* flow and a *learned/induced* flow are the **same type** and run the **same** compile→run path on a durable engine (default **LangGraph**). Bolt on an AWM-style online induction loop (`induce(trace) → Procedure` + a manual `update()` hook) and make collaboration/escalation first-class steps (`ask` another agent, `escalate` up the org until a decider resolves it) — without re-implementing the engine, the org, or the agent wire.

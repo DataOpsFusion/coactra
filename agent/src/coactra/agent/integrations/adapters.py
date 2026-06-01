@@ -136,3 +136,33 @@ class OrganizationAdapter:
     def manager(self, node: Any) -> Any:
         manager = node.manager
         return manager() if callable(manager) else manager
+
+
+class WorkAdapter:
+    """Translate agent scope into work scope for durable work-order lookups."""
+
+    def __init__(
+        self,
+        work: Any,
+        *,
+        scope_factory: Callable[[Any], Any] | None = None,
+    ) -> None:
+        self._work = work
+        self._scope_factory = scope_factory
+
+    def _scope(self, scope: Any) -> Any:
+        if self._scope_factory is not None:
+            return self._scope_factory(scope)
+
+        from coactra.work import Scope
+
+        return Scope(tenant_id=scope.tenant_id, namespace=scope.namespace)
+
+    def submit(self, order: Any) -> Any:
+        return self._work.submit(order)
+
+    def get(self, work_id: str, scope: Any) -> Any:
+        return self._work.get(work_id, self._scope(scope))
+
+    def cancel(self, work_id: str, scope: Any, *, reason: str = "") -> Any:
+        return self._work.cancel(work_id, self._scope(scope), reason=reason)

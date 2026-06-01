@@ -9,16 +9,16 @@
 > no-passthrough); clean up the structure.
 
 ## Locked principles
-- **Ports + DI.** The five siblings are consumed through narrow `Protocol` PORTS
-  (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`) — the
+- **Ports + DI.** The six siblings are consumed through narrow `Protocol` PORTS
+  (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`, `WorkPort`) — the
   agent NEVER imports sibling code. Ports are **injected** via a composition root.
 - **Ports mirror the real sibling facades** so wiring is a 3-line adapter, not glue:
   - `MemoryPort.remember(events, scope) / recall(query, scope, k) -> list[...]` ← matches `coactra.memory`
   - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `coactra.organization`
-  - `AIPort.ask(...) / structured(...)`, `WorkflowPort.run(procedure, state)`, `WorkspacePort.read/write/run`.
-  Real wiring lives OUTSIDE this lib (or in an optional `bindings` extra); the core ships
+  - `AIPort.ask(...) / structured(...)`, `WorkflowPort.run(procedure, state)`, `WorkspacePort.read/write/run`, `WorkPort.submit/get/cancel`.
+  Real wiring lives in the optional `coactra.agent.integrations` package; the core ships
   Protocol + in-process fakes so it's testable with zero siblings installed.
-- **Factory / composition root:** `make_agent(*, scope, ai=…, memory=…, workspace=…, workflow=…, organization=…, mcp=…, transport=…, exchanger=…, policy=…)` wires everything; sensible in-process defaults; nothing instantiated inline.
+- **Factory / composition root:** `make_agent(*, scope, ai=…, memory=…, workspace=…, workflow=…, organization=…, work=…, mcp=…, transport=…, exchanger=…, policy=…)` wires everything; sensible in-process defaults; nothing instantiated inline.
 - **Clean wrappable surface:** small, typed, async-first where the protocols are async; a
   plain `Agent` facade an openai-sdk tool / a2a skill can wrap in a few lines.
 
@@ -41,12 +41,13 @@
 ## Layers
 ```
 domain/        # Scope, AgentRef, ToolSpec, DelegationGrant, ExchangedIdentity — plain types
-ports/         # AIPort/MemoryPort/WorkspacePort/WorkflowPort/OrganizationPort Protocols + in-process fakes
+ports/         # AIPort/MemoryPort/WorkspacePort/WorkflowPort/OrganizationPort/WorkPort Protocols + in-process fakes
 mounting.py    # MountRegistry (trie namespacing + pending→active state machine + invalidation), MCPServerPort
 identity.py    # TokenExchanger Protocol + InProcessExchanger (actor chain, no passthrough)
 collaboration.py # AgentRef, CollaborationPolicy, AllowSameTenant, PolicyGatedCollaborator, A2ATransportPort
 agent.py       # Agent facade (begin_turn / mount_mcp / act_on_behalf_of / talk / recall …)
 factory.py     # make_agent(...) composition root
+integrations/  # optional sibling facade adapters + make_coactra_agent(...) helper
 ```
 
 ## Boundary / tests

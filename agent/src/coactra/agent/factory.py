@@ -1,6 +1,6 @@
 """make_agent — the composition root.
 
-The ONE place anything is instantiated. It wires the five ports (defaulting to faithful
+The ONE place anything is instantiated. It wires the six ports (defaulting to faithful
 in-process fakes), the token exchanger, the mount registry, and the policy-gated
 collaborator, then hands the fully-built collaborators to the `Agent` (which constructs
 nothing itself). Swap any port/transport/exchanger/policy for a real adapter to go live;
@@ -31,10 +31,12 @@ from coactra.agent.ports import (
     FakeOrganization,
     FakeWorkflow,
     FakeWorkspace,
+    FakeWork,
     MemoryPort,
     OrganizationPort,
     WorkflowPort,
     WorkspacePort,
+    WorkPort,
 )
 
 
@@ -47,6 +49,7 @@ def make_agent(
     workspace: WorkspacePort | None = None,
     workflow: WorkflowPort | None = None,
     organization: OrganizationPort | None = None,
+    work: WorkPort | None = None,
     mcp: dict[str, MCPServerPort] | None = None,
     transport: A2ATransportPort | None = None,
     exchanger: TokenExchanger | None = None,
@@ -58,7 +61,7 @@ def make_agent(
     Args:
       scope: the mandatory tenant/namespace key threaded through every subsystem.
       me: self-identity for collaboration; defaults to `scope.namespace`.
-      ai/memory/workspace/workflow/organization: the five sibling PORTS (fakes by default).
+      ai/memory/workspace/workflow/organization/work: the six sibling PORTS (fakes by default).
       mcp: optional initial mounts (`{mount_id: server}`) staged at construction — they
            remain INVISIBLE until the first `begin_turn()`, like any mid-session mount.
       transport: the A2A wire behind the collaboration gate (NullTransport by default).
@@ -73,6 +76,7 @@ def make_agent(
     workspace = workspace or FakeWorkspace(scope=scope)
     workflow = workflow or FakeWorkflow()
     organization = organization or FakeOrganization()
+    work = work or FakeWork()
     exchanger = exchanger or InProcessExchanger()
     policy = policy or AllowSameTenant()
     transport = transport or NullTransport()
@@ -95,6 +99,7 @@ def make_agent(
         workspace=workspace,
         workflow=workflow,
         organization=organization,
+        work=work,
         exchanger=exchanger,
         mounts=mounts,
         collaborator=collaborator,

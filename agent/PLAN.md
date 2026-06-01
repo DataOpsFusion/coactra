@@ -1,4 +1,13 @@
+# v0.3 integration addendum
+
+`coactra-work` now adds the sixth sibling port: `WorkPort`, `FakeWork`, and the optional `WorkAdapter`. The v0.2 implementation plan below is retained as historical design context, so its original five-sibling wording is intentionally unchanged.
+
+---
+
 # coactra.agent Implementation Plan
+
+> **Current layout note:** optional real sibling wiring now lives in
+> `coactra.agent.integrations`; the core ports and fakes remain sibling-independent.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

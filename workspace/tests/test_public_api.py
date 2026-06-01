@@ -11,6 +11,7 @@ def test_public_surface_is_complete():
         "PolicyError",
         "WorkspaceBackend",
         "LocalFilesystemBackend",
+        "UnsafeLocalExecError",
         "Workspace",
         "open_workspace",
     }
@@ -21,7 +22,12 @@ def test_public_surface_is_complete():
 
 def test_end_to_end_open_write_run_handoff(tmp_path):
     scope = w.Scope(tenant_id="acme", agent_id="planner")
-    ws = w.open_workspace(scope=scope, base_dir=tmp_path, policy=w.CliPolicy(deny=["rm"]))
+    ws = w.open_workspace(
+        scope=scope,
+        base_dir=tmp_path,
+        policy=w.CliPolicy(deny=["rm"]),
+        allow_unsafe_local_exec=True,
+    )
 
     ws.write("plan.md", "step 1: provision")
     assert ws.read("plan.md") == "step 1: provision"

@@ -2,7 +2,7 @@
 session subsystems (mounting, identity, collaboration).
 
 It is DELIBERATELY thin: every capability call delegates to an injected port or a built
-subsystem; the Agent re-implements NONE of memory/workflow/workspace/ai/organization
+subsystem; the Agent re-implements NONE of memory/workflow/workspace/ai/organization/work
 behavior. A mandatory Scope threads into every subsystem so isolation is real. The surface
 is small and typed so an openai-sdk tool or an a2a skill can wrap it in a few lines;
 `remember`/`recall` are async because the underlying memory protocol is async.
@@ -30,6 +30,7 @@ from coactra.agent.ports import (
     OrganizationPort,
     WorkflowPort,
     WorkspacePort,
+    WorkPort,
 )
 
 T = TypeVar("T")
@@ -52,6 +53,7 @@ class Agent:
         workspace: WorkspacePort,
         workflow: WorkflowPort,
         organization: OrganizationPort,
+        work: WorkPort,
         exchanger: TokenExchanger,
         mounts: MountRegistry,
         collaborator: PolicyGatedCollaborator,
@@ -64,6 +66,7 @@ class Agent:
         self._workspace = workspace
         self._workflow = workflow
         self._org = organization
+        self._work = work
         self._exchanger = exchanger
         self._mounts = mounts
         self._collaborator = collaborator
@@ -166,3 +169,13 @@ class Agent:
 
     def members_of(self, node: Any) -> list[Any]:
         return self._org.members(node)
+
+    def submit_work(self, order: Any) -> Any:
+        """Submit one durable work order through the configured work port."""
+        return self._work.submit(order)
+
+    def get_work(self, work_id: str) -> Any:
+        return self._work.get(work_id, self.scope)
+
+    def cancel_work(self, work_id: str, *, reason: str = "") -> Any:
+        return self._work.cancel(work_id, self.scope, reason=reason)
