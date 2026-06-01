@@ -9,6 +9,17 @@ description = "Thin, clean async connector to long-term memory engines (mem0 / G
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
+authors = [{ name = "fleetlib authors" }]
+keywords = ["llm", "agents", "memory", "mem0", "graphiti", "rag", "long-term-memory"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = ["pydantic>=2.7"]
 
 [project.optional-dependencies]
@@ -18,6 +29,9 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[project.urls]
+Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
 # PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
