@@ -9,6 +9,17 @@ description = "Model-call shelf + reasoning capture-replay for AI agent fleets."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
+authors = [{ name = "fleetlib authors" }]
+keywords = ["llm", "agents", "reasoning", "structured-output", "litellm", "instructor"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "instructor>=1.0",
     "litellm>=1.40",
@@ -19,6 +30,9 @@ dependencies = [
 [project.optional-dependencies]
 chroma = ["chromadb>=0.5"]
 dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fleetlib"]

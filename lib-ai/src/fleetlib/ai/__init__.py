@@ -29,7 +29,10 @@ from fleetlib.ai.gate import AdaptiveGate
 from fleetlib.ai.models import Decision, ReasoningTrace, RecallResult
 from fleetlib.ai.store import InMemoryStore
 
+__version__ = "0.2.0"
+
 __all__ = [
+    "__version__",
     "ask",
     "structured",
     "make_completer",

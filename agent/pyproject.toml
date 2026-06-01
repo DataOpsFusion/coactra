@@ -9,6 +9,17 @@ description = "Thin composition/policy layer that wires an AI agent over mature 
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
+authors = [{ name = "fleetlib authors" }]
+keywords = ["llm", "agents", "mcp", "a2a", "rfc8693", "agent-runtime", "composition"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "pydantic>=2.7",
 ]
@@ -35,6 +46,9 @@ oauth = ["authlib>=1.3"]
 # the model; it does not yet wrap the OpenAI Agents runner. Add an `agents` extra + an
 # AgentRunnerPort seam only when that integration is actually built (YAGNI until then).
 dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://example.invalid/fleetlib"  # TODO: set real repo URL before PyPI
 
 [tool.hatch.build.targets.wheel]
 # PEP 420 namespace: ship the fleetlib/ dir WITHOUT a top-level fleetlib/__init__.py
