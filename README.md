@@ -12,6 +12,11 @@ The public API is meant to stay boring:
 
 ## Install
 
+> **Pre-release:** the `coactra-*` distributions are **not on PyPI yet**. Today you
+> install them editable from this monorepo (`pip install -e './agent[dev]'`, etc. —
+> see [CONTRIBUTING.md](CONTRIBUTING.md)). The `pip install coactra-*` lines below are
+> the intended public interface once the suite is published.
+
 Install only the pieces you need:
 
 ```bash
@@ -57,6 +62,12 @@ draft = agent.think("What should we check first for database latency?")
 
 print(order.id, order.status, result.output, draft)
 ```
+
+> **The default agent uses a fake model.** `make_agent(...)` with no AI port wired in
+> uses an in-process `FakeAI` that echoes the prompt — `draft` above is the literal
+> string `"completion:What should we check first for database latency?"`, not real
+> model output. Wire a real model (see the agent integrations / `make_coactra_agent`
+> and [docs/PRODUCTION.md](docs/PRODUCTION.md)) to get a meaningful answer.
 
 See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a complete walkthrough, [docs/EXAMPLES.md](docs/EXAMPLES.md) for the sample catalog, and [examples/basic_incident_triage.py](examples/basic_incident_triage.py) for the smallest runnable app.
 

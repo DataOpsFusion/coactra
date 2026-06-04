@@ -1,5 +1,13 @@
 {
   "schema_version": 1,
+  "note": "Machine-readable mirror of docs/ADAPTER_MATURITY.md. Keep both in sync; scripts/check_adapter_maturity.py enforces parity in CI.",
+  "maturity_values": [
+    "reference",
+    "implemented",
+    "experimental",
+    "stub",
+    "compatibility"
+  ],
   "resume_semantics_values": [
     "same-thread",
     "new-run-with-prior-state",
@@ -7,6 +15,135 @@
     "host-owned"
   ],
   "adapters": [
+    {
+      "package": "coactra-ai",
+      "name": "LiteLLMCompleter",
+      "file": "lib-ai/src/coactra/ai/completion/client.py",
+      "extra": null,
+      "maturity": "implemented",
+      "production_notes": "Main model-call wrapper through LiteLLM/Instructor."
+    },
+    {
+      "package": "coactra-ai",
+      "name": "ChromaStore",
+      "file": "lib-ai/src/coactra/ai/adapters/chroma.py",
+      "extra": "chroma",
+      "maturity": "implemented",
+      "production_notes": "Optional vector trace store; depends on Chroma."
+    },
+    {
+      "package": "coactra-memory",
+      "name": "InProcessBackend",
+      "file": "memory/src/coactra/memory/backends/inprocess.py",
+      "extra": null,
+      "maturity": "reference",
+      "production_notes": "Offline lexical memory, process-local."
+    },
+    {
+      "package": "coactra-memory",
+      "name": "Mem0Backend",
+      "file": "memory/src/coactra/memory/backends/mem0.py",
+      "extra": "mem0",
+      "maturity": "implemented",
+      "production_notes": "Wraps sync mem0 behind the async protocol."
+    },
+    {
+      "package": "coactra-memory",
+      "name": "GraphitiBackend",
+      "file": "memory/src/coactra/memory/backends/graphiti.py",
+      "extra": "graphiti",
+      "maturity": "implemented",
+      "production_notes": "Requires Graphiti/Neo4j and model/embed clients. Export is approximate/lossy."
+    },
+    {
+      "package": "coactra-workspace",
+      "name": "LocalFilesystemBackend",
+      "file": "workspace/src/coactra/workspace/backends/local.py",
+      "extra": null,
+      "maturity": "reference",
+      "production_notes": "File confinement implemented. Local exec disabled by default and is not a sandbox."
+    },
+    {
+      "package": "coactra-workspace",
+      "name": "DaytonaBackend",
+      "file": "workspace/src/coactra/workspace/adapters/daytona.py",
+      "extra": "daytona",
+      "maturity": "stub",
+      "production_notes": "Named workspace seam only; raises MissingExtraError on construction."
+    },
+    {
+      "package": "coactra-workspace",
+      "name": "E2BBackend",
+      "file": "workspace/src/coactra/workspace/adapters/e2b.py",
+      "extra": "e2b",
+      "maturity": "stub",
+      "production_notes": "Named workspace seam only; raises MissingExtraError on construction."
+    },
+    {
+      "package": "coactra-workspace",
+      "name": "OpenHandsBackend",
+      "file": "workspace/src/coactra/workspace/adapters/openhands.py",
+      "extra": "openhands",
+      "maturity": "stub",
+      "production_notes": "Named workspace seam only; raises MissingExtraError on construction."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "InMemoryWorkStore",
+      "file": "orchestration/src/coactra/orchestration/work/backends/inmemory.py",
+      "extra": null,
+      "maturity": "reference",
+      "production_notes": "Process-local work ledger for tests/demos."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "SqlWorkStore",
+      "file": "orchestration/src/coactra/orchestration/work/backends/sql.py",
+      "extra": "sql",
+      "maturity": "implemented",
+      "production_notes": "Durable SQL ledger with optimistic concurrency."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "DBOSDispatcher",
+      "file": "orchestration/src/coactra/orchestration/work/adapters/dbos.py",
+      "extra": "dbos",
+      "maturity": "experimental",
+      "production_notes": "Thin dispatch bridge; the Coactra ledger remains source of truth."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "TemporalDispatcher",
+      "file": "orchestration/src/coactra/orchestration/work/adapters/temporal.py",
+      "extra": "temporal",
+      "maturity": "experimental",
+      "production_notes": "Thin dispatch bridge; not a full workflow backend."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "DaprDispatcher",
+      "file": "orchestration/src/coactra/orchestration/work/adapters/dapr.py",
+      "extra": "dapr",
+      "maturity": "experimental",
+      "production_notes": "Thin dispatch bridge."
+    },
+    {
+      "package": "coactra-orchestration.work",
+      "name": "MCPTasksAdapter",
+      "file": "orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py",
+      "extra": null,
+      "maturity": "experimental",
+      "production_notes": "MCP task shape bridge."
+    },
+    {
+      "package": "coactra-orchestration.workflow",
+      "name": "LangGraphEngine",
+      "file": "orchestration/src/coactra/orchestration/workflow/backends/langgraph.py",
+      "extra": "langgraph",
+      "maturity": "implemented",
+      "resume_semantics": "unsupported",
+      "production_notes": "Optional LangGraph procedure runner; non-durable (use DurableLangGraphEngine for resume)."
+    },
     {
       "package": "coactra-orchestration.workflow",
       "name": "DurableLangGraphEngine",
@@ -35,13 +172,68 @@
       "production_notes": "Resume starts a deployment run carrying prior thread state; host flow owns true resume behavior."
     },
     {
-      "package": "coactra-workspace",
-      "name": "DaytonaBackend",
-      "file": "workspace/src/coactra/workspace/adapters/daytona.py",
-      "extra": "daytona",
+      "package": "coactra-organization",
+      "name": "SqliteOrgStore",
+      "file": "organization/src/coactra/organization/repository/sqlite_store.py",
+      "extra": null,
+      "maturity": "reference",
+      "production_notes": "SQLModel/SQLAlchemy repository."
+    },
+    {
+      "package": "coactra-organization",
+      "name": "AsyncPostgresOrgStore",
+      "file": "organization/src/coactra/organization/repository/async_store.py",
+      "extra": null,
+      "maturity": "implemented",
+      "production_notes": "Async facade over the SQL repository using worker-thread offload (see backlog #7 on naming)."
+    },
+    {
+      "package": "coactra-organization",
+      "name": "OpenFGAAuthorizer",
+      "file": "organization/src/coactra/organization/adapters/openfga.py",
+      "extra": null,
+      "maturity": "implemented",
+      "production_notes": "Authorization seam over the OpenFGA SDK."
+    },
+    {
+      "package": "coactra-organization",
+      "name": "Neo4jOrgStore",
+      "file": "organization/src/coactra/organization/repository/neo4j_store.py",
+      "extra": null,
       "maturity": "stub",
-      "resume_semantics": "unsupported",
-      "production_notes": "Named workspace seam only."
+      "production_notes": "Named seam only; raises MissingExtraError on construction."
+    },
+    {
+      "package": "coactra-agent",
+      "name": "InProcessExchanger",
+      "file": "agent/src/coactra/agent/identity.py",
+      "extra": null,
+      "maturity": "reference",
+      "production_notes": "Local no-passthrough token exchanger for tests/demos."
+    },
+    {
+      "package": "coactra-agent",
+      "name": "KeycloakExchanger",
+      "file": "agent/src/coactra/agent/adapters/keycloak.py",
+      "extra": "oauth",
+      "maturity": "implemented",
+      "production_notes": "RFC 8693 token exchange over a configured token endpoint; async variant with coactra-agent[oauth]."
+    },
+    {
+      "package": "coactra-agent",
+      "name": "OfficialA2ATransport",
+      "file": "agent/src/coactra/agent/adapters/a2a.py",
+      "extra": null,
+      "maturity": "implemented",
+      "production_notes": "Outbound official A2A SDK adapter."
+    },
+    {
+      "package": "coactra-agent",
+      "name": "inbound A2A helpers",
+      "file": "agent/src/coactra/agent/adapters/a2a_server.py",
+      "extra": null,
+      "maturity": "implemented",
+      "production_notes": "make_a2a_executor / build_a2a_app; require a verifier for production use."
     },
     {
       "package": "coactra-agent",
@@ -49,8 +241,7 @@
       "file": "agent/src/coactra/agent/adapters/fastmcp.py",
       "extra": "mcp",
       "maturity": "stub",
-      "resume_semantics": "unsupported",
-      "production_notes": "Named server seam only."
+      "production_notes": "Named server seam only; raises MissingExtraError on construction."
     }
   ]
 }

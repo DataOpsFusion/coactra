@@ -115,7 +115,7 @@ reinvent mem0/langgraph by accident.
 
 | # | Library | One job | Depends on | Notes |
 |---|---------|---------|------------|-------|
-| 1 | **coactra-ai** | The model brain. Call LLMs + the reasoning-reuse idea: capture how a model reasoned through a problem and replay it next time instead of re-reasoning. | — | Foundation. The differentiator. Everything else uses it. |
+| 1 | **coactra-ai** | The model brain. Call LLMs + the reasoning-reuse idea: capture how a model reasoned through a problem and replay it next time instead of re-reasoning. | — | Foundation + differentiator. *Intended* reasoning substrate; today only `coactra-memory`'s optional Graphiti backend imports it — the others stay decoupled by design. |
 | 2 | **coactra-memory** | Long-term facts. Write "what happened / what was learned", recall later. | — | Persistent knowledge store + retrieval. |
 | 3 | **coactra-workspace** | **Persistent agent desk.** Files/state/CLI that persist across sessions (ephemeral mode optional). | — | A place the agent lives — not disposable scratch. |
 | 4 | **coactra-orchestration** | Procedures plus durable work orders. Declarative recipes, real-job lifecycle, leases, retries, artifacts, decisions, and audit events. | — | One coherent control surface; execution remains delegated to mature runtimes. |
@@ -132,9 +132,11 @@ reinvent mem0/langgraph by accident.
                  agent  ────────────         (wires everything; holds MCP + A2A plumbing)
 ```
 
-memory / workspace / orchestration / organization are **siblings** — none depends on the
-others. They're just capabilities `agent` picks up. Only `agent` depends on
-everything. No circular dependencies.
+memory / workspace / orchestration / organization are **siblings** — none depends on
+another's core. The only cross-sibling coupling is optional and confined to
+`integrations/` modules (e.g. `workspace.integrations` importing `coactra.memory` /
+`coactra.organization`), never pulled in by the base install. They're capabilities
+`agent` picks up; only `agent` depends on everything. No circular dependencies.
 
 **Build order (bottom-up):** `lib-ai → memory + workspace → orchestration + organization → agent`
 

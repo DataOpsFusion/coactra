@@ -33,12 +33,15 @@ tiktoken = ["tiktoken>=0.7"]
 dev = ["pytest>=8.0"]
 
 [project.urls]
-Homepage = "https://github.com/coactra/coactra"
-Repository = "https://github.com/coactra/coactra"
-Issues = "https://github.com/coactra/coactra/issues"
+Homepage = "https://github.com/DataOpsFusion/coactra"
+Repository = "https://github.com/DataOpsFusion/coactra"
+Issues = "https://github.com/DataOpsFusion/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/coactra"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/coactra", "README.md", "tests"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
