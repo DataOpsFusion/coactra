@@ -1,7 +1,7 @@
 """Default ReasoningStore: in-process, tenant-partitioned, bounded + quality-filtered."""
 from __future__ import annotations
 
-from coactra.ai.completion.embedding import cosine
+from coactra.ai.completion.embedding import rank_traces
 from coactra.ai.replay.models import ReasoningTrace
 
 
@@ -20,11 +20,4 @@ class InMemoryStore:
     def search(
         self, tenant: str, vector: list[float], k: int, min_quality: float
     ) -> list[tuple[ReasoningTrace, float]]:
-        traces = self._by_tenant.get(tenant, {}).values()
-        scored = [
-            (t, cosine(vector, t.embedding))
-            for t in traces
-            if t.quality >= min_quality
-        ]
-        scored.sort(key=lambda pair: pair[1], reverse=True)
-        return scored[:k]
+        return rank_traces(vector, self._by_tenant.get(tenant, {}).values(), k, min_quality)

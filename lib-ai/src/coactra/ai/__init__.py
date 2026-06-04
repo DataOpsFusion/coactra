@@ -41,6 +41,8 @@ from coactra.ai.replay.engine import ReasoningEngine
 from coactra.ai.replay.gate import AdaptiveGate
 from coactra.ai.replay.models import Decision, ReasoningTrace, RecallResult
 from coactra.ai.replay.store import InMemoryStore
+from coactra.ai.routing import TenantReasoningStoreRouter
+from coactra.ai.tokens import ApproximateTokenCounter, TiktokenCounter, TokenCounter, count_tokens
 
 __version__ = "0.2.0"
 
@@ -59,4 +61,9 @@ __all__ = [
     "ReasoningTrace",
     "RecallResult",
     "Decision",
+    "TokenCounter",
+    "ApproximateTokenCounter",
+    "TiktokenCounter",
+    "count_tokens",
+    "TenantReasoningStoreRouter",
 ]

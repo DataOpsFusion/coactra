@@ -16,7 +16,7 @@ reusable capabilities live here so agents (and the other libraries) pull them of
 one shelf instead of re-inventing them.
 
 **Reasoning-replay is one of those capabilities, not the whole library** — capture
-how a model reasoned through a problem so it can be reused later (feeds `workflow`
+how a model reasoned through a problem so it can be reused later (feeds `orchestration.workflow`
 and `memory`). It's the most novel item on the shelf, but the shelf is the point.
 
 ```python
@@ -30,7 +30,7 @@ trace  = reasoning.capture(...)          # the path it took, reusable later
 
 openai-sdk, litellm, instructor.
 
-## Verdict (from research — see ../RESEARCH-VERDICTS.md)
+## Design verdict
 
 - **Model calls + structured output → WRAP, don't build.** Solved. Use **Instructor +
   LiteLLM** (LiteLLM routes, Instructor types — LiteLLM alone won't strictly enforce
@@ -46,3 +46,10 @@ openai-sdk, litellm, instructor.
 - Reasoning-replay boundary: does it emit a `workflow` + write to `memory`
   (producer, no own store), keep its own cache, or just memoize? (The crux.)
 - The exact shared-helper surface every other library imports.
+
+## Token budgets and silo routing
+
+Use `count_tokens(text)` for dependency-light context estimates, or install
+`coactra-ai[tiktoken]` and inject `TiktokenCounter` for tokenizer-accurate counts. Wrap
+reasoning stores with `TenantReasoningStoreRouter(factory)` when each tenant needs a
+separate physical vector store.

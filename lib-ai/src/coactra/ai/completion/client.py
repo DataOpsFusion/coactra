@@ -54,23 +54,12 @@ def _extract_text(message: Any) -> str:
     return content or ""
 
 
-class LiteLLMCompleter:
-    """Default Completer over litellm.completion.
-
-    Falls back to ``reasoning_content``/``reasoning`` when ``content`` is empty,
-    so free-text from thinking models is never silently dropped.
-    """
-
-    def complete(self, model: str, messages: list[dict[str, Any]], **kwargs: Any) -> str:
-        resp = litellm.completion(model=model, messages=messages, **kwargs)
-        return _extract_text(resp["choices"][0]["message"])
-
-
 class BoundCompleter:
     """A Completer with provider config (api_base/api_key/defaults) pre-bound.
 
-    Per-call kwargs override the bound defaults. Routes through litellm exactly like
-    ``LiteLLMCompleter`` (including the reasoning_content fallback).
+    Per-call kwargs override the bound defaults. This is the single litellm call path;
+    ``LiteLLMCompleter`` is just the zero-binding case. Includes the reasoning_content
+    fallback via ``_extract_text``.
     """
 
     def __init__(self, **bound: Any) -> None:
@@ -85,6 +74,35 @@ class BoundCompleter:
         return _extract_text(resp["choices"][0]["message"])
 
 
+class LiteLLMCompleter(BoundCompleter):
+    """Default Completer over litellm.completion with no pre-bound provider config.
+
+    Equivalent to ``BoundCompleter()`` — kept as a named public default. The litellm
+    routing and reasoning_content fallback live in the base class, so there is one
+    implementation of the call path, not two that must stay in sync.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+
+def _provider_config(
+    api_base: str | None, api_key: str | None, defaults: dict[str, Any]
+) -> dict[str, Any]:
+    """Merge optional provider credentials into the default kwargs (omitting unset ones).
+
+    Single source of truth for how ``api_base``/``api_key`` become litellm kwargs, so the
+    Completer path (``make_completer``) and the Instructor path that bypasses the Completer
+    (``Client.structured``) cannot silently drift when a config key is added.
+    """
+    cfg: dict[str, Any] = dict(defaults)
+    if api_base is not None:
+        cfg["api_base"] = api_base
+    if api_key is not None:
+        cfg["api_key"] = api_key
+    return cfg
+
+
 def make_completer(
     *,
     api_base: str | None = None,
@@ -94,12 +112,7 @@ def make_completer(
     """Build a Completer with provider config pre-bound so callers stop repeating
     ``api_base``/``api_key`` (and any default kwargs) on every call. Injectable
     anywhere a ``Completer`` is expected (``ReasoningEngine``, ``ask``)."""
-    bound: dict[str, Any] = dict(defaults)
-    if api_base is not None:
-        bound["api_base"] = api_base
-    if api_key is not None:
-        bound["api_key"] = api_key
-    return BoundCompleter(**bound)
+    return BoundCompleter(**_provider_config(api_base, api_key, defaults))
 
 
 def ask(
@@ -197,9 +210,5 @@ class Client:
         return ask(prompt, model=self.model, completer=self._completer, **kwargs)
 
     def structured(self, schema: type[T], prompt: str, **kwargs: Any) -> T:
-        cfg: dict[str, Any] = {**self._defaults}
-        if self._api_base is not None:
-            cfg["api_base"] = self._api_base
-        if self._api_key is not None:
-            cfg["api_key"] = self._api_key
+        cfg = _provider_config(self._api_base, self._api_key, self._defaults)
         return structured(schema, prompt, model=self.model, **{**cfg, **kwargs})
