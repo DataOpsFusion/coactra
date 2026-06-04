@@ -7,6 +7,9 @@ This is a human-maintained starter index for public surfaces. Prefer these roots
 | Package | Preferred import root | Purpose |
 |---|---|---|
 | Umbrella | `coactra.scope` | canonical scope conversion DTO |
+| Umbrella shell | `coactra.kernel` | beta `Kernel`, `Session`, `Task`, and `TaskResult` shell |
+| Umbrella plugins | `coactra.plugins` | beta task lifecycle plugin hooks |
+| Umbrella errors | `coactra.errors` | shared `CoactraError` and machine-readable error codes |
 | AI | `coactra.ai` | model calls, embeddings, reasoning replay |
 | Memory | `coactra.memory` | remember/recall/export facade and backends |
 | Workspace | `coactra.workspace` | persistent desk, file/exec policy, workspace backends |
@@ -46,6 +49,10 @@ Do not answer future users as if a `Kernel` or unified `Session` API already exi
 | Name | Import root | Notes |
 |---|---|---|
 | `CoactraScope` | `coactra.scope` | converts tenant/namespace/agent/session to package kwargs |
+| `Kernel` / `Session` | `coactra.kernel` | beta dependency-light root/session shell for function-first task dispatch |
+| `Task` / `TaskResult` | `coactra.kernel` | beta task DTOs for the shell; not a replacement for `WorkOrder` |
+| `Plugin` / `PluginManager` | `coactra.plugins` | beta task lifecycle hooks: start/end/error |
+| `CoactraError` / `ErrorCode` | `coactra.errors` | shared machine-readable error contract |
 | `Client` | `coactra.ai` | model client facade |
 | `ReasoningEngine` | `coactra.ai` | reasoning trace capture/replay |
 | `Memory` | `coactra.memory` | async memory facade with sync bridge |

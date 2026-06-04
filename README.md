@@ -5,6 +5,7 @@ Coactra is a small set of Python libraries for building AI applications that nee
 The public API is meant to stay boring:
 
 - write your application behavior as plain functions
+- use `Kernel` / `Session` when you want a small beta shell around plain task functions
 - use `WorkManager` when work must survive retries or restarts
 - use `make_agent(...)` when you want one facade over AI, memory, workspace, workflow, organization, and collaboration
 - use adapter classes only at backend boundaries, such as SQL, Keycloak, A2A, or sandbox providers
@@ -27,8 +28,22 @@ make test-core
 ## Quick Example
 
 ```python
+from coactra.kernel import Kernel, Task
 from coactra.agent import Scope as AgentScope, make_agent
+from coactra.scope import CoactraScope
 from coactra.orchestration.work import Scope as WorkScope, WorkManager, WorkOrder
+
+
+def triage(context, task):
+    return {"tenant": context.scope.tenant_id, "incident": task.input["incident"]}
+
+
+session = (
+    Kernel.builder()
+    .with_handler("triage", triage)
+    .build()
+    .session(CoactraScope(tenant_id="acme", namespace="support"))
+)
 
 agent_scope = AgentScope(tenant_id="acme", namespace="agent:support")
 work_scope = WorkScope(tenant_id="acme", namespace="support")
@@ -37,9 +52,10 @@ agent = make_agent(scope=agent_scope)
 work = WorkManager()
 
 order = work.submit(WorkOrder(scope=work_scope, title="Triage database latency"))
+result = await session.run(Task("triage", {"incident": "db-latency"}))
 draft = agent.think("What should we check first for database latency?")
 
-print(order.id, order.status, draft)
+print(order.id, order.status, result.output, draft)
 ```
 
 See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a complete walkthrough, [docs/EXAMPLES.md](docs/EXAMPLES.md) for the sample catalog, and [examples/basic_incident_triage.py](examples/basic_incident_triage.py) for the smallest runnable app.

@@ -9,6 +9,9 @@ Start with [QUICKSTART.md](QUICKSTART.md) if you are building your first app, th
 | Need | Import from | Main objects |
 |---|---|---|
 | Shared scope conversion | `coactra.scope` | `CoactraScope` |
+| Function-first task shell | `coactra.kernel` | `Kernel`, `Session`, `Task`, `TaskResult` |
+| Task lifecycle hooks | `coactra.plugins` | `Plugin`, `PluginManager`, `HookContext` |
+| Shared error contract | `coactra.errors` | `CoactraError`, `ErrorCode` |
 | Model calls and reasoning reuse | `coactra.ai` | `ask`, `structured`, `Client`, `ReasoningEngine` |
 | Long-term memory | `coactra.memory` | `Memory`, `MemoryBackend`, `make_backend`, `AuthorizedMemory` |
 | Persistent workspace | `coactra.workspace` | `Workspace`, `open_workspace`, `WorkspaceBackend`, `CliPolicy` |
@@ -38,6 +41,22 @@ from coactra.orchestration.work import Scope, WorkManager, WorkOrder
 work = WorkManager()
 scope = Scope(tenant_id="acme", namespace="support")
 order = work.submit(WorkOrder(scope=scope, title="Triage incident"))
+```
+
+When you want a small session shell around plain functions, use `Kernel`:
+
+```python
+from coactra.kernel import Kernel, Task
+from coactra.scope import CoactraScope
+
+
+def triage(context, task):
+    return {"tenant": context.scope.tenant_id, "incident": task.input["incident"]}
+
+
+kernel = Kernel.builder().with_handler("triage", triage).build()
+session = kernel.session(CoactraScope(tenant_id="acme", namespace="support"))
+result = await session.run(Task("triage", {"incident": "db-latency"}))
 ```
 
 ## Scope
