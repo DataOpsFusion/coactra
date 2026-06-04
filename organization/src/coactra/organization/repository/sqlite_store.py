@@ -42,6 +42,20 @@ class SqliteOrgStore:
                 f"entity tenant_id={entity.tenant_id!r} != operation tenant_id={tenant_id!r}"
             )
 
+    def _require_in_tenant(
+        self, s: Session, model, id_, tenant_id: str, label: str, *, suffix: str = ""
+    ):
+        """Fetch a tenant-bearing row by id and prove it belongs to ``tenant_id`` — or raise.
+
+        This guard IS the isolation invariant: SQLite isolation here is filter-discipline,
+        not structural, so every write that reaches a row by id routes through this one
+        place. Returns the row so callers that mutate it don't re-fetch.
+        """
+        row = s.get(model, id_)
+        if row is None or row.tenant_id != tenant_id:
+            raise CrossTenantError(f"{label}={id_} not in tenant {tenant_id!r}{suffix}")
+        return row
+
     # --- tenants / seats / members / assignment (flat-fleet baseline) ----------
 
     def add_tenant(self, tenant: Tenant) -> Tenant:
@@ -77,23 +91,13 @@ class SqliteOrgStore:
         # member (and seat, when given) must belong to this tenant. seat_id=None records
         # a seatless placement — the principal sits on a node without holding a role.
         with Session(self._engine) as s:
-            member = s.get(Member, member_id)
-            if member is None or member.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"member_id={member_id} not in tenant {tenant_id!r}"
-                )
+            self._require_in_tenant(s, Member, member_id, tenant_id, "member_id")
             if seat_id is not None:
-                seat = s.get(Seat, seat_id)
-                if seat is None or seat.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"seat_id={seat_id} not in tenant {tenant_id!r}"
-                    )
+                self._require_in_tenant(s, Seat, seat_id, tenant_id, "seat_id")
             if department_id is not None:
-                department = s.get(Department, department_id)
-                if department is None or department.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"department_id={department_id} not in tenant {tenant_id!r}"
-                    )
+                self._require_in_tenant(
+                    s, Department, department_id, tenant_id, "department_id"
+                )
             s.add(
                 Membership(
                     tenant_id=tenant_id,
@@ -121,11 +125,9 @@ class SqliteOrgStore:
     def reports_to(self, tenant_id: str, seat_id: int, reports_to_seat_id: int) -> None:
         with Session(self._engine) as s:
             for sid in (seat_id, reports_to_seat_id):
-                seat = s.get(Seat, sid)
-                if seat is None or seat.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"seat_id={sid} not in tenant {tenant_id!r}; reporting edge refused"
-                    )
+                self._require_in_tenant(
+                    s, Seat, sid, tenant_id, "seat_id", suffix="; reporting edge refused"
+                )
             s.add(
                 ReportingEdge(
                     tenant_id=tenant_id,
@@ -152,11 +154,9 @@ class SqliteOrgStore:
     def set_escalation_route(self, tenant_id: str, from_seat_id: int, to_seat_id: int) -> None:
         with Session(self._engine) as s:
             for sid in (from_seat_id, to_seat_id):
-                seat = s.get(Seat, sid)
-                if seat is None or seat.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"seat_id={sid} not in tenant {tenant_id!r}; route refused"
-                    )
+                self._require_in_tenant(
+                    s, Seat, sid, tenant_id, "seat_id", suffix="; route refused"
+                )
             s.add(
                 EscalationRoute(
                     tenant_id=tenant_id, from_seat_id=from_seat_id, to_seat_id=to_seat_id
@@ -338,6 +338,14 @@ class SqliteOrgStore:
                 select(MemberOverride).where(MemberOverride.tenant_id == tenant_id)
             ).all():
                 overrides_by_member.setdefault(o.member_id, {})[o.action] = o.effect
+            seats = list(s.exec(select(Seat).where(Seat.tenant_id == tenant_id)).all())
+            reporting_edges = list(
+                s.exec(select(ReportingEdge).where(ReportingEdge.tenant_id == tenant_id)).all()
+            )
+            escalation_routes = list(
+                s.exec(select(EscalationRoute).where(EscalationRoute.tenant_id == tenant_id)).all()
+            )
+            policy_refs = list(s.exec(select(PolicyRef).where(PolicyRef.tenant_id == tenant_id)).all())
             return Directory(
                 tenant_id=tenant_id,
                 nodes=nodes,
@@ -346,17 +354,19 @@ class SqliteOrgStore:
                 node_by_member=node_by_member,
                 grants_by_node=grants_by_node,
                 overrides_by_member=overrides_by_member,
+                seats=seats,
+                reporting_edges=reporting_edges,
+                escalation_routes=escalation_routes,
+                policy_refs=policy_refs,
             )
 
     # --- permission writes/reads (node grants + per-member overrides) ----------
 
     def grant_node(self, tenant_id: str, node_id: int, action: str) -> None:
         with Session(self._engine) as s:
-            node = s.get(Department, node_id)
-            if node is None or node.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"node_id={node_id} not in tenant {tenant_id!r}; grant refused"
-                )
+            self._require_in_tenant(
+                s, Department, node_id, tenant_id, "node_id", suffix="; grant refused"
+            )
             existing = s.exec(
                 select(NodeGrant).where(
                     NodeGrant.tenant_id == tenant_id,
@@ -395,11 +405,9 @@ class SqliteOrgStore:
         self, tenant_id: str, member_id: int, action: str, effect: str
     ) -> None:
         with Session(self._engine) as s:
-            member = s.get(Member, member_id)
-            if member is None or member.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"member_id={member_id} not in tenant {tenant_id!r}; override refused"
-                )
+            self._require_in_tenant(
+                s, Member, member_id, tenant_id, "member_id", suffix="; override refused"
+            )
             existing = s.exec(
                 select(MemberOverride).where(
                     MemberOverride.tenant_id == tenant_id,
@@ -435,22 +443,25 @@ class SqliteOrgStore:
 
     def set_member_status(self, tenant_id: str, member_id: int, status: str) -> None:
         with Session(self._engine) as s:
-            member = s.get(Member, member_id)
-            if member is None or member.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"member_id={member_id} not in tenant {tenant_id!r}"
-                )
+            member = self._require_in_tenant(s, Member, member_id, tenant_id, "member_id")
             member.status = status
+            s.add(member)
+            s.commit()
+
+    def set_member_directory_fields(
+        self, tenant_id: str, member_id: int, *, seniority: int, created_by: str | None, approved_by: str | None
+    ) -> None:
+        with Session(self._engine) as s:
+            member = self._require_in_tenant(s, Member, member_id, tenant_id, "member_id")
+            member.seniority = seniority
+            member.created_by = created_by
+            member.approved_by = approved_by
             s.add(member)
             s.commit()
 
     def set_block_inheritance(self, tenant_id: str, node_id: int, value: bool) -> None:
         with Session(self._engine) as s:
-            node = s.get(Department, node_id)
-            if node is None or node.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"node_id={node_id} not in tenant {tenant_id!r}"
-                )
+            node = self._require_in_tenant(s, Department, node_id, tenant_id, "node_id")
             node.block_inheritance = value
             s.add(node)
             s.commit()
@@ -459,23 +470,11 @@ class SqliteOrgStore:
         self, tenant_id: str, member_id: int, node_id: int | None, seat_id: int | None
     ) -> None:
         with Session(self._engine) as s:
-            member = s.get(Member, member_id)
-            if member is None or member.tenant_id != tenant_id:
-                raise CrossTenantError(
-                    f"member_id={member_id} not in tenant {tenant_id!r}"
-                )
+            self._require_in_tenant(s, Member, member_id, tenant_id, "member_id")
             if seat_id is not None:
-                seat = s.get(Seat, seat_id)
-                if seat is None or seat.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"seat_id={seat_id} not in tenant {tenant_id!r}"
-                    )
+                self._require_in_tenant(s, Seat, seat_id, tenant_id, "seat_id")
             if node_id is not None:
-                node = s.get(Department, node_id)
-                if node is None or node.tenant_id != tenant_id:
-                    raise CrossTenantError(
-                        f"node_id={node_id} not in tenant {tenant_id!r}"
-                    )
+                self._require_in_tenant(s, Department, node_id, tenant_id, "node_id")
             existing = s.exec(
                 select(Membership).where(
                     Membership.tenant_id == tenant_id,

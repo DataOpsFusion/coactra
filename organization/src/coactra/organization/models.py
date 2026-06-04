@@ -80,6 +80,7 @@ class Seat(OrgModel, table=True):
 class MemberStatus(str, Enum):
     active = "active"
     suspended = "suspended"
+    archived = "archived"
 
 
 class Member(OrgModel, table=True):
@@ -94,6 +95,9 @@ class Member(OrgModel, table=True):
     name: str
     kind: MemberKind = MemberKind.agent
     status: MemberStatus = MemberStatus.active
+    seniority: int = 0
+    created_by: str | None = None
+    approved_by: str | None = None
 
 
 class Membership(OrgModel, table=True):

@@ -30,7 +30,7 @@ org.escalate(work_order)       # push it up a tier
 sqlmodel for persistence; role concepts seen in crewai / autogen / langgraph-supervisor,
 but those **bake structure into execution** — this is a standalone directory.
 
-## Verdict (from research — see ../RESEARCH-VERDICTS.md)
+## Design verdict
 
 **BUILD a thin standalone model.** CrewAI hierarchical process and LangGraph Supervisor
 exist but bake org into the *execution* graph; a standalone multi-tenant directory is a
@@ -49,3 +49,19 @@ and "where does escalation go?", nothing more.
 Use `coactra.organization.repository` for persistence contracts and backends. The older
 `coactra.organization.store` and `coactra.organization.sqlite_store` module paths remain
 as deprecated compatibility imports for existing callers.
+
+## Production storage
+
+`AsyncPostgresOrgStore` exposes the tenant-checked SQL repository as async methods backed
+by PostgreSQL, keeping blocking SQL calls off the event loop. Install
+`coactra-organization[postgres]`. `TenantOrgStoreRouter` selects a distinct physical
+store per tenant when silo isolation is required.
+
+Authorization is a separate async seam: `Authorizer.check(AuthorizationRequest)` returns
+an auditable decision for subject/action/resource checks. `InMemoryAuthorizer` is the
+offline default, and `OpenFGAAuthorizer` maps the same request to the official OpenFGA
+Python SDK when `coactra-organization[openfga]` is installed.
+
+The domain round trip now includes reporting edges, escalation routes, policy references,
+ownership domains, seniority, archived principals, and `created_by` / `approved_by` audit
+attribution.

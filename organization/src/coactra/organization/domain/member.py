@@ -30,10 +30,11 @@ class MemberKind(str, Enum):
 
 
 class MemberStatus(str, Enum):
-    """Lifecycle state. Suspended is reversible (disable); removal deletes outright."""
+    """Lifecycle state. Suspended is reversible; archived retains an audit record."""
 
     active = "active"
     suspended = "suspended"
+    archived = "archived"
 
 
 @dataclass(eq=False)
@@ -53,6 +54,9 @@ class Member:
     overrides: dict[Action, Effect] = field(default_factory=dict)
     node: "Organization | None" = None
     id: int | None = None
+    seniority: int = 0
+    created_by: str | None = None
+    approved_by: str | None = None
 
     @property
     def active(self) -> bool:

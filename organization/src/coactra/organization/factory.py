@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from coactra.organization.engine import make_engine
 from coactra.organization.repository.neo4j_store import Neo4jOrgStore
+from coactra.organization.repository.async_store import AsyncPostgresOrgStore
 from coactra.organization.repository.sqlite_store import SqliteOrgStore
 from coactra.organization.repository.store import OrgStore
 
@@ -27,3 +28,8 @@ def make_org_store(config: str = "sqlite://") -> OrgStore:
     if config.startswith("neo4j"):
         return Neo4jOrgStore(uri=config)
     raise ValueError(f"unsupported org-store backend: {config!r}")
+
+
+def make_async_org_store(config: str) -> AsyncPostgresOrgStore:
+    """Return the async Postgres org-store facade for a shared fleet database."""
+    return AsyncPostgresOrgStore(config)

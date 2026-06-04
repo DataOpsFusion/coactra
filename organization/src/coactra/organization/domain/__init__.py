@@ -8,6 +8,7 @@ persist them (the deliberate domain/persistence split of the v0.2 redesign).
 
 from __future__ import annotations
 
+from coactra.organization.domain.directory import PolicyReference
 from coactra.organization.domain.member import Member, MemberKind, MemberStatus
 from coactra.organization.domain.organization import Organization
 from coactra.organization.domain.permission import Action, Effect, PermissionSet
@@ -22,4 +23,5 @@ __all__ = [
     "Action",
     "Effect",
     "PermissionSet",
+    "PolicyReference",
 ]
