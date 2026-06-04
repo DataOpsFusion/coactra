@@ -50,7 +50,7 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a complete walkthrough, [docs/E
 - [Examples](docs/EXAMPLES.md): runnable sample projects for memory, durable work, workspace, and multi-agent policy.
 - [Interface map](docs/INTERFACES.md): package roots, stable API surfaces, and where A2A fits.
 - [Production guide](docs/PRODUCTION.md): SQL work store, scope consistency, auth, and deployment posture.
-- [Library map](LIBRARIES.md): package boundaries and adapter maturity.
+- [Library map](docs/LIBRARIES.md): package boundaries and adapter maturity.
 
 ## Maturity
 

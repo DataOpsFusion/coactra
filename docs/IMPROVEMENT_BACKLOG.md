@@ -60,8 +60,8 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: PydanticAI's typed dependencies, tools, outputs, and durable execution integrations are relevant, but replacing Coactra's domain model with another framework would erase the project-specific value.
 - Evidence from files:
-  - Coactra's project-specific boundaries are documented in `LIBRARIES.md:27-91`.
-  - Agent ports and dependency injection are defined in `agent/DESIGN.md:11-23`.
+  - Coactra's project-specific boundaries are documented in `docs/LIBRARIES.md:27-91`.
+  - Agent ports and dependency injection are defined in `docs/agent/DESIGN.md:11-23`.
 - Why it matters: the best path is selective adoption of typed patterns where they simplify Coactra's API, not a framework migration that narrows the product scope by accident.
 - Recommended fix: create one spike comparing a simple Coactra agent flow to a PydanticAI-style typed-deps flow, then adopt only the parts that reduce API noise.
 - Difficulty: Medium
@@ -123,9 +123,9 @@ This backlog is based on static source inspection and later architecture-alignme
 
 ### 5. Add a machine-readable adapter maturity registry
 
-- Problem: adapter maturity is spread across `LIBRARIES.md`, package READMEs, docstrings, and stub tests.
+- Problem: adapter maturity is spread across `docs/LIBRARIES.md`, package READMEs, docstrings, and stub tests.
 - Evidence from files:
-  - Adapter maturity matrix in `LIBRARIES.md:187-195`.
+  - Adapter maturity matrix in `docs/LIBRARIES.md:187-195`.
   - Workspace adapter maturity mapping in `workspace/src/coactra/workspace/adapters/__init__.py:1-17`.
   - Agent FastMCP stub in `agent/src/coactra/agent/adapters/fastmcp.py:1-12`.
   - Organization Neo4j stub in `organization/src/coactra/organization/repository/neo4j_store.py:1-14`.
@@ -162,8 +162,8 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: as integrations grow, memory/workspace/workflow/org can accidentally start importing each other or owning behavior outside their boundaries.
 - Evidence from files:
-  - `LIBRARIES.md:70-91` defines boundaries: workflow owns when/what, organization owns who, agent carries talk, memory and reasoning stores are separate.
-  - `agent/DESIGN.md:11-23` locks ports and DI.
+  - `docs/LIBRARIES.md:70-91` defines boundaries: workflow owns when/what, organization owns who, agent carries talk, memory and reasoning stores are separate.
+  - `docs/agent/DESIGN.md:11-23` locks ports and DI.
   - Workspace README says agent owns MCP mounting and organization owns hierarchy/policy (`workspace/README.md:33-40`).
 - Why it matters: preserving clean package boundaries is the main architectural strength of the project.
 - Recommended fix: add boundary tests or lint checks that prevent sibling imports outside `integrations/`. Add `docs/BOUNDARIES.md`.
@@ -246,7 +246,7 @@ This backlog is based on static source inspection and later architecture-alignme
   - Memory scope key behavior in `memory/src/coactra/memory/types.py:24-87`.
   - Workspace path-safe scope in `workspace/src/coactra/workspace/scope.py:15-32`.
   - Collaboration cross-tenant denial in `agent/src/coactra/agent/collaboration.py:52-79`.
-  - Organization tenant isolation in `organization/DESIGN.md:69-76`.
+  - Organization tenant isolation in `docs/organization/DESIGN.md:69-76`.
 - Why it matters: tenant isolation is a selling point and a security boundary.
 - Recommended fix: create `docs/TENANT_ISOLATION.md` with per-package semantics, cross-tenant denial, router usage, and known limitations.
 - Difficulty: Low
@@ -375,7 +375,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: docs are readable but not machine-labeled by package, maturity, statefulness, or public API status.
 - Evidence from files:
-  - Current docs are plain Markdown: `README.md`, `LIBRARIES.md`, `docs/*.md`, package READMEs/DESIGNs.
+  - Current docs are plain Markdown: `README.md`, `docs/LIBRARIES.md`, `docs/*.md`, package READMEs/DESIGNs.
 - Why it matters: retrieval quality improves when chunks can be filtered.
 - Recommended fix: add YAML front matter with `package`, `role`, `maturity`, `statefulness`, `extras`, `public_api`, and `tenant_isolation` fields.
 - Difficulty: Low
@@ -383,10 +383,10 @@ This backlog is based on static source inspection and later architecture-alignme
 
 ### 26. Split long design documents into stable knowledge chunks
 
-- Problem: `LIBRARIES.md` and package design files contain dense cross-cutting decisions that could retrieve too broadly.
+- Problem: `docs/LIBRARIES.md` and package design files contain dense cross-cutting decisions that could retrieve too broadly.
 - Evidence from files:
-  - `LIBRARIES.md` covers philosophy, tenancy, package boundaries, dependency shape, adapter maturity, and compatibility aliases.
-  - `agent/DESIGN.md`, `organization/DESIGN.md`, and package READMEs contain multiple concepts per file.
+  - `docs/LIBRARIES.md` covers philosophy, tenancy, package boundaries, dependency shape, adapter maturity, and compatibility aliases.
+  - `docs/agent/DESIGN.md`, `docs/organization/DESIGN.md`, and package READMEs contain multiple concepts per file.
 - Why it matters: smaller chunks reduce hallucinated cross-package ownership.
 - Recommended fix: generate or maintain `docs/kb/*.md` chunk files from the knowledge base in this report.
 - Difficulty: Low
@@ -429,7 +429,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: architecture is currently prose-heavy.
 - Evidence from files:
-  - `LIBRARIES.md`, `docs/INTERFACES.md`, and package READMEs explain relationships but have limited diagrams.
+  - `docs/LIBRARIES.md`, `docs/INTERFACES.md`, and package READMEs explain relationships but have limited diagrams.
 - Why it matters: package boundaries and data flows are easier for humans and chatbots with diagrams.
 - Recommended fix: add Mermaid or ASCII diagrams for package dependency graph, work lifecycle, memory flow, workspace flow, agent policy flow, and org permission resolution.
 - Difficulty: Low

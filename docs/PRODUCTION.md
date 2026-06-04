@@ -91,7 +91,7 @@ Use `AsyncKeycloakExchanger` or a cached async exchanger in async services. Avoi
 
 ## Adapter maturity
 
-Treat stub and experimental adapters as integration seams, not production backends. The adapter maturity matrix in `LIBRARIES.md` is the source of truth for which adapters are production-oriented today.
+Treat stub and experimental adapters as integration seams, not production backends. The adapter maturity matrix in `docs/LIBRARIES.md` is the source of truth for which adapters are production-oriented today.
 
 ## Deployment checklist
 

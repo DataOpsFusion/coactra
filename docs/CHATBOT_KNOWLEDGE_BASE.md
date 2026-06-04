@@ -13,7 +13,7 @@ coactra, agent systems, multi-package, alpha, durable work, memory, workspace, o
 Related files:
 
 - `README.md`
-- `LIBRARIES.md`
+- `docs/LIBRARIES.md`
 - `docs/INTERFACES.md`
 - `docs/PRODUCTION.md`
 
@@ -43,7 +43,7 @@ package boundaries, coactra-ai, coactra-memory, coactra-workspace, coactra-orche
 
 Related files:
 
-- `LIBRARIES.md`
+- `docs/LIBRARIES.md`
 - `coactra/pyproject.toml`
 - `lib-ai/pyproject.toml`
 - `memory/pyproject.toml`
@@ -497,7 +497,7 @@ Related files:
 - `orchestration/src/coactra/orchestration/work/store.py`
 - `orchestration/src/coactra/orchestration/work/backends/inmemory.py`
 - `orchestration/src/coactra/orchestration/work/backends/sql.py`
-- `orchestration/docs/WORK-ORDERS.md`
+- `docs/orchestration/WORK-ORDERS.md`
 - `orchestration/tests/test_work_lifecycle.py`
 - `orchestration/tests/test_work_sql_store.py`
 
@@ -538,7 +538,7 @@ Related files:
 - `orchestration/src/coactra/orchestration/work/adapters/temporal.py`
 - `orchestration/src/coactra/orchestration/work/adapters/dapr.py`
 - `orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py`
-- `orchestration/docs/WORK-ORDERS.md`
+- `docs/orchestration/WORK-ORDERS.md`
 
 Related components:
 
@@ -572,7 +572,7 @@ Related files:
 - `orchestration/src/coactra/orchestration/workflow/runtime/handlers.py`
 - `orchestration/src/coactra/orchestration/workflow/runtime/approval.py`
 - `orchestration/tests/test_workflow_engine_handlers.py`
-- `orchestration/docs/PROCEDURES.md`
+- `docs/orchestration/PROCEDURES.md`
 
 Related components:
 
@@ -670,7 +670,7 @@ Related files:
 - `organization/src/coactra/organization/domain/seat.py`
 - `organization/src/coactra/organization/domain/permission.py`
 - `organization/src/coactra/organization/domain/directory.py`
-- `organization/DESIGN.md`
+- `docs/organization/DESIGN.md`
 - `organization/tests/test_domain_tree.py`
 - `organization/tests/test_domain_permissions.py`
 - `organization/tests/test_escalation.py`
@@ -769,7 +769,7 @@ adapter maturity, optional extras, stub, experimental, production seam, missing 
 
 Related files:
 
-- `LIBRARIES.md`
+- `docs/LIBRARIES.md`
 - `docs/PRODUCTION.md`
 - `agent/src/coactra/agent/adapters/_stub.py`
 - `agent/src/coactra/agent/adapters/fastmcp.py`
@@ -872,7 +872,7 @@ Related files:
 
 - `docs/PRODUCTION.md`
 - `docs/INTERFACES.md`
-- `orchestration/docs/WORK-ORDERS.md`
+- `docs/orchestration/WORK-ORDERS.md`
 - `workspace/README.md`
 - `organization/README.md`
 - `agent/README.md`
@@ -902,12 +902,12 @@ RAG, indexing, chatbot, retrieval metadata, ignore files, source chunks
 
 Related files:
 
-- `PROJECT_DOSSIER.md`
-- `CHATBOT_KNOWLEDGE_BASE.md`
-- `IMPROVEMENT_BACKLOG.md`
-- `TARGET_ARCHITECTURE.md`
+- `docs/PROJECT_DOSSIER.md`
+- `docs/CHATBOT_KNOWLEDGE_BASE.md`
+- `docs/IMPROVEMENT_BACKLOG.md`
+- `docs/TARGET_ARCHITECTURE.md`
 - `README.md`
-- `LIBRARIES.md`
+- `docs/LIBRARIES.md`
 - `docs/`
 
 Related components:

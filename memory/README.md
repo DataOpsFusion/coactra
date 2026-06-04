@@ -146,7 +146,7 @@ memory stores and recalls. It does **not** decide what an agent does with a memo
 does not call models itself beyond what the engine needs, and does not message agents.
 The agent lib wraps `recall` into a tool; memory just answers.
 
-See `DESIGN.md` for the locked v0.2 design.
+See `../docs/memory/DESIGN.md` for the locked v0.2 design.
 
 ## Silo routing
 
