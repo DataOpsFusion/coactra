@@ -20,6 +20,8 @@ def test_group_id_is_graphiti_legal():
         Scope(tenant="acme"),
         Scope(tenant="acme", agent="builder"),
         Scope(tenant="acme", agent="builder", session="s1"),
+        Scope(tenant="acme", namespace="company"),
+        Scope(tenant="acme", namespace="department/infrastructure"),
         Scope(tenant="a_b-c", agent="x-y_z"),
     ]
     for s in scopes:
@@ -34,6 +36,8 @@ def test_group_id_is_injective_across_distinct_scopes():
         Scope(tenant="acme"),
         Scope(tenant="acmex"),
         Scope(tenant="acme", agent="x", session="y"),
+        Scope(tenant="acme", namespace="company"),
+        Scope(tenant="acme", namespace="department/infrastructure"),
     ]
     seen: dict[str, Scope] = {}
     for s in scopes:

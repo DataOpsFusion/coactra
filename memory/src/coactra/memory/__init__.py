@@ -17,11 +17,20 @@ objects; no mem0/graphiti type ever leaks across the boundary.
     Memory(backend=make_backend("inprocess")).sync.recall("q", scope=scope)
 """
 
+from coactra.memory.authorization import (
+    AllowListMemoryAuthorizer,
+    AuthorizedMemory,
+    MemoryAccess,
+    MemoryAccessDenied,
+    MemoryAuthorizer,
+)
 from coactra.memory.backends.base import MemoryBackend
 from coactra.memory.capabilities import Capability
+from coactra.memory.conformance import MemoryBackendReport, check_memory_backend_contract
 from coactra.memory.export import ExportReport, export
 from coactra.memory.facade import Memory
 from coactra.memory.factory import make_backend
+from coactra.memory.routing import TenantMemoryBackendRouter
 from coactra.memory.types import MemoryEvent, Recollection, Scope
 
 __all__ = [
@@ -32,9 +41,17 @@ __all__ = [
     "Recollection",
     "MemoryEvent",
     "MemoryBackend",
+    "MemoryAccess",
+    "MemoryAccessDenied",
+    "MemoryAuthorizer",
+    "AllowListMemoryAuthorizer",
+    "AuthorizedMemory",
     "Capability",
+    "MemoryBackendReport",
+    "check_memory_backend_contract",
     "ExportReport",
     "export",
+    "TenantMemoryBackendRouter",
 ]
 
 __version__ = "0.2.0"

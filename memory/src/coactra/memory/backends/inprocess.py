@@ -86,8 +86,4 @@ class InProcessBackend:
             bucket.append(item.model_copy(deep=True))
             existing.add(item.text)
             written += 1
-        return ExportReport(
-            transferred=written,
-            source_backend="",
-            target_backend=type(self).__name__,
-        )
+        return ExportReport.from_ingest(self, transferred=written)

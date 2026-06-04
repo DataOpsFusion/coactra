@@ -52,6 +52,20 @@ async def test_remember_calls_add_with_scope_mapping():
     assert kwargs == {"user_id": "acme", "agent_id": "builder", "run_id": "sess1"}
 
 
+async def test_namespaced_scope_uses_reserved_injective_agent_id():
+    fake = FakeMem0()
+    be = Mem0Backend(client=fake)
+    scope = Scope(tenant="acme", namespace="department/infrastructure")
+    await be.remember(["shared fact"], scope)
+
+    _, kwargs = fake.add_calls[0]
+    assert kwargs == {
+        "user_id": "acme",
+        "agent_id": "namespace:" + scope.key.encode("utf-8").hex(),
+    }
+    assert kwargs["agent_id"] != "department/infrastructure"
+
+
 async def test_remember_passes_chat_dicts_through():
     fake = FakeMem0()
     be = Mem0Backend(client=fake)
@@ -79,7 +93,11 @@ async def test_recall_calls_search_with_filters_and_top_k():
 
     call = fake.search_calls[0]
     assert call["query"] == "deploy strategy"
-    assert call["filters"] == {"user_id": "acme", "agent_id": "builder", "run_id": "sess1"}
+    assert call["filters"] == {
+        "user_id": "acme",
+        "agent_id": "builder",
+        "run_id": "sess1",
+    }
     assert call["top_k"] == 7
 
     assert len(out) == 1

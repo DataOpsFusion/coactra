@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "memory", "mem0", "graphiti", "rag", "long-term-memory"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
@@ -25,6 +25,7 @@ dependencies = ["pydantic>=2.7"]
 [project.optional-dependencies]
 mem0 = ["mem0ai>=0.1"]
 graphiti = ["graphiti-core>=0.3"]
+graphiti-ai = ["graphiti-core>=0.3", "coactra-ai>=0.2"]
 dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [tool.pytest.ini_options]
@@ -33,7 +34,9 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 [project.urls]
-Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
+Homepage = "https://github.com/coactra/coactra"
+Repository = "https://github.com/coactra/coactra"
+Issues = "https://github.com/coactra/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 # PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py

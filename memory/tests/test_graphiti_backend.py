@@ -7,8 +7,18 @@ type leaks across the boundary (sentinel-edge proof).
 
 from datetime import datetime, timezone
 
+import pytest
+
 from coactra.memory import Recollection, Scope
-from coactra.memory.backends.graphiti import GraphitiBackend, _group_id
+from coactra.memory.backends.graphiti import (
+    _NORMALIZED_FLAG,
+    GraphitiBackend,
+    _graphiti_client_kwargs,
+    _group_id,
+    _normalize_extracted_entities_response,
+    _openai_compatible_clients,
+    _patch_generate_response,
+)
 
 
 class FakeEdge:
@@ -19,6 +29,18 @@ class FakeEdge:
         self.uuid = uuid
         self.valid_at = valid_at
         self.group_id = group_id
+
+
+class ExtractedEntities:
+    pass
+
+
+class FakeLLMClient:
+    def __init__(self, response):
+        self.response = response
+
+    async def generate_response(self, *args, **kwargs):
+        return self.response
 
 
 class FakeGraphiti:
@@ -40,6 +62,58 @@ class FakeGraphiti:
 
 
 SCOPE = Scope(tenant="acme", agent="builder")
+
+
+def test_normalize_extracted_entities_accepts_provider_entities_list():
+    out = _normalize_extracted_entities_response(
+        {"entities": [{"name": "Harbor"}, {"text": "Neo4j"}, "Graphiti"]},
+        ExtractedEntities,
+    )
+
+    assert out["extracted_entities"] == [
+        {"name": "Harbor", "entity_type_id": 0},
+        {"text": "Neo4j", "name": "Neo4j", "entity_type_id": 0},
+        {"name": "Graphiti", "entity_type_id": 0},
+    ]
+
+
+def test_normalize_extracted_entities_accepts_provider_entities_dict():
+    out = _normalize_extracted_entities_response(
+        {"entities": {"Service": ["Harbor"], "Database": [{"text": "Neo4j"}]}},
+        ExtractedEntities,
+    )
+
+    assert out["extracted_entities"] == [
+        {"name": "Harbor", "entity_type_id": 0},
+        {"text": "Neo4j", "name": "Neo4j", "entity_type_id": 0},
+    ]
+
+
+async def test_patch_generate_response_fixes_extracted_entities_response():
+    client = _patch_generate_response(FakeLLMClient({"entities": ["Harbor"]}))
+
+    out = await client.generate_response([], response_model=ExtractedEntities)
+
+    assert out["extracted_entities"] == [{"name": "Harbor", "entity_type_id": 0}]
+    assert getattr(client, _NORMALIZED_FLAG) is True
+
+
+def test_explicit_graphiti_llm_client_is_not_patched():
+    explicit = FakeLLMClient({"entities": ["Explicit"]})
+    configured = _patch_generate_response(FakeLLMClient({"entities": ["Configured"]}))
+
+    kwargs = _graphiti_client_kwargs(
+        llm_client=explicit,
+        embedder=None,
+        cross_encoder=None,
+        configured_llm=configured,
+        configured_embedder=None,
+        configured_cross_encoder=None,
+    )
+
+    assert kwargs == {"llm_client": explicit}
+    assert getattr(configured, _NORMALIZED_FLAG) is True
+    assert not getattr(explicit, _NORMALIZED_FLAG, False)
 
 
 async def test_remember_calls_add_episode_with_singular_group_id():
@@ -150,3 +224,35 @@ async def test_no_graphiti_type_leaks_across_boundary():
         for v in r.metadata.values():
             assert not isinstance(v, FakeEdge)
             assert v is not sentinel
+
+
+async def test_openai_compatible_config_builds_official_generic_clients():
+    pytest.importorskip("graphiti_core")
+    from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
+    from graphiti_core.embedder.openai import OpenAIEmbedder
+    from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
+
+    llm_client, embedder, cross_encoder = _openai_compatible_clients(
+        llm_provider="openai_generic",
+        llm_api_key="llm-key",
+        llm_model="portable-chat",
+        llm_base_url="https://llm.example/v1",
+        embedder_api_key="embed-key",
+        embedder_model="portable-embed",
+        embedder_base_url="https://embed.example/v1",
+        embedding_dim=4096,
+    )
+    try:
+        assert isinstance(llm_client, OpenAIGenericClient)
+        assert getattr(llm_client, _NORMALIZED_FLAG) is True
+        assert llm_client.model == "portable-chat"
+        assert str(llm_client.client.base_url) == "https://llm.example/v1/"
+        assert isinstance(embedder, OpenAIEmbedder)
+        assert embedder.config.embedding_model == "portable-embed"
+        assert embedder.config.embedding_dim == 4096
+        assert str(embedder.client.base_url) == "https://embed.example/v1/"
+        assert isinstance(cross_encoder, OpenAIRerankerClient)
+        assert cross_encoder.client is llm_client.client
+    finally:
+        await llm_client.client.close()
+        await embedder.client.close()
