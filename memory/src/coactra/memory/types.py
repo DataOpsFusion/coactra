@@ -25,25 +25,31 @@ class Scope(BaseModel):
     """Immutable, hashable tenant key.
 
     ``tenant`` is mandatory and is ALWAYS encoded into the engine scoping key, so a
-    recall can never reach across tenants. ``agent`` and ``session`` optionally narrow
-    the partition within a tenant (per-agent / per-session memory).
+    recall can never reach across tenants. ``namespace`` optionally names a reusable
+    shared partition such as ``"department/infrastructure"`` or ``"company"``.
+    ``agent`` and ``session`` optionally narrow the partition further.
+
+    Existing three-slot keys are preserved when ``namespace`` is omitted. Namespaced
+    scopes use a distinct five-slot encoding, so adding shared memory does not move or
+    collide with existing per-agent memory.
     """
 
     model_config = {"frozen": True}
 
     tenant: str = Field(min_length=1)
+    namespace: str | None = None
     agent: str | None = None
     session: str | None = None
 
-    @field_validator("tenant", "agent", "session")
+    @field_validator("tenant", "namespace", "agent", "session")
     @classmethod
     def _no_reserved_chars(cls, v: str | None, info) -> str | None:
         """Keep the encoded key injective: reject the delimiter, the absent-field
         placeholder, and an empty narrowing field.
 
         ``key`` (and every backend that builds a scope key, e.g. graphiti's
-        ``group_id``) encodes fields as ``tenant:agent_or_*:session_or_*``. If a field
-        could contain ':' two distinct scopes could collapse to one key (a cross-tenant
+        ``group_id``) uses ':' delimiters and '*' placeholders. If a field could
+        contain ':' two distinct scopes could collapse to one key (a cross-tenant
         collision); '*' would alias the absent-field slot; and an empty agent/session
         would also alias the absent slot. Forbidding all three keeps the map one-to-one.
         """
@@ -67,6 +73,16 @@ class Scope(BaseModel):
     @property
     def key(self) -> str:
         """A stable, collision-resistant string key (tenant always first)."""
+        if self.namespace is not None:
+            return ":".join(
+                [
+                    self.tenant,
+                    "@",
+                    self.namespace,
+                    self.agent or "*",
+                    self.session or "*",
+                ]
+            )
         return ":".join([self.tenant, self.agent or "*", self.session or "*"])
 
 

@@ -10,9 +10,17 @@ def test_public_surface_is_exact():
         "Recollection",
         "MemoryEvent",
         "MemoryBackend",
+        "MemoryAccess",
+        "MemoryAccessDenied",
+        "MemoryAuthorizer",
+        "AllowListMemoryAuthorizer",
+        "AuthorizedMemory",
         "Capability",
+        "MemoryBackendReport",
+        "check_memory_backend_contract",
         "ExportReport",
         "export",
+        "TenantMemoryBackendRouter",
     }
     assert set(m.__all__) == expected
     for name in expected:

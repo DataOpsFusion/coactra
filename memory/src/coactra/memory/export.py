@@ -36,6 +36,16 @@ class ExportReport(BaseModel):
         """True only when no source capability was dropped at the target."""
         return not self.dropped_capabilities
 
+    @classmethod
+    def from_ingest(cls, backend: object, *, transferred: int) -> "ExportReport":
+        """Target-side report a backend's ``ingest`` returns.
+
+        Records only what the target knows: how many items it wrote and its own name.
+        ``source_backend`` is left blank here on purpose — ``export`` stamps it from the
+        actual source once both ends are known.
+        """
+        return cls(transferred=transferred, target_backend=type(backend).__name__)
+
 
 async def export(
     source: "MemoryBackend", target: "MemoryBackend", *, scope: Scope

@@ -58,6 +58,30 @@ hits = mem.sync.recall("why did the build break", scope=scope)
 (`Memory.sync.*` drives its own event loop, so call it from synchronous code — not from
 inside a running loop, where you should `await` the async methods instead.)
 
+### Shared namespaces
+
+Use `namespace` for durable memory shared by a department, project, or company. Existing
+`Scope(tenant, agent, session)` keys remain unchanged when `namespace` is omitted.
+
+```python
+agent = Scope(tenant="acme", namespace="agent", agent="builder")
+department = Scope(tenant="acme", namespace="department/engineering")
+company = Scope(tenant="acme", namespace="company")
+```
+
+The host decides which scopes an agent may read or publish. Wrap a memory facade with
+`AuthorizedMemory` when the library should enforce those decisions before reads/writes:
+
+```python
+policy = AllowListMemoryAuthorizer()
+policy.grant("agent:builder", MemoryAccess.read, department)
+policy.grant("agent:builder", MemoryAccess.write, department)
+mem = AuthorizedMemory(mem, actor="agent:builder", authorizer=policy)
+```
+
+Adapter authors can run `check_memory_backend_contract(backend)` in CI against real
+engines so fake-only tests do not hide drift.
+
 ## Concepts
 
 - **`Memory`** — async facade wrapping an *injected* backend (`remember` / `recall` /
@@ -65,9 +89,10 @@ inside a running loop, where you should `await` the async methods instead.)
 - **`make_backend(name, **config)`** — the DI selection point. `name` is
   `"inprocess" | "mem0" | "graphiti"`. Unknown name → `ValueError`; a known name whose
   engine extra isn't installed → `MissingExtraError`.
-- **`Scope(tenant, agent=None, session=None)`** — the tenant-scoped key on every call.
-  `tenant` is always encoded into the engine scope, so recall can never cross tenants
-  (mem0 `user_id`/`agent_id`/`run_id`; Graphiti `group_id`).
+- **`Scope(tenant, namespace=None, agent=None, session=None)`** — the tenant-scoped
+  key on every call. `namespace` adds reusable shared partitions without changing legacy
+  keys. `tenant` is always encoded into the engine scope, so recall can never cross
+  tenants (mem0 `user_id`/`agent_id`/`run_id`; Graphiti `group_id`).
 - **`Recollection(text, score, source_id, when, metadata)`** — the only return shape. A
   mem0/Graphiti object never crosses the boundary.
 - **`export()`** — lossy by design. It negotiates the source's and target's declared
@@ -85,6 +110,36 @@ inside a running loop, where you should `await` the async methods instead.)
 `mem0` and `graphiti` import their engines **lazily** — importing the package never
 requires the optional extras; only constructing an engine-backed backend does.
 
+For the most portable Graphiti path, configure Coactra AI once and pass protocol
+objects into the backend. LiteLLM/Instructor stay as the single model boundary, so
+Claude, Qwen, DeepSeek, OpenAI-compatible endpoints, and other LiteLLM providers stay
+behind one stable API.
+
+```python
+from coactra.ai import Client, LiteLLMEmbedding
+
+backend = make_backend(
+    "graphiti",
+    uri="bolt://neo4j:7687",
+    user="neo4j",
+    password="...",
+    ai_client=Client(
+        model="openai/qwen3.6-plus",
+        api_base="https://llm.example/v1",
+        api_key="...",
+    ),
+    embed=LiteLLMEmbedding(
+        model="openai/text-embedding-3-small",
+        api_base="https://embed.example/v1",
+        api_key="...",
+    ),
+)
+```
+
+You can still inject native Graphiti clients via `llm_client=`, `embedder=`, and
+`cross_encoder=`, or configure Graphiti's built-in OpenAI-compatible clients directly
+for legacy deployments. Explicitly injected native clients pass through untouched.
+
 ## Boundary
 
 memory stores and recalls. It does **not** decide what an agent does with a memory,
@@ -92,3 +147,8 @@ does not call models itself beyond what the engine needs, and does not message a
 The agent lib wraps `recall` into a tool; memory just answers.
 
 See `DESIGN.md` for the locked v0.2 design.
+
+## Silo routing
+
+`TenantMemoryBackendRouter(factory)` selects and caches a different physical memory
+backend per tenant while preserving the existing async `MemoryBackend` Protocol.

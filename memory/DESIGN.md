@@ -29,8 +29,10 @@ await mem.export(to=other_backend, scope=scope)    # lossy; off the headline
 Memory(backend=make_backend("inprocess")).sync.recall("q", scope=scope)
 ```
 - `Recollection` = `(text: str, score: float, source_id: str, when: datetime|None, metadata: dict)` — a plain dataclass/pydantic model. NEVER a mem0/graphiti object.
-- `Scope` = `(tenant: str, agent: str|None, session: str|None)`. Maps to engine scoping:
-  mem0 → `user_id`/`agent_id`/`run_id` filters; Graphiti → `group_id` (e.g. `f"{tenant}:{agent}"`). Tenant isolation always enforced.
+- `Scope` = `(tenant: str, namespace: str|None, agent: str|None, session: str|None)`.
+  Existing three-slot keys remain stable when `namespace` is omitted. Namespaced scopes
+  use a distinct discriminator and map to mem0 `user_id`/`agent_id`/`run_id` filters or
+  Graphiti `group_id`. Tenant isolation is always enforced.
 
 ## Layers
 ```
@@ -60,7 +62,9 @@ class MemoryBackend(Protocol):
   → `Memory.search(query, filters=…, top_k=k)` → map results to `Recollection`. Config via
   `make_backend("mem0", config={...})` (LLM/embedder/vector-store; OSS via Ollama).
 - **GraphitiBackend**: `remember` → `await g.add_episode(..., group_id=…)`; `recall` →
-  `await g.search(query, group_id=…)` → map to `Recollection`. Needs Neo4j+LLM.
+  `await g.search(query, group_id=…)` → map to `Recollection`. Needs Neo4j+LLM. It
+  accepts injected native clients or explicit OpenAI-compatible LLM/embedder settings;
+  `llm_provider="openai_generic"` selects Graphiti's portable chat-completions client.
 - **Testing**: in-process backend fully unit-tested; mem0/graphiti adapters unit-tested
   with MOCKED engine clients (assert correct engine calls + scope mapping + Recollection
   mapping, no type leak); live integration tests gated behind env (mem0/OPENAI, NEO4J) and
