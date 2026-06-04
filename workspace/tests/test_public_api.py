@@ -5,7 +5,9 @@ def test_public_surface_is_complete():
     expected = {
         "__version__",
         "Scope",
+        "WorkspaceError",
         "ExecResult",
+        "ExecOptions",
         "CapabilityManifest",
         "CliPolicy",
         "PolicyError",
@@ -43,3 +45,20 @@ def test_end_to_end_open_write_run_handoff(tmp_path):
     assert ws2.read("plan.md") == "step 1: provision"
     assert ws2.manifest().refs == ["mcp://gateway/call_tool"]
     assert "run step 2" in ws2.day_note()
+
+
+def test_unsafe_local_exec_without_policy_uses_safe_default(tmp_path):
+    scope = w.Scope(tenant_id="acme", agent_id="planner")
+    ws = w.open_workspace(
+        scope=scope,
+        base_dir=tmp_path,
+        allow_unsafe_local_exec=True,
+    )
+
+    assert ws.run("echo allowed").ok
+    try:
+        ws.run("rm something")
+    except w.PolicyError as exc:
+        assert "deny rule" in str(exc)
+    else:  # pragma: no cover - safety assertion
+        raise AssertionError("rm should be denied by the safe default policy")

@@ -19,8 +19,10 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, Field
 
+from coactra.workspace.errors import WorkspaceError
 
-class PolicyError(RuntimeError):
+
+class PolicyError(WorkspaceError):
     """Raised when a command is blocked by the desk CLI policy."""
 
 
@@ -36,6 +38,19 @@ class CliPolicy(BaseModel):
 
     allow: list[str] = Field(default_factory=list)  # empty => allow all (subject to deny)
     deny: list[str] = Field(default_factory=list)
+
+    @classmethod
+    def safe_default(cls) -> "CliPolicy":
+        """Conservative policy used when local subprocess execution is enabled implicitly.
+
+        Empty ``allow`` means allow-all for backward compatibility. This helper gives
+        ``open_workspace(..., allow_unsafe_local_exec=True)`` a safer default without
+        changing explicitly provided policies.
+        """
+        return cls(
+            allow=["pwd", "ls", "cat", "echo", "python", "python3"],
+            deny=["rm", "git push", "curl", "wget", "ssh", "scp"],
+        )
 
     def check(self, command: str | Sequence[str]) -> list[str]:
         """Validate command; return the normalized argv. Raises PolicyError if blocked."""

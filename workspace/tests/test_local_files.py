@@ -17,6 +17,12 @@ def test_write_creates_nested_dirs(tmp_path):
     assert be.read_file("sub/dir/file.txt", SCOPE) == "x"
 
 
+def test_make_dir_creates_empty_nested_dir(tmp_path):
+    be = LocalFilesystemBackend(base_dir=tmp_path)
+    be.make_dir("journal/daily", SCOPE)
+    assert (tmp_path / "acme" / "planner" / "journal" / "daily").is_dir()
+
+
 def test_list_and_delete(tmp_path):
     be = LocalFilesystemBackend(base_dir=tmp_path)
     be.write_file("a.txt", "1", SCOPE)

@@ -39,3 +39,20 @@ def test_compact_noop_when_under_limit(tmp_path):
     ws.handoff("only one")
     assert ws.compact(max_entries=5) == 0
     assert "only one" in ws.day_note()
+
+
+def test_rotate_journal_archives_only_dated_entries_before_cutoff(tmp_path):
+    from datetime import date
+
+    ws = _ws(tmp_path)
+    ws.write("journal/2026-05-01.md", "old")
+    ws.write("journal/2026-06-02.md", "today")
+    ws.write("journal/README.md", "keep")
+
+    moved = ws.rotate_journal(before=date(2026, 6, 2))
+
+    assert moved == ["archive/journal/2026-05-01.md"]
+    assert ws.read("archive/journal/2026-05-01.md") == "old"
+    assert "journal/2026-05-01.md" not in ws.list()
+    assert "journal/2026-06-02.md" in ws.list()
+    assert "journal/README.md" in ws.list()
