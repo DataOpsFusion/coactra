@@ -29,9 +29,9 @@ openfga = ["openfga_sdk>=0.9,<1"]
 dev = ["pytest>=8", "pytest-asyncio>=0.23"]
 
 [project.urls]
-Homepage = "https://github.com/coactra/coactra"
-Repository = "https://github.com/coactra/coactra"
-Issues = "https://github.com/coactra/coactra/issues"
+Homepage = "https://github.com/DataOpsFusion/coactra"
+Repository = "https://github.com/DataOpsFusion/coactra"
+Issues = "https://github.com/DataOpsFusion/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 # PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py

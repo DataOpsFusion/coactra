@@ -16,7 +16,7 @@ Use this file before recommending an adapter for production. A named adapter is 
 |---|---|---|---|
 | `coactra-ai` | `LiteLLM` completion client | implemented | Main model-call wrapper through LiteLLM/Instructor. |
 | `coactra-ai` | `ChromaStore` | implemented | Optional vector trace store, depends on Chroma. |
-| `coactra-memory` | `InProcessMemoryBackend` | reference | Offline lexical memory, process-local. |
+| `coactra-memory` | `InProcessBackend` | reference | Offline lexical memory, process-local. |
 | `coactra-memory` | `Mem0Backend` | implemented | Wraps sync mem0 behind async protocol. |
 | `coactra-memory` | `GraphitiBackend` | implemented | Requires Graphiti/Neo4j and model/embed clients. Export is approximate/lossy. |
 | `coactra-workspace` | `LocalFilesystemBackend` | reference | File confinement implemented. Exec disabled by default. |

@@ -4,6 +4,11 @@ This guide builds a small incident-triage agent. It is intentionally function-fi
 
 ## 1. Install
 
+> **Pre-release:** the `coactra-*` distributions are not on PyPI yet — install them
+> editable from the monorepo today (`pip install -e './agent[dev]'`, etc.). See
+> [../CONTRIBUTING.md](../CONTRIBUTING.md). The `pip install coactra-*` commands below
+> are the intended public interface once published.
+
 For a local prototype:
 
 ```bash
@@ -59,7 +64,7 @@ agent = make_agent(scope=AgentScope(tenant_id="acme", namespace="agent:support")
 answer = agent.think("What should we check first for database latency?")
 ```
 
-The default agent is dependency-light and uses in-process defaults. Swap ports only when you need real backends.
+The default agent is dependency-light and uses in-process defaults — including an in-process `FakeAI` that **echoes the prompt** (`agent.think("...")` returns `"completion:..."`, not real model output). Wire a real AI client to get real answers; swap other ports only when you need real backends.
 
 ## 5. Compose A Small App
 

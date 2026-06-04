@@ -32,6 +32,9 @@ jobs:
       - name: Validate public API inventory
         run: python scripts/check_public_api.py
 
+      - name: Validate adapter maturity manifest
+        run: python scripts/check_adapter_maturity.py
+
       - name: Run dependency-light core tests
         run: make test-core
 

@@ -6,6 +6,10 @@ This guide describes the minimum production posture for Coactra applications.
 
 Use stable package roots for application code and keep experimental adapters behind explicit imports and configuration.
 
+> **Pre-release:** the `coactra-*` distributions are not on PyPI yet — install them
+> editable from the monorepo today (see [../CONTRIBUTING.md](../CONTRIBUTING.md)). Pin
+> versions and extras in your deployment lockfile once they are published.
+
 ```bash
 pip install "coactra-orchestration[sql]" coactra-agent coactra-workspace coactra-memory
 ```
@@ -91,7 +95,7 @@ Use `AsyncKeycloakExchanger` or a cached async exchanger in async services. Avoi
 
 ## Adapter maturity
 
-Treat stub and experimental adapters as integration seams, not production backends. The adapter maturity matrix in `docs/LIBRARIES.md` is the source of truth for which adapters are production-oriented today.
+Treat stub and experimental adapters as integration seams, not production backends. The full matrix in [`docs/ADAPTER_MATURITY.md`](ADAPTER_MATURITY.md) — mirrored machine-readably in [`docs/adapter_maturity.json`](adapter_maturity.json), kept in sync by CI — is the source of truth for which adapters are production-oriented today. (The matrix in `docs/LIBRARIES.md` is an abridged summary.)
 
 ## Deployment checklist
 

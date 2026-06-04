@@ -32,7 +32,13 @@ def submit_incident(work: WorkManager, scope: WorkScope, incident: str) -> WorkO
 
 
 def draft_first_checks(agent, incident: str) -> str:
-    """Ask the configured agent facade for first-pass triage guidance."""
+    """Ask the configured agent facade for first-pass triage guidance.
+
+    NOTE: ``make_agent`` with no AI port wired in uses an in-process ``FakeAI`` that
+    echoes the prompt, so this returns ``"completion:Give the first three checks..."``
+    rather than real model output. Wire a real model (see docs/PRODUCTION.md) for a
+    meaningful draft.
+    """
     return agent.think(f"Give the first three checks for this incident: {incident}")
 
 
