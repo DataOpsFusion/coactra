@@ -7,8 +7,8 @@ The main project later just installs + imports the ones it needs.
 > **CURRENT SHAPE:** six capability distributions plus the lightweight `coactra`
 > convenience installer. The sibling libraries remain standalone; `coactra-agent` consumes
 > them through ports and optional `coactra.agent.integrations`. Run `make test` from the
-> repository root for the package-by-package suite. Each library has a `README.md` charter
-> and a `DESIGN.md` spec.
+> repository root for the package-by-package suite. Each library has a package `README.md`
+> charter and a design spec under `docs/<package>/`.
 
 ## Installation
 

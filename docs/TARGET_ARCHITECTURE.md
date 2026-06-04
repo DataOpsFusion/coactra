@@ -48,7 +48,7 @@ The current package split is coherent and should stay:
 - `coactra-organization`: tenant/org/permission/authorization directory.
 - `coactra-agent`: composition, MCP mounting, delegated identity, collaboration policy.
 
-Evidence: `LIBRARIES.md` defines these packages and their dependency shape (`LIBRARIES.md:116-139`). The agent design locks ports and dependency injection (`agent/DESIGN.md:11-23`).
+Evidence: `docs/LIBRARIES.md` defines these packages and their dependency shape (`docs/LIBRARIES.md:116-139`). The agent design locks ports and dependency injection (`docs/agent/DESIGN.md:11-23`).
 
 ### Keep function-first application style
 
@@ -83,7 +83,7 @@ Coactra should continue wrapping mature external protocols and engines rather th
 - Keycloak/RFC 8693 for delegated identity.
 - OpenFGA for authorization.
 
-Evidence: `LIBRARIES.md:27-38`, `agent/README.md:5-18`, `memory/README.md:8-16`, `orchestration/docs/WORK-ORDERS.md:90-97`.
+Evidence: `docs/LIBRARIES.md:27-38`, `agent/README.md:5-18`, `memory/README.md:8-16`, `docs/orchestration/WORK-ORDERS.md:90-97`.
 
 ### Keep the public shell smaller than the package graph
 
@@ -121,7 +121,7 @@ docs/
 
 Why:
 
-- `PROJECT_DOSSIER.md` is a snapshot. Long-term docs should be maintained as source of truth.
+- `docs/PROJECT_DOSSIER.md` is a snapshot. Long-term docs should be maintained as source of truth.
 - Adapter maturity and persistent state should be queryable without scanning source.
 - Chatbot retrieval needs smaller, labeled chunks.
 
@@ -442,12 +442,12 @@ Why: LangGraph, Temporal, and Prefect can all run durable work, but they do not 
 
 High priority:
 
-- `PROJECT_DOSSIER.md`
-- `CHATBOT_KNOWLEDGE_BASE.md`
-- `IMPROVEMENT_BACKLOG.md`
-- `TARGET_ARCHITECTURE.md`
+- `docs/PROJECT_DOSSIER.md`
+- `docs/CHATBOT_KNOWLEDGE_BASE.md`
+- `docs/IMPROVEMENT_BACKLOG.md`
+- `docs/TARGET_ARCHITECTURE.md`
 - `README.md`
-- `LIBRARIES.md`
+- `docs/LIBRARIES.md`
 - `docs/*.md`
 - package READMEs and DESIGN docs
 - `src/**/*.py`
@@ -499,7 +499,7 @@ Near-term, keep current package directories to avoid disruptive moves:
 ```text
 library/
   README.md
-  LIBRARIES.md
+  docs/LIBRARIES.md
   Makefile
   docs/
     ARCHITECTURE.md

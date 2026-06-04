@@ -4,11 +4,11 @@ Generated from a read-only inspection of the current working tree. This reposito
 
 ## 1. Executive Summary
 
-Coactra is a modular toolkit for building agent systems that do real work: agents can call models, remember facts, keep a workspace, execute durable work orders, run reusable procedures, consult an organization model, and collaborate with other agents. The top-level README states that `coactra-orchestration` combines durable work orders and reusable procedures, while `coactra-agent` composes the sibling capabilities through ports (`README.md:1-7`). `LIBRARIES.md` describes six capability distributions plus a lightweight `coactra` umbrella installer (`LIBRARIES.md:7-11`, `LIBRARIES.md:116-123`).
+Coactra is a modular toolkit for building agent systems that do real work: agents can call models, remember facts, keep a workspace, execute durable work orders, run reusable procedures, consult an organization model, and collaborate with other agents. The top-level README states that `coactra-orchestration` combines durable work orders and reusable procedures, while `coactra-agent` composes the sibling capabilities through ports (`README.md:1-7`). `docs/LIBRARIES.md` describes six capability distributions plus a lightweight `coactra` umbrella installer (`docs/LIBRARIES.md:7-11`, `docs/LIBRARIES.md:116-123`).
 
-The project is for developers building multi-tenant AI agent fleets or backend services where agents need operational boundaries: tenancy, policy, memory, durable task state, workspace persistence, delegated identity, and A2A/MCP integration. It is intentionally "thin wrappers over best-of-breed libraries" where mature tools exist, and custom code where a generalized interface gap exists (`LIBRARIES.md:27-38`).
+The project is for developers building multi-tenant AI agent fleets or backend services where agents need operational boundaries: tenancy, policy, memory, durable task state, workspace persistence, delegated identity, and A2A/MCP integration. It is intentionally "thin wrappers over best-of-breed libraries" where mature tools exist, and custom code where a generalized interface gap exists (`docs/LIBRARIES.md:27-38`).
 
-Current maturity is alpha. The core facades and Protocols are intended stable surfaces, but multiple adapters are explicitly stubbed or experimental (`README.md:19-21`, `docs/PRODUCTION.md:92-107`, `LIBRARIES.md:187-195`). There is good unit-level coverage across packages, but production readiness depends on optional backends, durable stores, and host wiring that are only partly implemented or intentionally left as seams.
+Current maturity is alpha. The core facades and Protocols are intended stable surfaces, but multiple adapters are explicitly stubbed or experimental (`README.md:19-21`, `docs/PRODUCTION.md:92-107`, `docs/LIBRARIES.md:187-195`). There is good unit-level coverage across packages, but production readiness depends on optional backends, durable stores, and host wiring that are only partly implemented or intentionally left as seams.
 
 ## 2. High-Level Architecture
 
@@ -84,7 +84,7 @@ The intended runtime is function-first application code that receives an injecte
 - Embeddings/vector search: LiteLLM embeddings and optional Chroma (`lib-ai/src/coactra/ai/completion/embedding.py:48-66`, `lib-ai/src/coactra/ai/adapters/chroma.py:37-76`).
 - Memory engines: mem0 and Graphiti optional extras (`memory/README.md:102-111`, `memory/src/coactra/memory/factory.py:17-30`).
 - Workflow engines: LangGraph and DurableLangGraph are implemented optional backends; `TemporalEngine` and `PrefectEngine` are now thin `WorkflowEngine` adapters over host runtime clients/deployments (`orchestration/src/coactra/orchestration/workflow/backends/langgraph.py`, `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py`, `orchestration/src/coactra/orchestration/workflow/adapters/temporal.py`, `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`).
-- Work dispatch: DBOS, Temporal, Dapr, fsspec, A2A, CloudEvents, OpenTelemetry adapters (`orchestration/docs/WORK-ORDERS.md:51-61`).
+- Work dispatch: DBOS, Temporal, Dapr, fsspec, A2A, CloudEvents, OpenTelemetry adapters (`docs/orchestration/WORK-ORDERS.md:51-61`).
 - Organization persistence/auth: SQLModel/SQLAlchemy, async Postgres wrapper, OpenFGA adapter, Neo4j stub (`organization/src/coactra/organization/repository/sqlite_store.py:1-8`, `organization/src/coactra/organization/repository/async_store.py:1-69`, `organization/src/coactra/organization/adapters/openfga.py:17-53`, `organization/src/coactra/organization/repository/neo4j_store.py:1-14`).
 - Agent communication/security: official A2A SDK, Starlette, Keycloak/RFC 8693 token exchange, FastMCP stub (`agent/src/coactra/agent/adapters/a2a.py:23-40`, `agent/src/coactra/agent/adapters/a2a_server.py:77-101`, `agent/src/coactra/agent/adapters/keycloak.py:102-262`, `agent/src/coactra/agent/adapters/fastmcp.py:1-12`).
 
@@ -103,7 +103,7 @@ Persistent state exists through Python-backed stores rather than standalone migr
 
 ```text
 library/
-  README.md, LIBRARIES.md, Makefile
+  README.md, docs/LIBRARIES.md, Makefile
   docs/
   examples/
   coactra/
@@ -119,7 +119,7 @@ library/
 ### Root Files
 
 - `README.md`: package overview, test commands, production seams, and alpha warning (`README.md:1-21`). Active.
-- `LIBRARIES.md`: architecture philosophy, package boundaries, dependency shape, compatibility aliases, and adapter maturity matrix (`LIBRARIES.md:27-38`, `LIBRARIES.md:125-195`). Active and important for retrieval.
+- `docs/LIBRARIES.md`: architecture philosophy, package boundaries, dependency shape, compatibility aliases, and adapter maturity matrix (`docs/LIBRARIES.md:27-38`, `docs/LIBRARIES.md:125-195`). Active and important for retrieval.
 - `Makefile`: loops test commands across packages; `test-core` excludes `lib-ai` and `organization` from the core set (`Makefile:1-10`). Active developer tooling.
 - `LICENSE`: root license.
 - `dist/`: build artifacts. Generated/stale risk for AI indexing; should usually be ignored.
@@ -296,7 +296,7 @@ Connections: work order facade, approval stores, capability registry, LangGraph 
 
 ### Organization
 
-Meaning: tenant-scoped OU-like hierarchy with members, seats, permissions, ownership, reporting, escalation, and policy references (`organization/DESIGN.md:17-41`, `organization/src/coactra/organization/domain/organization.py:29-289`). Persistence is explicit through injected stores (`organization/src/coactra/organization/service.py:28-268`).
+Meaning: tenant-scoped OU-like hierarchy with members, seats, permissions, ownership, reporting, escalation, and policy references (`docs/organization/DESIGN.md:17-41`, `organization/src/coactra/organization/domain/organization.py:29-289`). Persistence is explicit through injected stores (`organization/src/coactra/organization/service.py:28-268`).
 
 Connections: workspace memory ACL, workflow escalation chain, agent organization port, OpenFGA authorizer seam.
 
@@ -511,7 +511,7 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 
 ### Error Handling Flow
 
-- Work store concurrency errors and lease errors are raised to workers; docs tell workers to reload/back off on `ConflictError` or `LeaseError` (`orchestration/docs/WORK-ORDERS.md:177-180`).
+- Work store concurrency errors and lease errors are raised to workers; docs tell workers to reload/back off on `ConflictError` or `LeaseError` (`docs/orchestration/WORK-ORDERS.md:177-180`).
 - Local workspace exec fails closed unless explicitly enabled (`workspace/src/coactra/workspace/backends/local.py:75-122`).
 - Token passthrough attempts raise `TokenPassthroughError` (`agent/src/coactra/agent/identity.py:90-94`, `agent/src/coactra/agent/adapters/keycloak.py:126-129`).
 - Optional backend/adapters raise missing-extra errors when used without dependencies or real implementations (`workspace/src/coactra/workspace/adapters/_stub.py:10-13`, `agent/src/coactra/agent/adapters/_stub.py:10-13`, `memory/src/coactra/memory/backends/_errors.py:1-11`).
@@ -590,8 +590,8 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 ### Work SQL Store
 
 - Tables: `coactra_work_orders` and `coactra_work_events` (`orchestration/src/coactra/orchestration/work/backends/sql.py:96-138`).
-- Stored data: full `WorkOrder` JSON snapshot plus indexed `tenant_id`, `namespace`, `status`, `idempotency_key`, and `version` (`orchestration/docs/WORK-ORDERS.md:153-156`).
-- Concurrency: optimistic `UPDATE ... WHERE version = ...` semantics (`orchestration/docs/WORK-ORDERS.md:177-180`, `orchestration/src/coactra/orchestration/work/backends/sql.py:145-224`).
+- Stored data: full `WorkOrder` JSON snapshot plus indexed `tenant_id`, `namespace`, `status`, `idempotency_key`, and `version` (`docs/orchestration/WORK-ORDERS.md:153-156`).
+- Concurrency: optimistic `UPDATE ... WHERE version = ...` semantics (`docs/orchestration/WORK-ORDERS.md:177-180`, `orchestration/src/coactra/orchestration/work/backends/sql.py:145-224`).
 - Use: production work ledger for multi-process workers and restart-safe work state (`docs/PRODUCTION.md:20-44`).
 
 ### Organization SQL Store
@@ -628,7 +628,7 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 
 ### Environment Variables and Secrets
 
-- Work docs show `COACTRA_WORK_DATABASE_URL` and `WORKER_ID` for worker setup (`orchestration/docs/WORK-ORDERS.md:160-169`).
+- Work docs show `COACTRA_WORK_DATABASE_URL` and `WORKER_ID` for worker setup (`docs/orchestration/WORK-ORDERS.md:160-169`).
 - Memory live tests expect `OPENAI_API_KEY` and `NEO4J_URI` for live Graphiti/mem0 readiness (`memory/tests/test_live_integration.py:24-25`).
 - Keycloak adapter accepts token endpoint, client id, client secret, audience, and actor tokens through constructor parameters, not environment-specific code (`agent/src/coactra/agent/adapters/keycloak.py:107-125`).
 - Production docs warn not to put long-lived secrets in workspace files or capability manifests (`docs/PRODUCTION.md:82-90`).
@@ -643,7 +643,7 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 
 ### Easy for an AI Agent to Understand
 
-- Package boundaries are documented in `LIBRARIES.md` and package READMEs (`LIBRARIES.md:95-139`).
+- Package boundaries are documented in `docs/LIBRARIES.md` and package READMEs (`docs/LIBRARIES.md:95-139`).
 - Public APIs are exported from package roots with tests such as `agent/tests/test_public_api.py`, `memory/tests/test_public_api.py`, `orchestration/tests/test_work_public_api.py`, and `organization/tests/test_public_api.py`.
 - Protocol boundaries are explicit and small: agent ports, memory backend, workspace backend, work store, procedure store, org store.
 - Tests describe many intended invariants in plain language, especially mounting, no-passthrough identity, collaboration denial, local exec safety, and Graphiti normalization.
@@ -660,7 +660,7 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 
 Index:
 
-- `README.md`, `LIBRARIES.md`, `docs/*.md`
+- `README.md`, `docs/LIBRARIES.md`, `docs/*.md`
 - package `README.md` and `DESIGN.md`
 - `pyproject.toml` files
 - `src/**/*.py`, excluding generated compatibility only if duplicate noise is too high
@@ -700,7 +700,7 @@ Add front matter or sidecar metadata per doc/chunk:
 
 ## 10. Chatbot Knowledge Base Output
 
-The companion file `CHATBOT_KNOWLEDGE_BASE.md` contains chunked, search-friendly entries. The key chunks are:
+The companion file `docs/CHATBOT_KNOWLEDGE_BASE.md` contains chunked, search-friendly entries. The key chunks are:
 
 - Project Overview and Package Boundary Map
 - Canonical Scope and Tenant Isolation
@@ -722,7 +722,7 @@ Each KB chunk includes summary, keywords, related files, related components, and
 
 ## 11. Improvement Backlog
 
-The companion file `IMPROVEMENT_BACKLOG.md` contains the prioritized backlog. Highest-signal items:
+The companion file `docs/IMPROVEMENT_BACKLOG.md` contains the prioritized backlog. Highest-signal items:
 
 - Fix workspace router `exec` signature to forward `ExecOptions`.
 - Complete `TenantProcedureStoreRouter` so it satisfies the full `ProcedureStore` contract.
@@ -740,12 +740,12 @@ The companion file `IMPROVEMENT_BACKLOG.md` contains the prioritized backlog. Hi
 - Workspace Daytona/E2B/OpenHands adapters are stubs (`workspace/src/coactra/workspace/adapters/daytona.py:1-13`, `workspace/src/coactra/workspace/adapters/e2b.py:1-13`, `workspace/src/coactra/workspace/adapters/openhands.py:1-13`).
 - Organization Neo4j store is a stub (`organization/src/coactra/organization/repository/neo4j_store.py:1-14`).
 - Workflow Temporal and Prefect adapters are implemented thin bridges (`orchestration/src/coactra/orchestration/workflow/adapters/temporal.py`, `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`); production readiness depends on host runtime wiring and integration tests.
-- MCP Tasks adapter is experimental by docs (`orchestration/docs/WORK-ORDERS.md:90-97`).
-- DBOS/Temporal/Dapr dispatch adapters are documented as thin/experimental integration bridges (`LIBRARIES.md:195`).
+- MCP Tasks adapter is experimental by docs (`docs/orchestration/WORK-ORDERS.md:90-97`).
+- DBOS/Temporal/Dapr dispatch adapters are documented as thin/experimental integration bridges (`docs/LIBRARIES.md:195`).
 
 ### Duplicate or Compatibility Paths
 
-- `coactra.work` and `coactra.workflow` compatibility aliases remain after packaging-level merge (`orchestration/README.md:72-78`, `LIBRARIES.md:179-185`).
+- `coactra.work` and `coactra.workflow` compatibility aliases remain after packaging-level merge (`orchestration/README.md:72-78`, `docs/LIBRARIES.md:179-185`).
 - Agent root deprecated exports still resolve internal adapter names (`agent/src/coactra/agent/__init__.py:114-145`).
 - Organization compatibility imports for older store paths remain (`organization/README.md:47-51`).
 - Workspace compatibility imports for `backend.py` and `local.py` remain (`workspace/README.md:76-77`).
@@ -769,7 +769,7 @@ The companion file `IMPROVEMENT_BACKLOG.md` contains the prioritized backlog. Hi
 
 ## 13. Suggested Target Architecture
 
-The companion file `TARGET_ARCHITECTURE.md` contains the detailed recommendation. Summary:
+The companion file `docs/TARGET_ARCHITECTURE.md` contains the detailed recommendation. Summary:
 
 - Keep the six capability packages plus the umbrella installer.
 - Add a small shared core/docs layer for scope, maturity metadata, and generated API/state indexes.

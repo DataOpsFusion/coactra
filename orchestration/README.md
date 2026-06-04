@@ -97,5 +97,5 @@ manager.submit(WorkOrder(scope=scope, title="Build release"))
 ```
 
 For production Postgres, pass a SQLAlchemy URL such as
-`postgresql+psycopg://user:pass@host:5432/db`. See `docs/WORK-ORDERS.md` for the worker
+`postgresql+psycopg://user:pass@host:5432/db`. See `../docs/orchestration/WORK-ORDERS.md` for the worker
 pattern and concurrency guarantees.

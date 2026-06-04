@@ -77,9 +77,9 @@ WorkOrder / Procedure / Approval / Artifact / Audit
 
 ## Source Anchors
 
-- `LIBRARIES.md` defines the thin-wrapper philosophy and package boundaries.
-- `agent/DESIGN.md` defines ports and composition root as locked principles.
-- `orchestration/docs/WORK-ORDERS.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
+- `docs/LIBRARIES.md` defines the thin-wrapper philosophy and package boundaries.
+- `docs/agent/DESIGN.md` defines ports and composition root as locked principles.
+- `docs/orchestration/WORK-ORDERS.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
 - `workspace/README.md` says workspace stores the desk while agent owns MCP mounting and organization owns hierarchy/policy.
 
 ## Runtime Factory
