@@ -10,8 +10,6 @@ from coactra.agent.adapters.keycloak import KeycloakExchanger
     "cls,extra",
     [
         (FastMCPServer, "mcp"),
-        (A2ATransport, "a2a"),
-        (KeycloakExchanger, "oauth"),
     ],
 )
 def test_stub_instantiation_raises_until_extra_and_impl_land(cls, extra):
@@ -21,5 +19,5 @@ def test_stub_instantiation_raises_until_extra_and_impl_land(cls, extra):
 
 def test_stubs_name_the_seam_they_will_satisfy():
     assert FastMCPServer.satisfies == "MCPServerPort"
-    assert A2ATransport.satisfies == "A2ATransportPort"
+    assert A2ATransport.satisfies == "AsyncA2ATransportPort"
     assert KeycloakExchanger.satisfies == "TokenExchanger"

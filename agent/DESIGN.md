@@ -9,7 +9,7 @@
 > no-passthrough); clean up the structure.
 
 ## Locked principles
-- **Ports + DI.** The six siblings are consumed through narrow `Protocol` PORTS
+- **Ports + DI.** Six capability ports backed by five sibling distributions are consumed through narrow `Protocol` PORTS
   (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`, `WorkPort`) — the
   agent NEVER imports sibling code. Ports are **injected** via a composition root.
 - **Ports mirror the real sibling facades** so wiring is a 3-line adapter, not glue:
@@ -35,8 +35,11 @@
 ## Collaboration (keep v0.1, clean it)
 - Tenant-qualified `AgentRef(tenant_id, agent_id)` targets; `CollaborationPolicy` can DENY
   cross-tenant talk (deny-before-allow). `PolicyGatedCollaborator` structurally satisfies
-  `coactra.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
+  `coactra.orchestration.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
   workflow run with no adapter) — verify signatures against the built workflow lib.
+- Async SDK hosts use `AsyncPolicyGatedCollaborator` + `AsyncA2ATransportPort`. It shares
+  the same tenant-qualified deny-before-wire policy without pulling an event-loop-specific
+  SDK or LangGraph into the reusable package.
 
 ## Layers
 ```

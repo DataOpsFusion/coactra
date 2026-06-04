@@ -1,38 +1,31 @@
-"""coactra.agent — the runtime that WIRES the six sibling capabilities into a working
-agent, as a thin composition/POLICY layer ABOVE mature protocols (it does NOT fork them).
+"""coactra.agent — scoped agent composition and policy facade.
 
-It builds only the three session-level gaps the research verdict identified:
-  1. mid-session MCP mounting exposed on the next safe model turn — a prefix-trie tool
-     namespace + a pending->active state machine (mounting.py);
-  2. delegated identity via RFC 8693 token exchange — an immutable subject->actor chain,
-     NEVER token passthrough (identity.py + domain.identity);
-  3. collaboration policy over A2A — tenant-qualified, deniable `AgentRef` targets
-     (collaboration.py + domain.refs).
-
-The six siblings (ai/memory/workspace/workflow/organization/work) are consumed through narrow
-local port Protocols shaped to MIRROR the real sibling facades (ports/), never by importing
-their internals. Build one with `make_agent(...)` (factory.py); every default is an
-in-process fake, so the package is fully testable with zero siblings installed.
-
-    from coactra.agent import make_agent, Scope, DelegationGrant
-
-    agent = make_agent(scope=Scope(tenant_id="acme", namespace="agent:platform"))
-    agent.mount_mcp("fs", my_mcp_server)   # invisible until the next turn
-    agent.begin_turn()                     # now agent.tools() == ["fs.read_file", ...]
-    ident = agent.act_on_behalf_of(DelegationGrant(subject_token=tok, actor=agent.me))
-    reply = agent.talk("agent:security", "is it safe?")   # gated by collaboration policy
+The stable root API exposes the agent facade, local domain types, policy/identity
+Protocols, and composition helpers. Test fakes, A2A server helpers, and internal data
+structures remain importable from their concrete modules and are available at the root only
+through deprecated compatibility lookups.
 """
+
+from __future__ import annotations
+
+import warnings
+from importlib import import_module
+from typing import Any
 
 from coactra.agent.agent import Agent
 from coactra.agent.collaboration import (
     A2ATransportPort,
     AgentRef,
+    AsyncA2ATransportPort,
+    AsyncNullTransport,
+    AsyncPolicyGatedCollaborator,
     AllowSameTenant,
     CollaborationDenied,
     CollaborationPolicy,
     NullTransport,
     PolicyGatedCollaborator,
 )
+from coactra.agent.conformance import TokenExchangeReport, check_token_exchanger_contract
 from coactra.agent.domain import (
     DelegationGrant,
     ExchangedIdentity,
@@ -41,8 +34,15 @@ from coactra.agent.domain import (
     ToolSpec,
     TokenPassthroughError,
 )
+from coactra.agent.errors import AgentError
 from coactra.agent.factory import make_agent
-from coactra.agent.identity import InProcessExchanger, TokenExchanger
+from coactra.agent.identity import (
+    AsyncTokenExchanger,
+    AsyncTokenExchangerAdapter,
+    CachedAsyncTokenExchanger,
+    InProcessExchanger,
+    TokenExchanger,
+)
 from coactra.agent.mounting import (
     ConflictPolicy,
     MCPServerPort,
@@ -50,27 +50,21 @@ from coactra.agent.mounting import (
     MountRegistry,
     NamespaceByMountId,
     RejectOnConflict,
-    ToolTrie,
 )
 from coactra.agent.ports import (
     AIPort,
-    FakeAI,
-    FakeMember,
-    FakeMemory,
-    FakeOrganization,
-    FakeOrgNode,
-    FakeWorkflow,
-    FakeWorkspace,
-    FakeWork,
     MemoryPort,
     OrganizationPort,
     WorkflowPort,
     WorkspacePort,
     WorkPort,
 )
+from coactra.agent.routing import TenantAgentRouter
 
 __all__ = [
     "__version__",
+    # errors
+    "AgentError",
     # domain
     "Scope",
     "ToolSpec",
@@ -79,42 +73,75 @@ __all__ = [
     "ExchangedIdentity",
     "Hop",
     "TokenPassthroughError",
-    # mounting (DSA: prefix trie + state machine)
+    # mounting
     "MCPServerPort",
     "ConflictPolicy",
     "NamespaceByMountId",
     "RejectOnConflict",
     "MountConflictError",
     "MountRegistry",
-    "ToolTrie",
-    # identity (DSA: immutable actor chain)
+    # identity
     "TokenExchanger",
+    "AsyncTokenExchanger",
+    "AsyncTokenExchangerAdapter",
+    "CachedAsyncTokenExchanger",
+    "TokenExchangeReport",
+    "check_token_exchanger_contract",
     "InProcessExchanger",
     # collaboration
     "CollaborationPolicy",
     "AllowSameTenant",
     "A2ATransportPort",
+    "AsyncA2ATransportPort",
     "NullTransport",
+    "AsyncNullTransport",
     "PolicyGatedCollaborator",
+    "AsyncPolicyGatedCollaborator",
     "CollaborationDenied",
-    # ports + fakes
+    # ports
     "AIPort",
     "MemoryPort",
     "WorkspacePort",
     "WorkflowPort",
     "OrganizationPort",
     "WorkPort",
-    "FakeAI",
-    "FakeMemory",
-    "FakeWorkspace",
-    "FakeWorkflow",
-    "FakeOrganization",
-    "FakeWork",
-    "FakeOrgNode",
-    "FakeMember",
     # facade + composition root
     "Agent",
     "make_agent",
+    "TenantAgentRouter",
 ]
+
+_DEPRECATED_ROOT_EXPORTS: dict[str, tuple[str, str]] = {
+    "ToolTrie": ("coactra.agent.mounting", "ToolTrie"),
+    "FakeAI": ("coactra.agent.ports", "FakeAI"),
+    "FakeMemory": ("coactra.agent.ports", "FakeMemory"),
+    "FakeWorkspace": ("coactra.agent.ports", "FakeWorkspace"),
+    "FakeWorkflow": ("coactra.agent.ports", "FakeWorkflow"),
+    "FakeOrganization": ("coactra.agent.ports", "FakeOrganization"),
+    "FakeWork": ("coactra.agent.ports", "FakeWork"),
+    "FakeOrgNode": ("coactra.agent.ports", "FakeOrgNode"),
+    "FakeMember": ("coactra.agent.ports", "FakeMember"),
+    "A2AInboundRequest": ("coactra.agent.adapters.a2a_server", "A2AInboundRequest"),
+    "A2ARequestVerifier": ("coactra.agent.adapters.a2a_server", "A2ARequestVerifier"),
+    "build_a2a_app": ("coactra.agent.adapters.a2a_server", "build_a2a_app"),
+    "make_a2a_executor": ("coactra.agent.adapters.a2a_server", "make_a2a_executor"),
+    "parse_a2a_envelope": ("coactra.agent.adapters.a2a_server", "parse_a2a_envelope"),
+    "render_task_text": ("coactra.agent.adapters.a2a_server", "render_task_text"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    target = _DEPRECATED_ROOT_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(name)
+    module_name, attr_name = target
+    warnings.warn(
+        f"coactra.agent.{name} is deprecated at the package root; "
+        f"import {attr_name} from {module_name} instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return getattr(import_module(module_name), attr_name)
+
 
 __version__ = "0.2.0"

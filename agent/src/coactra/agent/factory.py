@@ -61,7 +61,7 @@ def make_agent(
     Args:
       scope: the mandatory tenant/namespace key threaded through every subsystem.
       me: self-identity for collaboration; defaults to `scope.namespace`.
-      ai/memory/workspace/workflow/organization/work: the six sibling PORTS (fakes by default).
+      ai/memory/workspace/workflow/organization/work: the six capability PORTS (fakes by default).
       mcp: optional initial mounts (`{mount_id: server}`) staged at construction — they
            remain INVISIBLE until the first `begin_turn()`, like any mid-session mount.
       transport: the A2A wire behind the collaboration gate (NullTransport by default).

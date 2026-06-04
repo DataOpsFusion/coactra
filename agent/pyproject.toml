@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "mcp", "a2a", "rfc8693", "agent-runtime", "composition"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
@@ -25,28 +25,29 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The six optional siblings this library can wire together. The core imports none of
+# The five optional sibling distributions this library can wire together. The core imports none of
 # them: it consumes local port Protocols with in-process fakes. Optional adapters under
 # `coactra.agent.integrations` import sibling facades lazily when the full stack is used.
 siblings = [
     "coactra-ai",
     "coactra-memory",
     "coactra-workspace",
-    "coactra-workflow",
+    "coactra-orchestration",
     "coactra-organization",
-    "coactra-work",
 ]
 mcp = ["fastmcp>=2"]
-a2a = ["a2a-sdk>=0.2"]
-oauth = ["authlib>=1.3"]
+a2a = ["a2a-sdk>=1.0,<2.0"]
+oauth = ["authlib>=1.3", "httpx>=0.27"]
 # `agents` (openai-agents) is intentionally NOT an extra yet: this plan exposes the toolset
 # (mounting.active_tools + the begin_turn invalidate callback) for whatever runner drives
 # the model; it does not yet wrap the OpenAI Agents runner. Add an `agents` extra + an
 # AgentRunnerPort seam only when that integration is actually built (YAGNI until then).
-dev = ["pytest>=8", "ruff>=0.5"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.5"]
 
 [project.urls]
-Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
+Homepage = "https://github.com/coactra/coactra"
+Repository = "https://github.com/coactra/coactra"
+Issues = "https://github.com/coactra/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 # PEP 420 namespace: ship the coactra/ dir WITHOUT a top-level coactra/__init__.py
@@ -62,9 +63,8 @@ include = ["src/coactra", "README.md", "tests"]
 coactra-ai = { path = "../lib-ai", editable = true }
 coactra-memory = { path = "../memory", editable = true }
 coactra-workspace = { path = "../workspace", editable = true }
-coactra-workflow = { path = "../workflow", editable = true }
+coactra-orchestration = { path = "../orchestration", editable = true }
 coactra-organization = { path = "../organization", editable = true }
-coactra-work = { path = "../work", editable = true }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
