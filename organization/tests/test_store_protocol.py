@@ -88,6 +88,9 @@ class _Dummy:
     def set_member_status(self, tenant_id, member_id, status) -> None:
         ...
 
+    def set_member_directory_fields(self, tenant_id, member_id, *, seniority, created_by, approved_by) -> None:
+        ...
+
     def set_block_inheritance(self, tenant_id, node_id, value) -> None:
         ...
 

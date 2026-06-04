@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from coactra.organization.domain.directory import PolicyReference
 from coactra.organization.domain.member import Member, MemberKind, MemberStatus
 from coactra.organization.domain.permission import Action, Effect, PermissionSet
 from coactra.organization.domain.seat import Seat
@@ -45,6 +46,10 @@ class Organization:
         self._children: list[Organization] = []
         self._members: list[Member] = []
         self._grants: PermissionSet = set()
+        self._reporting_edges: list[tuple[Seat, Seat]] = []
+        self._escalation_routes: list[tuple[Seat, Seat]] = []
+        self._policy_refs: list[PolicyReference] = []
+        self._known_seats: list[Seat] = []
 
     # --- construction / tree shape (composite) ---------------------------------
 
@@ -120,6 +125,9 @@ class Organization:
         kind: str | MemberKind = MemberKind.agent,
         role: str | None = None,
         permissions: PermissionSet | None = None,
+        seniority: int = 0,
+        created_by: str | None = None,
+        approved_by: str | None = None,
     ) -> Member:
         """Record a principal on THIS node. Does not provision or message anything.
 
@@ -130,7 +138,17 @@ class Organization:
         # A seat is created if a role is named OR permissions are conferred — never
         # silently drop permissions just because no role string was given.
         seat = Seat(role=role or "", permissions=perms) if (role is not None or perms) else None
-        member = Member(name=name, kind=MemberKind(kind), seat=seat, node=self)
+        member = Member(
+            name=name,
+            kind=MemberKind(kind),
+            seat=seat,
+            node=self,
+            seniority=seniority,
+            created_by=created_by,
+            approved_by=approved_by,
+        )
+        if seat is not None:
+            self.root_node()._known_seats.append(seat)
         self._members.append(member)
         return member
 
@@ -149,6 +167,11 @@ class Organization:
         """Re-enable a suspended principal."""
         self._owner_node(member)
         member.status = MemberStatus.active
+
+    def archive(self, member: Member) -> None:
+        """Retain a principal for audit while removing all effective access."""
+        self._owner_node(member)
+        member.status = MemberStatus.archived
 
     def move(self, member: Member, to: "Organization") -> None:
         """Reparent a principal to another node in the SAME tenant (AD move OU)."""
@@ -178,6 +201,40 @@ class Organization:
                     raise CrossTenantError("member belongs to a different tenant")
                 return node
         raise ValueError(f"member {member.name!r} is not in this organization tree")
+
+    # --- optional directory metadata ------------------------------------------
+
+    def reports_to(self, seat: Seat, manager: Seat) -> None:
+        """Record a seat reporting edge on the tenant aggregate."""
+        self.root_node()._reporting_edges.append((seat, manager))
+
+    def route_escalation(self, seat: Seat, decider: Seat) -> None:
+        """Record an explicit escalation override on the tenant aggregate."""
+        self.root_node()._escalation_routes.append((seat, decider))
+
+    def add_policy_ref(self, name: str, *, version: int = 1, target: str = "") -> PolicyReference:
+        ref = PolicyReference(name=name, version=version, target=target)
+        self.root_node()._policy_refs.append(ref)
+        return ref
+
+    @property
+    def reporting_edges(self) -> list[tuple[Seat, Seat]]:
+        return list(self.root_node()._reporting_edges)
+
+    @property
+    def escalation_routes(self) -> list[tuple[Seat, Seat]]:
+        return list(self.root_node()._escalation_routes)
+
+    @property
+    def policy_refs(self) -> list[PolicyReference]:
+        return list(self.root_node()._policy_refs)
+
+    def owner_of(self, resource_domain: str) -> Seat | None:
+        """Return the seat owning ``resource_domain``, if one is known."""
+        for seat in self.root_node()._known_seats:
+            if seat.domain == resource_domain:
+                return seat
+        return None
 
     # --- node-level grants -----------------------------------------------------
 

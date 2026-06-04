@@ -20,6 +20,7 @@ class Seat:
     role: str
     domain: str | None = None
     permissions: PermissionSet = field(default_factory=set)
+    id: int | None = None
 
     def grants(self, action: Action) -> bool:
         return action in self.permissions

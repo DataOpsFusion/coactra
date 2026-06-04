@@ -12,7 +12,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
-from coactra.organization.models import Department, Member, PolicyRef, Seat, Tenant
+from coactra.organization.models import (
+    Department, EscalationRoute, Member, PolicyRef, ReportingEdge, Seat, Tenant,
+)
 
 
 @dataclass
@@ -32,6 +34,10 @@ class Directory:
     # node id -> set of granted actions; member id -> {action: "allow"|"deny"}
     grants_by_node: dict[int, set[str]] = field(default_factory=dict)
     overrides_by_member: dict[int, dict[str, str]] = field(default_factory=dict)
+    seats: list[Seat] = field(default_factory=list)
+    reporting_edges: list[ReportingEdge] = field(default_factory=list)
+    escalation_routes: list[EscalationRoute] = field(default_factory=list)
+    policy_refs: list[PolicyRef] = field(default_factory=list)
 
 
 @runtime_checkable
@@ -162,7 +168,13 @@ class OrgStore(Protocol):
     # --- mutation reconciliation (so an explicit re-save flushes changes) -------
 
     def set_member_status(self, tenant_id: str, member_id: int, status: str) -> None:
-        """Persist a member's lifecycle status (active/suspended)."""
+        """Persist a member's lifecycle status (active/suspended/archived)."""
+        ...
+
+    def set_member_directory_fields(
+        self, tenant_id: str, member_id: int, *, seniority: int, created_by: str | None, approved_by: str | None
+    ) -> None:
+        """Persist directory ranking and audit attribution fields."""
         ...
 
     def set_block_inheritance(self, tenant_id: str, node_id: int, value: bool) -> None:
@@ -179,3 +191,12 @@ class OrgStore(Protocol):
     def clear_override(self, tenant_id: str, member_id: int, action: str) -> None:
         """Remove one per-member override (no-op if absent)."""
         ...
+
+
+# Single source of truth for the directory SPI surface. Adapters (the async facade and the
+# tenant router) build their forwarders from this instead of hand-syncing a name list that
+# can silently drift from the Protocol — add a method here and both adapters pick it up.
+ORG_STORE_METHODS: tuple[str, ...] = tuple(
+    name for name, value in vars(OrgStore).items()
+    if not name.startswith("_") and callable(value)
+)
