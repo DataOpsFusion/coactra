@@ -41,10 +41,10 @@
 In `agent/pyproject.toml`, under `[project.optional-dependencies]`, add:
 
 ```toml
-agent = ["pydantic-ai-slim>=0.0.20"]
+agent = ["pydantic-ai-slim>=1.0"]
 ```
 
-(If `[tool.uv.sources]` exists, no change needed — this is a real PyPI dep.) Then in the same file's `dev` extra, ensure it includes the agent extra deps so tests can import pydantic-ai, e.g. append `"pydantic-ai-slim>=0.0.20"` to the `dev` list.
+(If `[tool.uv.sources]` exists, no change needed — this is a real PyPI dep.) Then in the same file's `dev` extra, ensure it includes the agent extra deps so tests can import pydantic-ai, e.g. append `"pydantic-ai-slim>=1.0"` to the `dev` list.
 
 - [ ] **Step 2: Install and verify import**
 
