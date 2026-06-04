@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "stability_tiers": [
+    "stable",
+    "beta",
+    "experimental",
+    "compatibility",
+    "internal"
+  ],
+  "preferred_import_roots": [
+    {
+      "root": "coactra.scope",
+      "tier": "stable",
+      "purpose": "canonical scope conversion DTO"
+    },
+    {
+      "root": "coactra.ai",
+      "tier": "beta",
+      "purpose": "model calls, embeddings, reasoning replay"
+    },
+    {
+      "root": "coactra.memory",
+      "tier": "beta",
+      "purpose": "memory facade and backends"
+    },
+    {
+      "root": "coactra.workspace",
+      "tier": "beta",
+      "purpose": "workspace desk and backend policy"
+    },
+    {
+      "root": "coactra.orchestration.work",
+      "tier": "beta",
+      "purpose": "durable work-order ledger"
+    },
+    {
+      "root": "coactra.orchestration.workflow",
+      "tier": "beta",
+      "purpose": "procedure models and workflow runtime adapters"
+    },
+    {
+      "root": "coactra.orchestration",
+      "tier": "beta",
+      "purpose": "work/workflow facade"
+    },
+    {
+      "root": "coactra.organization",
+      "tier": "beta",
+      "purpose": "organization directory and authorization"
+    },
+    {
+      "root": "coactra.agent",
+      "tier": "beta",
+      "purpose": "agent composition root and policy"
+    },
+    {
+      "root": "coactra.agent.integrations",
+      "tier": "beta",
+      "purpose": "full-stack composition helpers"
+    }
+  ],
+  "compatibility_imports": [
+    {
+      "root": "coactra.work",
+      "preferred": "coactra.orchestration.work"
+    },
+    {
+      "root": "coactra.workflow",
+      "preferred": "coactra.orchestration.workflow"
+    }
+  ]
+}

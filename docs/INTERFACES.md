@@ -1,0 +1,113 @@
+# Interface Map
+
+This page names the public surfaces application code should use. The rule is simple: import from package roots for core behavior, and from `.adapters` packages only when you are wiring an external system.
+
+Start with [QUICKSTART.md](QUICKSTART.md) if you are building your first app, then use [EXAMPLES.md](EXAMPLES.md) to choose a sample project close to your use case.
+
+## Package Roots
+
+| Need | Import from | Main objects |
+|---|---|---|
+| Shared scope conversion | `coactra.scope` | `CoactraScope` |
+| Model calls and reasoning reuse | `coactra.ai` | `ask`, `structured`, `Client`, `ReasoningEngine` |
+| Long-term memory | `coactra.memory` | `Memory`, `MemoryBackend`, `make_backend`, `AuthorizedMemory` |
+| Persistent workspace | `coactra.workspace` | `Workspace`, `open_workspace`, `WorkspaceBackend`, `CliPolicy` |
+| Procedures and durable work | `coactra.orchestration` | `Orchestrator`, `DurableOrchestrator`, `Procedure`, `WorkManager` |
+| Work-order lifecycle | `coactra.orchestration.work` | `WorkOrder`, `WorkManager`, `WorkStore`, `AtomicWorkStore`, `SqlWorkStore` |
+| Tenant directory and authority | `coactra.organization` | `Organization`, `OrgStore`, `Authorizer`, `CompanySpec` |
+| Runtime composition | `coactra.agent` | `Agent`, `make_agent`, ports, identity, collaboration policy |
+
+## Normal Application Shape
+
+A normal app should not start with inheritance. Start with functions and inject the small Coactra object they need.
+
+```python
+from coactra.agent import Scope, make_agent
+
+
+def answer_support_question(question: str) -> str:
+    agent = make_agent(scope=Scope(tenant_id="acme", namespace="agent:support"))
+    return agent.think(question)
+```
+
+When work must be durable, add `WorkManager`:
+
+```python
+from coactra.orchestration.work import Scope, WorkManager, WorkOrder
+
+work = WorkManager()
+scope = Scope(tenant_id="acme", namespace="support")
+order = work.submit(WorkOrder(scope=scope, title="Triage incident"))
+```
+
+## Scope
+
+Each package keeps a small local `Scope` so it can be installed independently. For a composed app, use `CoactraScope` as the canonical DTO and convert at the boundary.
+
+```python
+from coactra.scope import CoactraScope
+
+scope = CoactraScope(
+    tenant_id="acme",
+    namespace="support",
+    agent_id="triage-agent",
+    session_id="session-1",
+)
+
+agent_kwargs = scope.to_agent_kwargs()
+work_kwargs = scope.to_work_kwargs()
+memory_kwargs = scope.to_memory_kwargs()
+```
+
+## A2A Placement
+
+A2A is not a separate Coactra core package. It is transport plumbing for multi-agent services.
+
+Use it only when one deployed agent service must call another deployed agent service.
+
+| Layer | Owns |
+|---|---|
+| `coactra.agent` | `CollaborationPolicy`, `AllowSameTenant`, `PolicyGatedCollaborator`, `AsyncPolicyGatedCollaborator`, `A2ATransportPort`, `AsyncA2ATransportPort` |
+| `coactra.agent.adapters` | `OfficialA2ATransport`, `build_a2a_app`, `A2AInboundRequest` |
+| `coactra.orchestration.work.adapters` | `to_a2a_agent_card`, `to_a2a_skill`, `to_a2a_artifact` |
+
+Outbound async A2A host:
+
+```python
+from coactra.agent import AllowSameTenant, AsyncPolicyGatedCollaborator, Scope
+from coactra.agent.adapters import OfficialA2ATransport
+
+scope = Scope(tenant_id="acme", namespace="agent:triage")
+transport = OfficialA2ATransport(
+    endpoint_for=lambda ref: f"https://{ref.agent_id}.internal/a2a",
+    audience_for=lambda ref: f"a2a://{ref.agent_id}",
+    token_provider=issue_token,
+)
+collaborator = AsyncPolicyGatedCollaborator(
+    transport=transport,
+    policy=AllowSameTenant(),
+    scope=scope,
+    me="agent:triage",
+)
+reply = await collaborator.ask("agent:research", "Check the incident notes", {})
+```
+
+Inbound A2A server:
+
+```python
+from coactra.agent.adapters import A2AInboundRequest, build_a2a_app
+
+async def handle(request: A2AInboundRequest) -> str:
+    return await run_capability(request.requested_capability, request.params)
+
+app = build_a2a_app(agent_card=agent_card, handler=handle, verifier=verifier)
+```
+
+The official A2A SDK path is async. The default `make_agent(...)` path is sync because it also supports workflow run contexts. Use `AsyncPolicyGatedCollaborator` directly for async A2A services.
+
+## Examples
+
+- [EXAMPLES.md](EXAMPLES.md): the full runnable sample catalog.
+- [../examples/basic_incident_triage.py](../examples/basic_incident_triage.py): normal function-first app using `make_agent` and `WorkManager`.
+- [../examples/projects](../examples/projects): diverse sample projects for memory, durable work, workspace, and multi-agent policy.
+- [../examples/function_first_agent.py](../examples/function_first_agent.py): advanced port-injection demo showing that Coactra accepts structural ports without subclassing.
