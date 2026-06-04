@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "coactra authors" }]
 keywords = ["llm", "agents", "reasoning", "structured-output", "litellm", "instructor"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
@@ -29,10 +29,13 @@ dependencies = [
 
 [project.optional-dependencies]
 chroma = ["chromadb>=0.5"]
+tiktoken = ["tiktoken>=0.7"]
 dev = ["pytest>=8.0"]
 
 [project.urls]
-Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
+Homepage = "https://github.com/coactra/coactra"
+Repository = "https://github.com/coactra/coactra"
+Issues = "https://github.com/coactra/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/coactra"]

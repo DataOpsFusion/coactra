@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from coactra.ai.completion.embedding import cosine
+from coactra.ai.completion.embedding import rank_traces
 from coactra.ai.replay.models import ReasoningTrace
 
 _META_JSON = "coactra_meta_json"
@@ -62,16 +62,15 @@ class ChromaStore:
     def search(
         self, tenant: str, vector: list[float], k: int, min_quality: float
     ) -> list[tuple[ReasoningTrace, float]]:
+        # Over-fetch (k*4) stays adapter-local; ranking/filtering is shared via rank_traces.
         res = self._col.query(
             query_embeddings=[vector],
             n_results=k * 4,
             where={"tenant": tenant},
             include=["metadatas", "embeddings"],
         )
-        out: list[tuple[ReasoningTrace, float]] = []
-        for meta, emb in zip(res["metadatas"][0], res["embeddings"][0]):
-            trace = _from_metadata(meta, emb)
-            if trace.quality >= min_quality:
-                out.append((trace, cosine(vector, emb)))
-        out.sort(key=lambda pair: pair[1], reverse=True)
-        return out[:k]
+        candidates = [
+            _from_metadata(meta, emb)
+            for meta, emb in zip(res["metadatas"][0], res["embeddings"][0])
+        ]
+        return rank_traces(vector, candidates, k, min_quality)
