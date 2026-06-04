@@ -1,5 +1,5 @@
-PACKAGES := coactra lib-ai memory workspace workflow organization work agent
-CORE_PACKAGES := coactra memory workspace work agent
+PACKAGES := coactra lib-ai memory workspace orchestration organization agent
+CORE_PACKAGES := coactra memory workspace orchestration agent
 
 .PHONY: test test-core
 

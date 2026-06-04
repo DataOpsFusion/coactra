@@ -15,23 +15,26 @@ authors = [{ name = "coactra authors" }]
 ai = ["coactra-ai>=0.2,<0.3"]
 memory = ["coactra-memory>=0.2,<0.3"]
 workspace = ["coactra-workspace>=0.1,<0.2"]
-workflow = ["coactra-workflow>=0.1,<0.2"]
-work = ["coactra-work>=0.1,<0.2"]
+orchestration = ["coactra-orchestration>=0.1,<0.2"]
+# Deprecated install aliases: both capabilities now ship in coactra-orchestration.
+workflow = ["coactra-orchestration>=0.1,<0.2"]
+work = ["coactra-orchestration>=0.1,<0.2"]
 organization = ["coactra-organization>=0.2,<0.3"]
 agent = ["coactra-agent[siblings]>=0.2,<0.3"]
 all = [
     "coactra-ai>=0.2,<0.3",
     "coactra-memory>=0.2,<0.3",
     "coactra-workspace>=0.1,<0.2",
-    "coactra-workflow>=0.1,<0.2",
-    "coactra-work>=0.1,<0.2",
+    "coactra-orchestration>=0.1,<0.2",
     "coactra-organization>=0.2,<0.3",
     "coactra-agent>=0.2,<0.3",
 ]
 dev = ["pytest>=8"]
 
 [project.urls]
-Homepage = "https://example.invalid/coactra"  # TODO: set real repo URL before PyPI
+Homepage = "https://github.com/coactra/coactra"
+Repository = "https://github.com/coactra/coactra"
+Issues = "https://github.com/coactra/coactra/issues"
 
 [tool.hatch.build.targets.wheel]
 # Preserve the PEP 420 coactra namespace: this package intentionally has no __init__.py.

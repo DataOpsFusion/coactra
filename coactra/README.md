@@ -7,7 +7,7 @@ Install only the capability you need:
 ```bash
 pip install coactra[memory]
 pip install coactra[workspace]
-pip install coactra[work]
+pip install coactra[orchestration]
 pip install coactra[agent]
 pip install coactra[all]
 ```
