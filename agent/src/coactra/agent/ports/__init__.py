@@ -1,6 +1,6 @@
-"""ports/ — the six narrow sibling Protocols + their in-process fakes.
+"""ports/ — the six narrow capability Protocols + their in-process fakes.
 
-The agent consumes ai/memory/workspace/workflow/organization/work ONLY through these
+The agent consumes ai/memory/workspace/orchestration(workflow + work)/organization ONLY through these
 Protocols; it never imports `coactra.<sibling>`. Each port mirrors the real sibling
 facade so live wiring is a thin adapter. Each ships a faithful in-process fake default.
 """

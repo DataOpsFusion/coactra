@@ -10,9 +10,9 @@ DESIGN: collaboration targets are TENANT-QUALIFIED and DENIABLE. A target is an
 policy can adjudicate cross-TENANT talk and DENY it. A bare-string agent id (e.g. a
 workflow `ask` step's `agent`) is lifted to an `AgentRef` in the caller's tenant.
 
-Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies coactra.workflow's
+Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies coactra.orchestration.workflow's
 `Collaborator` (.ask(agent, question, state)) and `EscalationRouter` (.route(escalation,
-chain)) Protocols — verified verbatim against workflow/handlers.py. We do not import
+chain)) Protocols — verified verbatim against orchestration/workflow/runtime/handlers.py. We do not import
 workflow; structural typing is the contract. The `ask` first parameter is WIDENED to
 `str | AgentRef`, which is structurally safe for a runtime_checkable Protocol.
 """
@@ -39,6 +39,13 @@ class CollaborationPolicy(Protocol):
 class A2ATransportPort(Protocol):
     def send(self, dst: AgentRef, question: str, scope: Scope) -> str:
         """Carry a question to `dst` (a tenant-qualified target) over A2A and return the reply."""
+        ...
+
+
+@runtime_checkable
+class AsyncA2ATransportPort(Protocol):
+    async def send(self, dst: AgentRef, question: str, scope: Scope) -> str:
+        """Carry a question over an async A2A client and return the reply."""
         ...
 
 
@@ -78,11 +85,40 @@ class NullTransport:
         return ""
 
 
+class AsyncNullTransport:
+    """Async default A2A transport — no wire configured; returns empty."""
+
+    async def send(self, dst: AgentRef, question: str, scope: Scope) -> str:
+        return ""
+
+
+def _allowed_target(
+    *,
+    policy: CollaborationPolicy,
+    scope: Scope,
+    me: str,
+    agent: str | AgentRef,
+) -> AgentRef:
+    me_ref = AgentRef(tenant_id=scope.tenant_id, agent_id=me)
+    dst_ref = as_ref(agent, scope)
+    if not policy.can_talk(me_ref, dst_ref, scope):
+        raise CollaborationDenied(
+            f"{me_ref.qualified_name} -> {dst_ref.qualified_name} denied by policy"
+        )
+    return dst_ref
+
+
+def _terminal_route(escalation: Any, chain: list[str]) -> str:
+    if not chain:
+        raise CollaborationDenied(getattr(escalation, "reason", "unresolved"))
+    return chain[-1]
+
+
 class PolicyGatedCollaborator:
     """Gates an A2A transport behind a CollaborationPolicy.
 
     Implements BOTH workflow seams by structural typing (signatures verified against
-    coactra.workflow.handlers):
+    coactra.orchestration.workflow.handlers):
       ask(agent, question, state) -> str          (workflow.Collaborator)
       route(escalation, chain) -> decider id       (workflow.EscalationRouter)
 
@@ -105,12 +141,9 @@ class PolicyGatedCollaborator:
         self._me = me
 
     def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:
-        me_ref = AgentRef(tenant_id=self._scope.tenant_id, agent_id=self._me)
-        dst_ref = as_ref(agent, self._scope)
-        if not self._policy.can_talk(me_ref, dst_ref, self._scope):
-            raise CollaborationDenied(
-                f"{me_ref.qualified_name} -> {dst_ref.qualified_name} denied by policy"
-            )
+        dst_ref = _allowed_target(
+            policy=self._policy, scope=self._scope, me=self._me, agent=agent
+        )
         return self._transport.send(dst_ref, question, self._scope)
 
     def route(self, escalation: Any, chain: list[str]) -> str:
@@ -118,6 +151,34 @@ class PolicyGatedCollaborator:
         is opaque to agent (organization owns who-reports-to-whom); we take the last id as
         the terminal decider (human / SOTA), matching the sibling workflow default
         (TerminalHumanRouter)."""
-        if not chain:
-            raise CollaborationDenied(getattr(escalation, "reason", "unresolved"))
-        return chain[-1]
+        return _terminal_route(escalation, chain)
+
+
+class AsyncPolicyGatedCollaborator:
+    """Async counterpart for hosts backed by an async A2A SDK client.
+
+    The sync collaborator remains the workflow-compatible default. This form keeps the
+    same tenant-qualified deny-before-wire policy while awaiting an async transport.
+    """
+
+    def __init__(
+        self,
+        *,
+        transport: AsyncA2ATransportPort,
+        policy: CollaborationPolicy,
+        scope: Scope,
+        me: str,
+    ) -> None:
+        self._transport = transport
+        self._policy = policy
+        self._scope = scope
+        self._me = me
+
+    async def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:
+        dst_ref = _allowed_target(
+            policy=self._policy, scope=self._scope, me=self._me, agent=agent
+        )
+        return await self._transport.send(dst_ref, question, self._scope)
+
+    def route(self, escalation: Any, chain: list[str]) -> str:
+        return _terminal_route(escalation, chain)

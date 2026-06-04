@@ -1,6 +1,6 @@
-"""The six sibling PORTS — the un-tangling seam.
+"""The six capability PORTS — the un-tangling seam.
 
-agent wires ai/memory/workspace/workflow/organization/work, but consuming a sibling's CODE
+agent wires ai/memory/workspace/orchestration(workflow + work)/organization, but consuming a sibling's CODE
 would re-tangle the libraries. So each sibling is consumed through a NARROW local port
 Protocol. Each port is shaped to MIRROR the real sibling facade, so the downstream wiring
 is a 3-line adapter rather than glue:
@@ -8,9 +8,9 @@ is a 3-line adapter rather than glue:
   - MemoryPort.remember(events, scope) / recall(query, scope, k)   <- coactra.memory.Memory (ASYNC)
   - OrganizationPort.can(member, action) / members(node) / manager(node)  <- coactra.organization.Organization
   - AIPort.ask(prompt) / structured(schema, prompt)                <- coactra.ai
-  - WorkflowPort.run(procedure, state)                             <- coactra.workflow (engine + RunContext)
+  - WorkflowPort.run(procedure, state)                             <- coactra.orchestration.workflow (engine + RunContext)
   - WorkspacePort.read / write / run                               <- coactra.workspace.Workspace
-  - WorkPort.submit / get / cancel                                  <- coactra.work.WorkManager
+  - WorkPort.submit / get / cancel                                  <- coactra.orchestration.work.WorkManager
 
 This library never imports `coactra.<sibling>`; structural typing is the only contract.
 Only `MemoryPort` is async — its real facade (`Memory.remember`/`recall`) is async. The
@@ -68,7 +68,7 @@ class WorkspacePort(Protocol):
 @runtime_checkable
 class WorkflowPort(Protocol):
     def run(self, procedure: Any, state: dict[str, Any]) -> Any:
-        """Compile + execute a procedure with `state` (mirrors coactra.workflow run).
+        """Compile + execute a procedure with `state` (mirrors coactra.orchestration.workflow run).
 
         The narrow surface is `(procedure, state)`; an adapter supplies the sibling's
         `RunContext` (scope + the agent's own collaborator/router) so a workflow `ask`
@@ -95,7 +95,7 @@ class OrganizationPort(Protocol):
 @runtime_checkable
 class WorkPort(Protocol):
     def submit(self, order: Any) -> Any:
-        """Submit one durable work order (mirrors coactra.work.WorkManager.submit)."""
+        """Submit one durable work order (mirrors coactra.orchestration.work.WorkManager.submit)."""
         ...
 
     def get(self, work_id: str, scope: Scope) -> Any:

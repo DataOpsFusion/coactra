@@ -16,9 +16,9 @@ from coactra.agent.integrations.adapters import (
 
 
 def _workflow_scope_from_agent(scope: Any) -> Any:
-    from coactra.workflow import Scope
+    from coactra.orchestration import WorkflowScope
 
-    return Scope(tenant_id=scope.tenant_id, namespace=scope.namespace)
+    return WorkflowScope(tenant_id=scope.tenant_id, namespace=scope.namespace)
 
 
 def make_coactra_agent(

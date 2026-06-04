@@ -1,15 +1,19 @@
 import asyncio
+import warnings
 
 import coactra.agent as a
+from coactra.agent.ports import FakeAI, FakeMemory, FakeOrganization
 
 
 def test_version_is_v2():
     assert a.__version__ == "0.2.0"
 
 
-def test_public_surface_is_complete():
+def test_public_surface_is_stable_root_api():
     expected = {
         "__version__",
+        # errors
+        "AgentError",
         # domain
         "Scope",
         "ToolSpec",
@@ -18,55 +22,65 @@ def test_public_surface_is_complete():
         "ExchangedIdentity",
         "Hop",
         "TokenPassthroughError",
-        # mounting (DSA)
+        # mounting
         "MCPServerPort",
         "ConflictPolicy",
         "NamespaceByMountId",
         "RejectOnConflict",
         "MountConflictError",
         "MountRegistry",
-        "ToolTrie",
-        # identity (DSA)
+        # identity
         "TokenExchanger",
+        "AsyncTokenExchanger",
+        "AsyncTokenExchangerAdapter",
+        "CachedAsyncTokenExchanger",
+        "TokenExchangeReport",
+        "check_token_exchanger_contract",
         "InProcessExchanger",
         # collaboration
         "CollaborationPolicy",
         "AllowSameTenant",
         "AgentRef",
         "A2ATransportPort",
+        "AsyncA2ATransportPort",
         "NullTransport",
+        "AsyncNullTransport",
         "PolicyGatedCollaborator",
+        "AsyncPolicyGatedCollaborator",
         "CollaborationDenied",
-        # ports + fakes
+        # ports
         "AIPort",
         "MemoryPort",
         "WorkspacePort",
         "WorkflowPort",
         "OrganizationPort",
         "WorkPort",
-        "FakeAI",
-        "FakeMemory",
-        "FakeWorkspace",
-        "FakeWorkflow",
-        "FakeOrganization",
-        "FakeWork",
-        "FakeOrgNode",
-        "FakeMember",
         # facade + composition root
         "Agent",
         "make_agent",
+        "TenantAgentRouter",
     }
-    assert expected <= set(a.__all__)
+    assert set(a.__all__) == expected
     for name in expected:
         assert hasattr(a, name), name
+    assert "FakeAI" not in a.__all__
+    assert "ToolTrie" not in a.__all__
+    assert "build_a2a_app" not in a.__all__
+
+
+def test_deprecated_root_internal_access_still_warns_for_migration():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert a.FakeAI is FakeAI
+    assert any("deprecated at the package root" in str(item.message) for item in caught)
 
 
 def test_removed_v01_names_are_gone():
     # API genuinely moved in v0.2: the v0.1 sync MemoryPort.learn / AIPort.complete /
     # OrganizationPort.escalation_chain surfaces are gone — the fakes no longer expose them.
-    assert not hasattr(a.FakeAI(), "complete")
-    assert not hasattr(a.FakeMemory(), "learn")
-    assert not hasattr(a.FakeOrganization(), "escalation_chain")
+    assert not hasattr(FakeAI(), "complete")
+    assert not hasattr(FakeMemory(), "learn")
+    assert not hasattr(FakeOrganization(), "escalation_chain")
 
 
 def test_end_to_end_composition():
@@ -102,19 +116,19 @@ def test_end_to_end_composition():
 
 
 def _load_workflow_handlers():
-    # Load the REAL coactra.workflow.runtime.handlers module DIRECTLY by file path. handlers.py is
+    # Load the REAL coactra.orchestration.workflow.runtime.handlers module DIRECTLY by file path. handlers.py is
     # leaf-importable (it imports only typing + pydantic), so this gives us the ACTUAL
-    # Protocols the inter-lib contract is defined against WITHOUT importing coactra.workflow
-    # (which pulls langgraph via langgraph_engine). The test can therefore never drift from
+    # Protocols the inter-lib contract is defined against WITHOUT importing coactra.orchestration.workflow
+    # (without pulling an optional backend). The test can therefore never drift from
     # the real workflow contract — if workflow renames/reshapes a seam, this breaks.
     import importlib.util
     from pathlib import Path
 
     here = Path(__file__).resolve()
-    # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/workflow/src/...
+    # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/orchestration/src/coactra/orchestration/workflow/...
     repo_root = here.parents[2]
     handlers_path = (
-        repo_root / "workflow" / "src" / "coactra" / "workflow" / "runtime" / "handlers.py"
+        repo_root / "orchestration" / "src" / "coactra" / "orchestration" / "workflow" / "runtime" / "handlers.py"
     )
     assert handlers_path.is_file(), (
         f"real workflow handlers not found at {handlers_path}"
@@ -129,7 +143,7 @@ def _load_workflow_handlers():
 
 
 def test_collaborator_is_workflow_runcontext_ready():
-    # The agent's collaborator STRUCTURALLY satisfies coactra.workflow's Collaborator /
+    # The agent's collaborator STRUCTURALLY satisfies coactra.orchestration.workflow's Collaborator /
     # EscalationRouter Protocols. We assert against the REAL Protocols loaded by file path
     # (no langgraph import) so this can't drift from workflow's actual contract.
     import inspect

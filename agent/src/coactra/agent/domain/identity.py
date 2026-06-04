@@ -27,6 +27,11 @@ class DelegationGrant(BaseModel):
 
     subject_token: str = Field(min_length=1)
     actor: str = Field(min_length=1)
+    # Optional pre-existing application delegation path, such as a host's
+    audience: str | None = None
+    requested_scopes: tuple[str, ...] = Field(default_factory=tuple)
+    # client_credentials + delegation_chain grant model.
+    delegation_chain: list[str] = Field(default_factory=list)
     # Test/guard hook: an explicit attempt to passthrough must be refused.
     passthrough: bool = Field(default=False, alias="_passthrough")
 

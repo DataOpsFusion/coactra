@@ -19,8 +19,7 @@ the protocols themselves:
 
 ## The vision
 
-The runtime that wires the other libraries (`lib-ai`, `memory`, `workspace`,
-`workflow`, `organization`, `work`) into a working agent — as a **composition/policy layer over
+The runtime that wires the other libraries (`lib-ai`, `memory`, `workspace`, `orchestration`, `organization`) into a working agent — as a **composition/policy layer over
 mature protocols**, not a reinvention of them. Richer agent collaboration = policy on
 top of A2A; mid-session capability mounting = orchestration on top of MCP
 `tools.listChanged`; human action = delegated on-behalf-of identity (RFC 8693).
@@ -34,7 +33,7 @@ agent.act_on_behalf_of(delegation_grant)         # delegated identity, NOT token
 
 openai-agents-sdk, a2a-sdk (v1.0.x), fastmcp, MCP OAuth + RFC 8693 token exchange.
 
-## Verdict (from research — see ../RESEARCH-VERDICTS.md)
+## Design verdict
 
 **WRAP the protocols + BUILD a thin composition/policy layer.** A2A and MCP already do
 the hard transport work. Don't fork them. Your gap is real but narrower: session-level
@@ -57,4 +56,24 @@ from coactra.agent.integrations import make_coactra_agent
 ```
 
 `make_coactra_agent(...)` translates the sibling scope shapes and injects the real AI,
-memory, workspace, workflow, organization, and work facades into `Agent`.
+memory, workspace, orchestration workflow/work, and organization facades into `Agent`.
+
+## Async A2A hosts
+
+`PolicyGatedCollaborator` remains the synchronous workflow-compatible default. Hosts
+using an async SDK client can inject an `AsyncA2ATransportPort` into
+`AsyncPolicyGatedCollaborator`; both variants enforce the same tenant-qualified
+deny-before-wire policy. The core package does not depend on LangGraph.
+
+## Production identity and silo routing
+
+`KeycloakExchanger` performs a real RFC 8693 token-exchange request. It sends the raw
+subject credential only to the authorization server and returns a fresh downstream token;
+it also accepts an actor-token factory for host `client_credentials + delegation_chain`
+models. Per-request `DelegationGrant.audience` and `requested_scopes` support
+audience-specific, reduced-scope tokens.
+
+Use `CachedAsyncTokenExchanger` when a service runtime should await token exchange and
+reuse short-lived results without blocking the event loop. Adapter authors can run
+`check_token_exchanger_contract(...)` in CI to verify no-passthrough and multi-hop chain
+behavior. `TenantAgentRouter` builds a runtime per tenant-qualified agent scope.
