@@ -44,3 +44,8 @@ packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/coactra", "README.md", "tests"]
+
+# uv-only (ignored by pip, absent from the built wheel): resolve sibling extras
+# from the local monorepo instead of PyPI during editable dev installs.
+[tool.uv.sources]
+coactra-ai = { path = "../lib-ai", editable = true }

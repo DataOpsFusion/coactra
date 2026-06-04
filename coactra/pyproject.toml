@@ -56,3 +56,13 @@ include = ["src/coactra", "README.md", "tests"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+# uv-only (ignored by pip, absent from the built wheel): resolve the sibling
+# distributions from the local monorepo instead of PyPI during editable dev installs.
+[tool.uv.sources]
+coactra-ai = { path = "../lib-ai", editable = true }
+coactra-memory = { path = "../memory", editable = true }
+coactra-workspace = { path = "../workspace", editable = true }
+coactra-orchestration = { path = "../orchestration", editable = true }
+coactra-organization = { path = "../organization", editable = true }
+coactra-agent = { path = "../agent", editable = true }
