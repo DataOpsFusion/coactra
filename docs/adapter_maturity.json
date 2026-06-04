@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "resume_semantics_values": [
+    "same-thread",
+    "new-run-with-prior-state",
+    "unsupported",
+    "host-owned"
+  ],
+  "adapters": [
+    {
+      "package": "coactra-orchestration.workflow",
+      "name": "DurableLangGraphEngine",
+      "file": "orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py",
+      "extra": "langgraph",
+      "maturity": "implemented",
+      "resume_semantics": "same-thread",
+      "production_notes": "Requires persistent checkpointer and procedure/version reload after restart."
+    },
+    {
+      "package": "coactra-orchestration.workflow",
+      "name": "TemporalEngine",
+      "file": "orchestration/src/coactra/orchestration/workflow/adapters/temporal.py",
+      "extra": "temporal",
+      "maturity": "implemented",
+      "resume_semantics": "same-thread",
+      "production_notes": "Host supplies Temporal client, workflow definition, task queue, and worker deployment."
+    },
+    {
+      "package": "coactra-orchestration.workflow",
+      "name": "PrefectEngine",
+      "file": "orchestration/src/coactra/orchestration/workflow/adapters/prefect.py",
+      "extra": "prefect",
+      "maturity": "implemented",
+      "resume_semantics": "new-run-with-prior-state",
+      "production_notes": "Resume starts a deployment run carrying prior thread state; host flow owns true resume behavior."
+    },
+    {
+      "package": "coactra-workspace",
+      "name": "DaytonaBackend",
+      "file": "workspace/src/coactra/workspace/adapters/daytona.py",
+      "extra": "daytona",
+      "maturity": "stub",
+      "resume_semantics": "unsupported",
+      "production_notes": "Named workspace seam only."
+    },
+    {
+      "package": "coactra-agent",
+      "name": "FastMCPServer",
+      "file": "agent/src/coactra/agent/adapters/fastmcp.py",
+      "extra": "mcp",
+      "maturity": "stub",
+      "resume_semantics": "unsupported",
+      "production_notes": "Named server seam only."
+    }
+  ]
+}
