@@ -40,9 +40,9 @@ The research suggests a `Kernel` / `Session` / `Scope` / `Task` model. Coactra s
 | Target concept | Current Coactra surface | Status |
 |---|---|---|
 | Scope | `coactra.scope.CoactraScope` plus package-local `Scope` DTOs | keep and document as stable first |
-| Kernel / composition root | `coactra.agent.make_agent`, `coactra.agent.integrations.make_coactra_agent` | keep; evaluate whether a `Kernel` removes real wiring complexity |
-| Session | agent/workflow/work manager context objects | not yet a single public concept |
-| Task | `WorkOrder`, `Procedure`, and app functions | do not collapse yet; their meanings differ |
+| Kernel / composition root | `coactra.kernel.Kernel`, `coactra.agent.make_agent`, `coactra.agent.integrations.make_coactra_agent` | `Kernel` is a beta function/task shell; agent factories remain the AI-agent composition roots |
+| Session | `coactra.kernel.Session` plus agent/workflow/work manager context objects | beta umbrella session exists for task dispatch; durable runtime sessions still belong to their packages |
+| Task | `coactra.kernel.Task`, `WorkOrder`, `Procedure`, and app functions | keep separate because shell dispatch, ledger work, and reusable procedures differ |
 | Workflow backend | `WorkflowEngine` | keep small; add contract tests and resume-semantics metadata |
 | Ports | agent/memory/workspace/workflow/org Protocols | keep; add reusable conformance suites |
 
@@ -147,14 +147,15 @@ Exit criteria:
 
 Deliverables:
 
-- decision: no plugin system yet, or a tiny hookspec list
-- hook ordering and error-isolation tests if hooks are added
+- tiny beta hookspec list in `coactra.plugins`
+- hook ordering and error-isolation tests
 - no ad hoc callbacks in examples unless they are marked experimental
 
 Exit criteria:
 
 - extension points are intentional public contracts
 - plugins do not become a second hidden orchestration framework
+- new hooks are not added without public API tests and docs
 
 ### v0.8 - Integration And Operations
 

@@ -27,6 +27,9 @@ Packages may keep independent versions, but the repo should publish a compatibil
 Application docs and examples should prefer:
 
 - `coactra.scope`
+- `coactra.kernel`
+- `coactra.plugins`
+- `coactra.errors`
 - `coactra.ai`
 - `coactra.memory`
 - `coactra.workspace`

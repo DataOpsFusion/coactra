@@ -14,6 +14,21 @@
       "purpose": "canonical scope conversion DTO"
     },
     {
+      "root": "coactra.kernel",
+      "tier": "beta",
+      "purpose": "Kernel, Session, Task, and TaskResult shell"
+    },
+    {
+      "root": "coactra.plugins",
+      "tier": "beta",
+      "purpose": "task lifecycle plugin hooks"
+    },
+    {
+      "root": "coactra.errors",
+      "tier": "beta",
+      "purpose": "shared Coactra error codes and exception base"
+    },
+    {
       "root": "coactra.ai",
       "tier": "beta",
       "purpose": "model calls, embeddings, reasoning replay"
