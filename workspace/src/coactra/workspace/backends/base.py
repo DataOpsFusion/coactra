@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from coactra.workspace.models import ExecResult
+from coactra.workspace.models import ExecOptions, ExecResult
 from coactra.workspace.scope import Scope
 
 
@@ -23,6 +23,10 @@ from coactra.workspace.scope import Scope
 class WorkspaceBackend(Protocol):
     def root_for(self, scope: Scope) -> str:
         """Absolute path of the desk root for scope (created on demand)."""
+        ...
+
+    def make_dir(self, path: str, scope: Scope) -> None:
+        """Create path (relative to the desk root) within scope."""
         ...
 
     def write_file(self, path: str, data: str, scope: Scope) -> None:
@@ -41,6 +45,11 @@ class WorkspaceBackend(Protocol):
         """Delete path (relative to the desk root) within scope."""
         ...
 
-    def exec(self, command: list[str], scope: Scope) -> ExecResult:
+    def exec(
+        self,
+        command: list[str],
+        scope: Scope,
+        options: ExecOptions | None = None,
+    ) -> ExecResult:
         """Run argv within the backend sandbox, or reject when confinement is unavailable."""
         ...

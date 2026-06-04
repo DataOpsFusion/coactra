@@ -7,6 +7,9 @@ class _Dummy:
     def root_for(self, scope: Scope) -> str:
         return "/tmp/x"
 
+    def make_dir(self, path: str, scope: Scope) -> None:
+        return None
+
     def write_file(self, path: str, data: str, scope: Scope) -> None:
         return None
 

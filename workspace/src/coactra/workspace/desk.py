@@ -16,11 +16,12 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from datetime import date
 from pathlib import Path
 
 from coactra.workspace.backends.base import WorkspaceBackend
-from coactra.workspace.models import CapabilityManifest, ExecResult
+from coactra.workspace.models import CapabilityManifest, ExecOptions, ExecResult
 from coactra.workspace.policy import CliPolicy
 from coactra.workspace.scope import Scope
 
@@ -53,6 +54,23 @@ class Workspace:
         """Absolute path of this desk's root."""
         return self._backend.root_for(self._scope)
 
+    def ensure_layout(
+        self,
+        directories: Sequence[str],
+        templates: Mapping[str, str] | None = None,
+    ) -> None:
+        """Create desk directories and missing template files through the backend.
+
+        Existing files are preserved so initialization is idempotent.
+        """
+        for path in directories:
+            self._backend.make_dir(path, self._scope)
+        for path, data in (templates or {}).items():
+            try:
+                self._backend.read_file(path, self._scope)
+            except FileNotFoundError:
+                self._backend.write_file(path, data, self._scope)
+
     def write(self, path: str, data: str) -> None:
         self._backend.write_file(path, data, self._scope)
 
@@ -62,10 +80,15 @@ class Workspace:
     def list(self) -> list[str]:
         return self._backend.list_files(self._scope)
 
-    def run(self, command: str | Sequence[str]) -> ExecResult:
+    def run(
+        self,
+        command: str | Sequence[str],
+        *,
+        options: ExecOptions | None = None,
+    ) -> ExecResult:
         # Policy normalizes to argv and raises PolicyError before exec is reached.
         argv = self._policy.check(command)
-        return self._backend.exec(argv, self._scope)
+        return self._backend.exec(argv, self._scope, options)
 
     def set_manifest(self, manifest: CapabilityManifest) -> None:
         self._backend.write_file(_MANIFEST_FILE, manifest.model_dump_json(), self._scope)
@@ -96,6 +119,40 @@ class Workspace:
             return self._backend.read_file(_HANDOFF_FILE, self._scope)
         except (FileNotFoundError, ValueError):
             return ""
+
+    def rotate_journal(
+        self,
+        *,
+        before: date,
+        journal_dir: str = "journal",
+        archive_dir: str = "archive/journal",
+    ) -> list[str]:
+        """Move dated journal files older than ``before`` into an archive directory.
+
+        Journal entries are files directly below ``journal_dir`` named
+        ``YYYY-MM-DD.*``. The operation uses only backend primitives, so it works for
+        local desks and remote sandbox providers alike. Returns archived paths.
+        """
+        prefix = journal_dir.rstrip("/") + "/"
+        archive = archive_dir.rstrip("/")
+        moved: list[str] = []
+        for path in self.list():
+            if not path.startswith(prefix):
+                continue
+            relative = path[len(prefix):]
+            if "/" in relative:
+                continue
+            try:
+                entry_date = date.fromisoformat(relative[:10])
+            except ValueError:
+                continue
+            if entry_date >= before:
+                continue
+            destination = f"{archive}/{relative}"
+            self.write(destination, self.read(path))
+            self._backend.delete_file(path, self._scope)
+            moved.append(destination)
+        return sorted(moved)
 
     def compact(self, *, max_entries: int = 50) -> int:
         """Auto-compact: keep only the newest max_entries handoff lines. Rule-based, no LLM.
@@ -130,6 +187,7 @@ def open_workspace(
     Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
     ephemeral=True uses a throwaway temp dir cleaned up on close(). Local subprocesses are
     not jailed; pass allow_unsafe_local_exec=True only for trusted local development.
+    When local exec is enabled without an explicit policy, a conservative allowlist is used.
     """
     from coactra.workspace.backends.local import LocalFilesystemBackend
 
@@ -137,6 +195,8 @@ def open_workspace(
         base = tempfile.mkdtemp(prefix="fleet-ws-ephemeral-")
     else:
         base = base_dir or ".fleet-workspaces"
+    if allow_unsafe_local_exec and policy is None:
+        policy = CliPolicy.safe_default()
     backend = LocalFilesystemBackend(
         base_dir=base,
         allow_unsafe_exec=allow_unsafe_local_exec,

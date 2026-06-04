@@ -12,10 +12,12 @@ shell=False — no shell string, no shell=True anywhere.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
-from coactra.workspace.models import ExecResult
+from coactra.workspace.errors import WorkspaceError
+from coactra.workspace.models import ExecOptions, ExecResult
 from coactra.workspace.scope import Scope
 
 
@@ -50,6 +52,9 @@ class LocalFilesystemBackend:
     def root_for(self, scope: Scope) -> str:
         return str(self._root_path(scope))
 
+    def make_dir(self, path: str, scope: Scope) -> None:
+        self._resolve(path, scope).mkdir(parents=True, exist_ok=True)
+
     def write_file(self, path: str, data: str, scope: Scope) -> None:
         target = self._resolve(path, scope)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -67,26 +72,63 @@ class LocalFilesystemBackend:
     def delete_file(self, path: str, scope: Scope) -> None:
         self._resolve(path, scope).unlink(missing_ok=True)
 
-    def exec(self, command: list[str], scope: Scope) -> ExecResult:
+    def exec(
+        self,
+        command: list[str],
+        scope: Scope,
+        options: ExecOptions | None = None,
+    ) -> ExecResult:
         if not self._allow_unsafe_exec:
             raise UnsafeLocalExecError(
                 "local subprocess execution is not filesystem-jailed; "
                 "pass allow_unsafe_exec=True only for trusted local development"
             )
+        options = options or ExecOptions()
         root = self._root_path(scope)
-        completed = subprocess.run(
-            command,
-            shell=False,
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-        )
+        cwd = self._resolve(options.cwd, scope) if options.cwd else root
+        env = None
+        if options.env or not options.inherit_env:
+            env = dict(os.environ) if options.inherit_env else {}
+            env.update(options.env)
+        try:
+            completed = subprocess.run(
+                command,
+                shell=False,
+                cwd=str(cwd),
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=options.timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout, stdout_truncated = _bounded_text(exc.stdout or "", options.max_output_bytes)
+            stderr, stderr_truncated = _bounded_text(exc.stderr or "", options.max_output_bytes)
+            return ExecResult(
+                exit_code=-1,
+                stdout=stdout,
+                stderr=stderr,
+                timed_out=True,
+                stdout_truncated=stdout_truncated,
+                stderr_truncated=stderr_truncated,
+            )
+        stdout, stdout_truncated = _bounded_text(completed.stdout, options.max_output_bytes)
+        stderr, stderr_truncated = _bounded_text(completed.stderr, options.max_output_bytes)
         return ExecResult(
             exit_code=completed.returncode,
-            stdout=completed.stdout,
-            stderr=completed.stderr,
+            stdout=stdout,
+            stderr=stderr,
+            stdout_truncated=stdout_truncated,
+            stderr_truncated=stderr_truncated,
         )
 
 
-class UnsafeLocalExecError(PermissionError):
+def _bounded_text(value: str | bytes, max_bytes: int) -> tuple[str, bool]:
+    text = value.decode(errors="replace") if isinstance(value, bytes) else value
+    data = text.encode("utf-8")
+    if len(data) <= max_bytes:
+        return text, False
+    return data[:max_bytes].decode("utf-8", errors="ignore"), True
+
+
+class UnsafeLocalExecError(WorkspaceError, PermissionError):
     """Raised when unjailed local subprocess execution was not explicitly enabled."""

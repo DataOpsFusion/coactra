@@ -1,3 +1,25 @@
-"""Optional-extra backend adapters. Stubs today — each names the WorkspaceBackend it will
-become and raises MissingExtraError until its extra (and a real impl) land. Stubs do NOT
-import the real SDK at module top, so they import fine without the extra installed."""
+"""Experimental workspace backend adapters.
+
+These names are intentionally not exported from ``coactra.workspace``. Provider adapters
+remain explicit opt-ins, and the current Daytona/E2B/OpenHands classes are stubs until real
+SDK-backed implementations land.
+"""
+
+from coactra.workspace.adapters._stub import MissingExtraError
+from coactra.workspace.adapters.daytona import DaytonaBackend
+from coactra.workspace.adapters.e2b import E2BBackend
+from coactra.workspace.adapters.openhands import OpenHandsBackend
+
+ADAPTER_MATURITY = {
+    "DaytonaBackend": "stub",
+    "E2BBackend": "stub",
+    "OpenHandsBackend": "stub",
+}
+
+__all__ = [
+    "ADAPTER_MATURITY",
+    "DaytonaBackend",
+    "E2BBackend",
+    "MissingExtraError",
+    "OpenHandsBackend",
+]

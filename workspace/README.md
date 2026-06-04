@@ -23,13 +23,14 @@ ws = agent.workspace          # the agent's persistent desk
 ws.write("notes.md", ...)     # files stay between sessions
 ws.run("ls")                  # requires a sandbox backend, or trusted local opt-in
 ws.handoff("tomorrow: ...")   # day-note for the next session
+ws.rotate_journal(before=cutoff) # archive older YYYY-MM-DD journal entries
 ```
 
 ## Wraps (swappable backends)
 
 Daytona, E2B, OpenHands, Docker, local filesystem.
 
-## Verdict (from research — see ../RESEARCH-VERDICTS.md)
+## Design verdict
 
 **BUILD a thin control layer over persistent sandboxes.** The field is NOT empty —
 Daytona (persistent sandboxes + snapshots + lifecycle + MCP), E2B (pause/resume with fs
@@ -49,8 +50,28 @@ the MCP mounting; `organization` owns hierarchy/policy; `workspace` just stores 
 backends/    # backend protocol and local filesystem default
 desk.py      # scope-bound Workspace facade
 policy.py    # desk-local CLI policy
-adapters/    # optional sandbox provider adapters
+adapters/      # optional sandbox provider adapters
+office.py      # optional office profile, STATUS governance, token accounting
+integrations/  # optional memory, organization, MCP, and workflow helpers
 ```
+
+The reusable desk remains dependency-light. Install optional layers only when needed:
+
+```bash
+pip install 'coactra-workspace[office]'
+pip install 'coactra-workspace[integrations]'
+```
+
+`coactra.workspace.office.OfficeWorkspace` adds a configurable office layout without
+changing the base facade. Integration modules are imported explicitly so a plain desk
+does not eagerly import memory, organization, MCP, or model dependencies.
+
+### Shared memory integration
+
+`coactra.workspace.integrations.mcp.register_recall_tool(...)` keeps the original
+single-agent recall behavior by default. A host may bind allowlisted aliases such as
+`department` and `company`, and may supply `MemoryAcl` plus an actor to expose an
+ACL-checked `publish_memory` tool. Callers cannot construct arbitrary tenant scopes.
 
 The original `backend.py` and `local.py` module paths remain compatibility imports.
 
@@ -61,3 +82,8 @@ local subprocess is not a filesystem jail. Local `exec()` therefore fails closed
 default. For trusted development only, opt in with `allow_unsafe_local_exec=True` when
 calling `open_workspace(...)`, or `allow_unsafe_exec=True` when constructing the backend.
 Use a sandbox-backed adapter for mutually untrusted tenants in production.
+
+## Silo routing
+
+Wrap provider backends with `TenantWorkspaceBackendRouter(factory)` when each tenant must
+resolve to a different physical sandbox account, root, or cluster.
