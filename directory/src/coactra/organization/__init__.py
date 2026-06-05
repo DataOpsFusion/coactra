@@ -10,7 +10,6 @@ import sys
 _impl = import_module("coactra.directory")
 for _suffix in (
     "adapters",
-    "adapters.neo4j",
     "adapters.openfga",
     "authorization",
     "company",
@@ -26,7 +25,6 @@ for _suffix in (
     "models",
     "repository",
     "repository.async_store",
-    "repository.neo4j_store",
     "repository.routing",
     "repository.sqlite_store",
     "repository.store",

@@ -23,9 +23,6 @@ classifiers = [
 dependencies = ["pydantic>=2.7"]
 
 [project.optional-dependencies]
-daytona = ["daytona-sdk>=0.10"]
-e2b = ["e2b>=1.0"]
-openhands = []  # no pinned dep yet; stub adapter only
 office = ["pyyaml>=6.0", "tiktoken>=0.7"]
 memory = ["coactra-memory>=0.2", "structlog>=24.0"]
 directory = ["coactra-directory>=0.2"]
