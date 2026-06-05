@@ -28,7 +28,7 @@ The project should use an adopt-first rule for generic infrastructure:
 - PydanticAI is a useful API-design reference for typed dependencies, tools, and structured output, but adopting its vocabulary should not force a rewrite of Coactra's package model.
 - LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra-ai`.
 
-See [internal/ROADMAP_V1.md](internal/ROADMAP_V1.md) and [internal/RELEASE_POLICY.md](internal/RELEASE_POLICY.md) for the concrete v1 plan.
+See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/release-policy.md](../maintainers/release-policy.md) for the concrete v1 plan.
 
 ## Target Stack
 
@@ -77,10 +77,10 @@ WorkOrder / Procedure / Approval / Artifact / Audit
 
 ## Source Anchors
 
-- `docs/LIBRARIES.md` defines the thin-wrapper philosophy and package boundaries.
-- `docs/agent/DESIGN.md` defines ports and composition root as locked principles.
-- `docs/jobs/WORK-ORDERS.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
-- `workspace/README.md` says workspace stores the desk while agent owns MCP mounting and organization owns hierarchy/policy.
+- `docs/concepts/library-map.md` defines the thin-wrapper philosophy and package boundaries.
+- `docs/maintainers/agent-design.md` defines ports and composition-root principles.
+- `docs/operations/work-orders.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
+- `docs/concepts/library-map.md` keeps workspace, agent, and directory responsibilities separate.
 
 ## Runtime Factory
 

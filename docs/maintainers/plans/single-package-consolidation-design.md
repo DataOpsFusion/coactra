@@ -101,7 +101,7 @@ Consolidate error types into `coactra/errors.py` and any base `Port`/`Protocol` 
 
 ## 8. Migration plan (incremental, verify each step)
 
-0. **(DONE)** Subtractive docs cleanup + `docs/internal/`, plus removal of the adapter-maturity apparatus and the raising stub adapters — already committed (`dbf374b`, `777cc71`, `254e8bc`). `INTERFACES.md` is the package-boundary guide.
+0. **(DONE)** Subtractive docs cleanup + `docs/internal/`, plus removal of the adapter-maturity apparatus and the raising stub adapters — already committed (`dbf374b`, `777cc71`, `254e8bc`). `interfaces.md` is the package-boundary guide.
 1. **Skeleton:** create the one-package `pyproject.toml` (extras per §5) and move the seven `src/coactra/*` trees + tests into the single `coactra` package. Confirm the whole suite imports and `make test`-equivalent passes.
 2. **Unify `Scope`:** introduce `coactra/scope.py::Scope` (canonical), repoint all capability imports, delete the five duplicates, convert `CoactraScope` to a deprecation shim. Run full suite.
 3. **Unify `TenantRouter`:** promote the generic to `coactra/_routing.py`, replace the five bespoke routers, add bounded-cache eviction. Run router/conformance tests.
