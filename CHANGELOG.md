@@ -23,8 +23,9 @@ per release.
   selected via extras (e.g. `pip install "coactra[memory,workflow]"`). Compat
   shims preserve the old `coactra.work`, `coactra.workflow`, `coactra.orchestration`,
   and `coactra.organization` import roots.
-- Install docs now state plainly that `coactra` is not yet on PyPI and is installed
-  from source today.
+- Install docs now point users at the PyPI `coactra` distribution and keep editable
+  source installs for contributor workflows.
+- MkDocs-based documentation site with GitHub Pages deployment from `main`.
 - README / Quickstart now signpost that the default `make_agent(...)` uses an
   in-process `FakeAI` echo model, and show how to wire a real model.
 

@@ -4,11 +4,7 @@ This guide describes the minimum production posture for Coactra applications.
 
 ## Recommended package posture
 
-Use stable package roots for application code and keep experimental adapters behind explicit imports and configuration.
-
-> **Pre-release:** `coactra` is not on PyPI yet — install it editable from the repo
-> today (see [../CONTRIBUTING.md](../CONTRIBUTING.md)). Pin the version and extras in
-> your deployment lockfile once it is published.
+Use stable package roots for application code and keep experimental adapters behind explicit imports and configuration. Pin the package version and selected extras in your deployment lockfile.
 
 ```bash
 pip install "coactra[sql,agent,workspace,memory]"

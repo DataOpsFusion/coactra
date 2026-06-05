@@ -1,0 +1,52 @@
+site_name: Coactra
+site_description: Composable Python libraries for agent applications, durable work, memory, workspace state, and collaboration.
+site_url: https://dataopsfusion.github.io/coactra/
+repo_url: https://github.com/DataOpsFusion/coactra
+repo_name: DataOpsFusion/coactra
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Quickstart: QUICKSTART.md
+      - Examples: EXAMPLES.md
+  - Concepts:
+      - Architecture: ARCHITECTURE.md
+      - Interfaces: INTERFACES.md
+      - Library Map: LIBRARIES.md
+      - State and Storage: STATE_AND_STORAGE.md
+      - Tenant Isolation: TENANT_ISOLATION.md
+      - Security: SECURITY.md
+  - Production:
+      - Production Guide: PRODUCTION.md
+      - Work Orders: jobs/WORK-ORDERS.md
+      - Publishing: PUBLISHING.md
+  - Maintainers:
+      - Target Architecture: internal/TARGET_ARCHITECTURE.md
+      - Roadmap: internal/ROADMAP_V1.md
+      - Release Policy: internal/RELEASE_POLICY.md
+      - Improvement Backlog: internal/IMPROVEMENT_BACKLOG.md
+      - Jobs Procedures: internal/jobs/PROCEDURES.md
+      - Agent Design: internal/agent/DESIGN.md
+      - Directory Design: internal/directory/DESIGN.md
+      - Memory Design: internal/memory/DESIGN.md
+      - AI Library Design: internal/lib-ai/DESIGN.md
+      - Superpowers:
+          - Single Package Plan: superpowers/plans/2026-06-05-single-package-consolidation.md
+          - Single Package Design: superpowers/specs/2026-06-05-single-package-consolidation-design.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true

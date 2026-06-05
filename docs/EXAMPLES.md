@@ -16,12 +16,12 @@ If you installed the packages with `pip install -e`, you can run the same files 
 
 | If you are building... | Start here | Why |
 |---|---|---|
-| a normal single-agent app | [../examples/basic_incident_triage.py](../examples/basic_incident_triage.py) | Smallest complete app using `make_agent` and `WorkManager`. |
-| support or helpdesk memory | [../examples/projects/customer_support_memory](../examples/projects/customer_support_memory) | Shows scoped `remember` and `recall`. |
-| durable jobs or releases | [../examples/projects/release_runner](../examples/projects/release_runner) | Shows submit, claim, start, checkpoint, complete, artifacts, events. |
-| a file-backed agent desk | [../examples/projects/workspace_research_desk](../examples/projects/workspace_research_desk) | Shows workspace files, handoff notes, and capability manifests. |
-| multi-agent collaboration | [../examples/projects/multi_agent_policy](../examples/projects/multi_agent_policy) | Shows policy-gated A2A placement and cross-tenant denial. |
-| custom port injection | [../examples/function_first_agent.py](../examples/function_first_agent.py) | Advanced proof that structural ports can be plain function objects. |
+| a normal single-agent app | [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py) | Smallest complete app using `make_agent` and `WorkManager`. |
+| support or helpdesk memory | [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/customer_support_memory](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/customer_support_memory) | Shows scoped `remember` and `recall`. |
+| durable jobs or releases | [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/release_runner](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/release_runner) | Shows submit, claim, start, checkpoint, complete, artifacts, events. |
+| a file-backed agent desk | [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/workspace_research_desk](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/workspace_research_desk) | Shows workspace files, handoff notes, and capability manifests. |
+| multi-agent collaboration | [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/multi_agent_policy](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/multi_agent_policy) | Shows policy-gated A2A placement and cross-tenant denial. |
+| custom port injection | [https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py) | Advanced proof that structural ports can be plain function objects. |
 
 ## Sample Projects
 
