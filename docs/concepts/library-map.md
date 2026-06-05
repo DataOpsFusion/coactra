@@ -9,7 +9,7 @@ imports the modules it needs.
 > extras (`pip install "coactra[memory,workflow]"`). The capability modules stay
 > decoupled; `coactra.agent` consumes them through ports and optional
 > `coactra.agent.integrations`. Run `make test` from the repository root for the full
-> suite. Each capability has a charter and a design spec under `docs/internal/<package>/`.
+> suite. Maintainer design notes live under the `maintainers` section of this docs site.
 
 ## Installation
 
@@ -113,7 +113,7 @@ reinvent mem0/langgraph by accident.
 > Headline: wrap the solved layers (model calls, memory engines, sandboxes, MCP/A2A
 > protocols); build thin connector, composition, and policy layers on top. Nothing here
 > re-implements a backend; the value is the small contracts between them. See
-> [INTERFACES.md](INTERFACES.md) for the application-facing API map.
+> [interfaces.md](interfaces.md) for the application-facing API map.
 
 ## The capabilities
 

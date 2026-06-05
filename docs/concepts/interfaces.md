@@ -2,7 +2,7 @@
 
 This page names the public surfaces application code should use. The rule is simple: import from package roots for core behavior, and from `.adapters` packages only when you are wiring an external system.
 
-Start with [QUICKSTART.md](QUICKSTART.md) if you are building your first app, then use [EXAMPLES.md](EXAMPLES.md) to choose a sample project close to your use case.
+Start with [Quickstart](../getting-started/quickstart.md) if you are building your first app, then use the [example catalog](../getting-started/examples.md) to choose a sample close to your use case.
 
 ## Package Roots
 
@@ -133,7 +133,7 @@ The official A2A SDK path is async. The default `make_agent(...)` path is sync b
 
 ## Examples
 
-- [EXAMPLES.md](EXAMPLES.md): the full runnable sample catalog.
-- [../examples/basic_incident_triage.py](../examples/basic_incident_triage.py): normal function-first app using `make_agent` and `WorkManager`.
-- [../examples/projects](../examples/projects): diverse sample projects for memory, durable work, workspace, and multi-agent policy.
-- [../examples/function_first_agent.py](../examples/function_first_agent.py): advanced port-injection demo showing that Coactra accepts structural ports without subclassing.
+- [Example catalog](../getting-started/examples.md): choose the right runnable sample.
+- [Basic incident triage](../examples/basic-incident-triage.md): smallest normal app using `make_agent` and `WorkManager`.
+- [Composed support agent](../examples/composed-support-agent.md): richer port injection without subclassing.
+- [Sample projects](../examples/index.md): memory, durable work, workspace, and multi-agent policy.
