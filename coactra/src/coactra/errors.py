@@ -30,6 +30,11 @@ class ErrorInfo:
     details: Mapping[str, Any] = MappingProxyType({})
 
 
+class MissingExtraError(RuntimeError):
+    """An optional-extra backend/adapter was used before its extra (and a real
+    implementation) exist. Raised with a human-readable install hint message."""
+
+
 class CoactraError(Exception):
     """Base exception carrying a stable Coactra error code and retry hint."""
 
@@ -96,5 +101,6 @@ __all__ = [
     "CoactraError",
     "ErrorCode",
     "ErrorInfo",
+    "MissingExtraError",
     "coactra_error_from_exception",
 ]
