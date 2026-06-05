@@ -20,8 +20,8 @@ The public API is meant to stay boring:
 Install only the pieces you need:
 
 ```bash
-pip install coactra-agent coactra-orchestration
-pip install "coactra-orchestration[sql]"   # durable SQL work store
+pip install coactra-agent coactra-jobs
+pip install "coactra-jobs[sql]"   # durable SQL work store
 ```
 
 From this repo, the dependency-light suite is:
@@ -36,7 +36,7 @@ make test-core
 from coactra.kernel import Kernel, Task
 from coactra.agent import Scope as AgentScope, make_agent
 from coactra.scope import CoactraScope
-from coactra.orchestration.work import Scope as WorkScope, WorkManager, WorkOrder
+from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
 
 
 def triage(context, task):

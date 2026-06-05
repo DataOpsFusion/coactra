@@ -24,7 +24,7 @@ jobs:
       - name: Build all 7 distributions
         run: |
           rm -rf dist-all
-          for p in lib-ai memory workspace orchestration organization agent coactra; do
+          for p in lib-ai memory workspace jobs directory agent coactra; do
             (cd "$p" && uv build --out-dir ../dist-all)
           done
 

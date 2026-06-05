@@ -10,9 +10,9 @@ Tenant isolation is a design constraint across the library. Every package should
 | `coactra-agent` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
 | `coactra-memory` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
 | `coactra-workspace` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
-| `coactra-orchestration.work` | `Scope(tenant_id, namespace)` | Work-order ledger partition. |
-| `coactra-orchestration.workflow` | `Scope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
-| `coactra-organization` | tenant on root/org/store operations | Tenant is the org directory isolation boundary. |
+| `coactra-jobs` | `Scope(tenant_id, namespace)` | Work-order ledger partition. |
+| `coactra-jobs` | `Scope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
+| `coactra-directory` | tenant on root/org/store operations | Tenant is the org directory isolation boundary. |
 
 ## Isolation Mechanisms
 

@@ -6,11 +6,11 @@ Protocol. Each port is shaped to MIRROR the real sibling facade, so the downstre
 is a 3-line adapter rather than glue:
 
   - MemoryPort.remember(events, scope) / recall(query, scope, k)   <- coactra.memory.Memory (ASYNC)
-  - OrganizationPort.can(member, action) / members(node) / manager(node)  <- coactra.organization.Organization
+  - OrganizationPort.can(member, action) / members(node) / manager(node)  <- coactra.directory.Organization
   - AIPort.ask(prompt) / structured(schema, prompt)                <- coactra.ai
-  - WorkflowPort.run(procedure, state)                             <- coactra.orchestration.workflow (engine + RunContext)
+  - WorkflowPort.run(procedure, state)                             <- coactra.jobs.workflow (engine + RunContext)
   - WorkspacePort.read / write / run                               <- coactra.workspace.Workspace
-  - WorkPort.submit / get / cancel                                  <- coactra.orchestration.work.WorkManager
+  - WorkPort.submit / get / cancel                                  <- coactra.jobs.WorkManager
 
 This library never imports `coactra.<sibling>`; structural typing is the only contract.
 Only `MemoryPort` is async — its real facade (`Memory.remember`/`recall`) is async. The
@@ -68,7 +68,7 @@ class WorkspacePort(Protocol):
 @runtime_checkable
 class WorkflowPort(Protocol):
     def run(self, procedure: Any, state: dict[str, Any]) -> Any:
-        """Compile + execute a procedure with `state` (mirrors coactra.orchestration.workflow run).
+        """Compile + execute a procedure with `state` (mirrors coactra.jobs.workflow run).
 
         The narrow surface is `(procedure, state)`; an adapter supplies the sibling's
         `RunContext` (scope + the agent's own collaborator/router) so a workflow `ask`
@@ -95,7 +95,7 @@ class OrganizationPort(Protocol):
 @runtime_checkable
 class WorkPort(Protocol):
     def submit(self, order: Any) -> Any:
-        """Submit one durable work order (mirrors coactra.orchestration.work.WorkManager.submit)."""
+        """Submit one durable work order (mirrors coactra.jobs.WorkManager.submit)."""
         ...
 
     def get(self, work_id: str, scope: Scope) -> Any:

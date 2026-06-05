@@ -34,7 +34,7 @@ affected package(s) on each entry.
   in-process `FakeAI` echo model, and show how to wire a real model.
 
 ### Packaging
-- Added `classifiers` to `coactra-orchestration` and the `coactra` umbrella, and a
+- Added `classifiers` to `coactra-jobs` and the `coactra` umbrella, and a
   `[tool.hatch.build.targets.sdist]` block to `coactra-ai`, for parity with the
   other distributions.
 
@@ -48,8 +48,8 @@ affected package(s) on each entry.
 |---|---|
 | coactra-ai | 0.2.0 |
 | coactra-memory | 0.2.0 |
-| coactra-organization | 0.2.0 |
+| coactra-directory | 0.2.0 |
 | coactra-agent | 0.2.0 |
 | coactra-workspace | 0.1.0 |
-| coactra-orchestration | 0.1.0 |
+| coactra-jobs | 0.1.0 |
 | coactra (umbrella) | 0.1.0 |

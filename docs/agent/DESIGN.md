@@ -14,7 +14,7 @@
   agent NEVER imports sibling code. Ports are **injected** via a composition root.
 - **Ports mirror the real sibling facades** so wiring is a 3-line adapter, not glue:
   - `MemoryPort.remember(events, scope) / recall(query, scope, k) -> list[...]` ← matches `coactra.memory`
-  - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `coactra.organization`
+  - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `coactra.directory`
   - `AIPort.ask(...) / structured(...)`, `WorkflowPort.run(procedure, state)`, `WorkspacePort.read/write/run`, `WorkPort.submit/get/cancel`.
   Real wiring lives in the optional `coactra.agent.integrations` package; the core ships
   Protocol + in-process fakes so it's testable with zero siblings installed.
@@ -35,7 +35,7 @@
 ## Collaboration (keep v0.1, clean it)
 - Tenant-qualified `AgentRef(tenant_id, agent_id)` targets; `CollaborationPolicy` can DENY
   cross-tenant talk (deny-before-allow). `PolicyGatedCollaborator` structurally satisfies
-  `coactra.orchestration.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
+  `coactra.jobs.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
   workflow run with no adapter) — verify signatures against the built workflow lib.
 - Async SDK hosts use `AsyncPolicyGatedCollaborator` + `AsyncA2ATransportPort`. It shares
   the same tenant-qualified deny-before-wire policy without pulling an event-loop-specific

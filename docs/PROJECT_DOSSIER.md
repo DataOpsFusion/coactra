@@ -4,7 +4,7 @@ Generated from a read-only inspection of the current working tree. This reposito
 
 ## 1. Executive Summary
 
-Coactra is a modular toolkit for building agent systems that do real work: agents can call models, remember facts, keep a workspace, execute durable work orders, run reusable procedures, consult an organization model, and collaborate with other agents. The top-level README states that `coactra-orchestration` combines durable work orders and reusable procedures, while `coactra-agent` composes the sibling capabilities through ports (`README.md:1-7`). `docs/LIBRARIES.md` describes six capability distributions plus a lightweight `coactra` umbrella installer (`docs/LIBRARIES.md:7-11`, `docs/LIBRARIES.md:116-123`).
+Coactra is a modular toolkit for building agent systems that do real work: agents can call models, remember facts, keep a workspace, execute durable work orders, run reusable procedures, consult an organization model, and collaborate with other agents. The top-level README states that `coactra-jobs` combines durable work orders and reusable procedures, while `coactra-agent` composes the sibling capabilities through ports (`README.md:1-7`). `docs/LIBRARIES.md` describes six capability distributions plus a lightweight `coactra` umbrella installer (`docs/LIBRARIES.md:7-11`, `docs/LIBRARIES.md:116-123`).
 
 The project is for developers building multi-tenant AI agent fleets or backend services where agents need operational boundaries: tenancy, policy, memory, durable task state, workspace persistence, delegated identity, and A2A/MCP integration. It is intentionally "thin wrappers over best-of-breed libraries" where mature tools exist, and custom code where a generalized interface gap exists (`docs/LIBRARIES.md:27-38`).
 
@@ -20,8 +20,8 @@ This is a Python 3.12 multi-distribution monorepo. It publishes or intends to pu
 - `coactra-ai`: model calling, structured output, embeddings, reasoning replay (`lib-ai/pyproject.toml:5-33`, `lib-ai/src/coactra/ai/__init__.py:13-45`).
 - `coactra-memory`: backend-neutral long-term memory facade (`memory/pyproject.toml:5-29`, `memory/src/coactra/memory/__init__.py:1-34`).
 - `coactra-workspace`: persistent agent desk and local/sandbox backend seam (`workspace/pyproject.toml:5-41`, `workspace/src/coactra/workspace/__init__.py:1-21`).
-- `coactra-orchestration`: durable work orders plus reusable workflows/procedures (`orchestration/pyproject.toml:5-47`, `orchestration/src/coactra/orchestration/__init__.py:3-64`).
-- `coactra-organization`: multi-tenant organization/fleet model and authorization seams (`organization/pyproject.toml:5-29`, `organization/src/coactra/organization/__init__.py:1-123`).
+- `coactra-jobs`: durable work orders plus reusable workflows/procedures (`jobs/pyproject.toml:5-47`, `jobs/src/coactra/jobs/__init__.py:3-64`).
+- `coactra-directory`: multi-tenant organization/fleet model and authorization seams (`directory/pyproject.toml:5-29`, `directory/src/coactra/directory/__init__.py:1-123`).
 - `coactra-agent`: composition and policy layer over the sibling capabilities and external protocols (`agent/pyproject.toml:5-45`, `agent/src/coactra/agent/factory.py:43-107`).
 
 There is no frontend layer, no HTTP API application other than optional inbound A2A Starlette helpers, and no Docker/Compose/CI files in the inspected `rg --files` inventory.
@@ -36,9 +36,9 @@ coactra.agent.Agent facade
   |-- AIPort -> coactra.ai Client / ReasoningEngine / LiteLLMEmbedding
   |-- MemoryPort -> coactra.memory Memory facade and backends
   |-- WorkspacePort -> coactra.workspace Workspace desk
-  |-- WorkflowPort -> coactra.orchestration.workflow engines
-  |-- WorkPort -> coactra.orchestration.work WorkManager
-  |-- OrganizationPort -> coactra.organization Organization / Authorizer
+  |-- WorkflowPort -> coactra.jobs.workflow engines
+  |-- WorkPort -> coactra.jobs WorkManager
+  |-- OrganizationPort -> coactra.directory Organization / Authorizer
   |-- MCPServerPort -> mounted tool lists exposed next safe turn
   |-- A2ATransportPort -> official A2A client/server adapters
   `-- TokenExchanger -> in-process or Keycloak RFC 8693 token exchange
@@ -83,21 +83,21 @@ The intended runtime is function-first application code that receives an injecte
 - Model calls: LiteLLM and Instructor (`lib-ai/pyproject.toml:13-16`, `lib-ai/src/coactra/ai/completion/client.py:57-74`, `lib-ai/src/coactra/ai/completion/client.py:147-180`).
 - Embeddings/vector search: LiteLLM embeddings and optional Chroma (`lib-ai/src/coactra/ai/completion/embedding.py:48-66`, `lib-ai/src/coactra/ai/adapters/chroma.py:37-76`).
 - Memory engines: mem0 and Graphiti optional extras (`memory/README.md:102-111`, `memory/src/coactra/memory/factory.py:17-30`).
-- Workflow engines: LangGraph and DurableLangGraph are implemented optional backends; `TemporalEngine` and `PrefectEngine` are now thin `WorkflowEngine` adapters over host runtime clients/deployments (`orchestration/src/coactra/orchestration/workflow/backends/langgraph.py`, `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py`, `orchestration/src/coactra/orchestration/workflow/adapters/temporal.py`, `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`).
-- Work dispatch: DBOS, Temporal, Dapr, fsspec, A2A, CloudEvents, OpenTelemetry adapters (`docs/orchestration/WORK-ORDERS.md:51-61`).
-- Organization persistence/auth: SQLModel/SQLAlchemy, async Postgres wrapper, OpenFGA adapter, Neo4j stub (`organization/src/coactra/organization/repository/sqlite_store.py:1-8`, `organization/src/coactra/organization/repository/async_store.py:1-69`, `organization/src/coactra/organization/adapters/openfga.py:17-53`, `organization/src/coactra/organization/repository/neo4j_store.py:1-14`).
+- Workflow engines: LangGraph and DurableLangGraph are implemented optional backends; `TemporalEngine` and `PrefectEngine` are now thin `WorkflowEngine` adapters over host runtime clients/deployments (`jobs/src/coactra/jobs/workflow/backends/langgraph.py`, `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py`, `jobs/src/coactra/jobs/workflow/adapters/temporal.py`, `jobs/src/coactra/jobs/workflow/adapters/prefect.py`).
+- Work dispatch: DBOS, Temporal, Dapr, fsspec, A2A, CloudEvents, OpenTelemetry adapters (`docs/jobs/WORK-ORDERS.md:51-61`).
+- Organization persistence/auth: SQLModel/SQLAlchemy, async Postgres wrapper, OpenFGA adapter, Neo4j stub (`directory/src/coactra/directory/repository/sqlite_store.py:1-8`, `directory/src/coactra/directory/repository/async_store.py:1-69`, `directory/src/coactra/directory/adapters/openfga.py:17-53`, `directory/src/coactra/directory/repository/neo4j_store.py:1-14`).
 - Agent communication/security: official A2A SDK, Starlette, Keycloak/RFC 8693 token exchange, FastMCP stub (`agent/src/coactra/agent/adapters/a2a.py:23-40`, `agent/src/coactra/agent/adapters/a2a_server.py:77-101`, `agent/src/coactra/agent/adapters/keycloak.py:102-262`, `agent/src/coactra/agent/adapters/fastmcp.py:1-12`).
 
 ### Database, Storage, Search/RAG, MCP
 
 Persistent state exists through Python-backed stores rather than standalone migrations:
 
-- Work orders: `SqlWorkStore` creates `coactra_work_orders` and `coactra_work_events` tables (`orchestration/src/coactra/orchestration/work/backends/sql.py:96-138`).
-- Organization directory: SQLModel table classes for tenants, departments, seats, members, memberships, reporting edges, escalation routes, policy refs, grants, and overrides (`organization/src/coactra/organization/models.py:46-163`).
+- Work orders: `SqlWorkStore` creates `coactra_work_orders` and `coactra_work_events` tables (`jobs/src/coactra/jobs/work/backends/sql.py:96-138`).
+- Organization directory: SQLModel table classes for tenants, departments, seats, members, memberships, reporting edges, escalation routes, policy refs, grants, and overrides (`directory/src/coactra/directory/models.py:46-163`).
 - Memory: in-process dict, mem0 engine, Graphiti graph memory using tenant-scoped engine keys/group IDs (`memory/src/coactra/memory/backends/inprocess.py:33-89`, `memory/src/coactra/memory/backends/mem0.py:75-127`, `memory/src/coactra/memory/backends/graphiti.py:38-47`, `memory/src/coactra/memory/backends/graphiti.py:242-377`).
 - Workspace: local filesystem root under tenant/agent path, plus day note, journal, handoff, and passive capability manifest (`workspace/src/coactra/workspace/backends/local.py:24-122`, `workspace/src/coactra/workspace/desk.py:32-204`).
 - RAG/search: `coactra-memory` provides backend-neutral recall; `coactra-ai` provides embeddings and trace ranking; workspace can register recall as an MCP-style tool (`memory/src/coactra/memory/types.py:89-102`, `lib-ai/src/coactra/ai/completion/embedding.py:13-39`, `workspace/src/coactra/workspace/integrations/mcp.py:19-84`).
-- MCP/tool calling: agent owns session-level mount staging and visibility; workspace can publish recall tools; orchestration has an experimental MCP Task adapter (`agent/src/coactra/agent/mounting.py:146-203`, `workspace/src/coactra/workspace/integrations/mcp.py:19-84`, `orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py:1-119`).
+- MCP/tool calling: agent owns session-level mount staging and visibility; workspace can publish recall tools; orchestration has an experimental MCP Task adapter (`agent/src/coactra/agent/mounting.py:146-203`, `workspace/src/coactra/workspace/integrations/mcp.py:19-84`, `jobs/src/coactra/jobs/work/adapters/mcp_tasks.py:1-119`).
 
 ## 3. Repository / Folder Map
 
@@ -194,27 +194,27 @@ library/
 
 - Purpose: combines durable work order lifecycle with reusable procedure/workflow execution.
 - Important files:
-  - `orchestration/src/coactra/orchestration/work/domain/models.py`: `WorkOrder`, lifecycle enums, attempts, approvals, budget, decisions (`orchestration/src/coactra/orchestration/work/domain/models.py:22-182`).
-  - `orchestration/src/coactra/orchestration/work/service.py`: `WorkManager` lifecycle methods (`orchestration/src/coactra/orchestration/work/service.py:50-436`).
-  - `orchestration/src/coactra/orchestration/work/backends/sql.py`: durable SQL work store (`orchestration/src/coactra/orchestration/work/backends/sql.py:1-295`).
-  - `orchestration/src/coactra/orchestration/workflow/domain/models.py`: procedure and step models (`orchestration/src/coactra/orchestration/workflow/domain/models.py:14-110`).
-  - `orchestration/src/coactra/orchestration/workflow/runtime/*`: run context, handlers, durable protocol, approval, capability validation, verification.
-  - `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py`: rich durable LangGraph backend (`orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:1-944`).
-  - `orchestration/src/coactra/orchestration/facade.py`: `Orchestrator` and `DurableOrchestrator` linking work orders to procedure runs (`orchestration/src/coactra/orchestration/facade.py:51-332`).
-- Status: active but in transition from earlier `work`/`workflow` package paths. Compatibility aliases exist (`orchestration/README.md:72-78`).
+  - `jobs/src/coactra/jobs/work/domain/models.py`: `WorkOrder`, lifecycle enums, attempts, approvals, budget, decisions (`jobs/src/coactra/jobs/work/domain/models.py:22-182`).
+  - `jobs/src/coactra/jobs/work/service.py`: `WorkManager` lifecycle methods (`jobs/src/coactra/jobs/work/service.py:50-436`).
+  - `jobs/src/coactra/jobs/work/backends/sql.py`: durable SQL work store (`jobs/src/coactra/jobs/work/backends/sql.py:1-295`).
+  - `jobs/src/coactra/jobs/workflow/domain/models.py`: procedure and step models (`jobs/src/coactra/jobs/workflow/domain/models.py:14-110`).
+  - `jobs/src/coactra/jobs/workflow/runtime/*`: run context, handlers, durable protocol, approval, capability validation, verification.
+  - `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py`: rich durable LangGraph backend (`jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:1-944`).
+  - `jobs/src/coactra/jobs/facade.py`: `Orchestrator` and `DurableOrchestrator` linking work orders to procedure runs (`jobs/src/coactra/jobs/facade.py:51-332`).
+- Status: active but in transition from earlier `work`/`workflow` package paths. Compatibility aliases exist (`jobs/README.md:72-78`).
 
 ### `organization/`
 
 - Purpose: standalone multi-tenant org/fleet directory with hierarchy, permissions, reporting, escalation, persistence, and authorization seams.
 - Important files:
-  - `organization/src/coactra/organization/domain/organization.py`: composite org tree and permission/lifecycle methods (`organization/src/coactra/organization/domain/organization.py:29-289`).
-  - `organization/src/coactra/organization/domain/member.py`: member kind/status and permission overrides (`organization/src/coactra/organization/domain/member.py:24-81`).
-  - `organization/src/coactra/organization/models.py`: SQLModel table definitions (`organization/src/coactra/organization/models.py:18-163`).
-  - `organization/src/coactra/organization/repository/store.py`: `OrgStore` Protocol and directory DTO (`organization/src/coactra/organization/repository/store.py:20-194`).
-  - `organization/src/coactra/organization/repository/sqlite_store.py`: tenant-filtered SQL repository (`organization/src/coactra/organization/repository/sqlite_store.py:1-510`).
-  - `organization/src/coactra/organization/service.py`: explicit `save_org` / `load_org` (`organization/src/coactra/organization/service.py:1-268`).
-  - `organization/src/coactra/organization/authorization.py`: async authorizer seam (`organization/src/coactra/organization/authorization.py:16-90`).
-  - `organization/src/coactra/organization/company.py`: bootstrap and validation helpers (`organization/src/coactra/organization/company.py:30-244`).
+  - `directory/src/coactra/directory/domain/organization.py`: composite org tree and permission/lifecycle methods (`directory/src/coactra/directory/domain/organization.py:29-289`).
+  - `directory/src/coactra/directory/domain/member.py`: member kind/status and permission overrides (`directory/src/coactra/directory/domain/member.py:24-81`).
+  - `directory/src/coactra/directory/models.py`: SQLModel table definitions (`directory/src/coactra/directory/models.py:18-163`).
+  - `directory/src/coactra/directory/repository/store.py`: `OrgStore` Protocol and directory DTO (`directory/src/coactra/directory/repository/store.py:20-194`).
+  - `directory/src/coactra/directory/repository/sqlite_store.py`: tenant-filtered SQL repository (`directory/src/coactra/directory/repository/sqlite_store.py:1-510`).
+  - `directory/src/coactra/directory/service.py`: explicit `save_org` / `load_org` (`directory/src/coactra/directory/service.py:1-268`).
+  - `directory/src/coactra/directory/authorization.py`: async authorizer seam (`directory/src/coactra/directory/authorization.py:16-90`).
+  - `directory/src/coactra/directory/company.py`: bootstrap and validation helpers (`directory/src/coactra/directory/company.py:30-244`).
 - Status: active. SQLite/SQLAlchemy path is implemented; Neo4j is a raise-on-use stub.
 
 ### `agent/`
@@ -236,7 +236,7 @@ library/
 
 ### Tenant and Scope
 
-Meaning: every package models tenant isolation explicitly. The canonical DTO is `CoactraScope`, which converts to package-specific scope shapes (`coactra/src/coactra/scope.py:26-98`). Memory has `Scope(tenant, namespace, agent, session)` with reserved separator validation (`memory/src/coactra/memory/types.py:24-87`). Workspace has path-safe `Scope(tenant_id, agent_id)` (`workspace/src/coactra/workspace/scope.py:15-32`). Work/workflow/agent use `tenant_id` plus optional namespace (`orchestration/src/coactra/orchestration/work/domain/scope.py:8-18`, `agent/src/coactra/agent/domain/scope.py:14-24`).
+Meaning: every package models tenant isolation explicitly. The canonical DTO is `CoactraScope`, which converts to package-specific scope shapes (`coactra/src/coactra/scope.py:26-98`). Memory has `Scope(tenant, namespace, agent, session)` with reserved separator validation (`memory/src/coactra/memory/types.py:24-87`). Workspace has path-safe `Scope(tenant_id, agent_id)` (`workspace/src/coactra/workspace/scope.py:15-32`). Work/workflow/agent use `tenant_id` plus optional namespace (`jobs/src/coactra/jobs/work/domain/scope.py:8-18`, `agent/src/coactra/agent/domain/scope.py:14-24`).
 
 Connections: scope keys partition memory, workspace files, work orders, workflow engines, org stores, and agent routers.
 
@@ -284,19 +284,19 @@ Connections: agent workspace port, memory distillation integration, org ACL inte
 
 ### Work Order
 
-Meaning: one durable real-world job with lifecycle, attempts, leases, approvals, decisions, artifacts, budget, and audit events (`orchestration/src/coactra/orchestration/work/domain/models.py:22-182`). `WorkManager` implements submit/claim/start/checkpoint/approval/complete/fail/cancel/reap (`orchestration/src/coactra/orchestration/work/service.py:50-436`).
+Meaning: one durable real-world job with lifecycle, attempts, leases, approvals, decisions, artifacts, budget, and audit events (`jobs/src/coactra/jobs/work/domain/models.py:22-182`). `WorkManager` implements submit/claim/start/checkpoint/approval/complete/fail/cancel/reap (`jobs/src/coactra/jobs/work/service.py:50-436`).
 
 Connections: SQL work store, workflow orchestrators, A2A/MCP/CloudEvents/OTel adapters, agent work port.
 
 ### Procedure and Workflow
 
-Meaning: reusable recipe made of steps such as task, branch, approval, ask, escalate, loops, parallel, sub-procedure depending on backend (`orchestration/src/coactra/orchestration/workflow/domain/models.py:14-110`, `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:366-560`). `ProcedureRunner` is the local run-to-completion protocol (`orchestration/src/coactra/orchestration/workflow/runtime/engine.py:25-45`); `WorkflowEngine` is async durable start/resume (`orchestration/src/coactra/orchestration/workflow/runtime/durable.py:50-80`).
+Meaning: reusable recipe made of steps such as task, branch, approval, ask, escalate, loops, parallel, sub-procedure depending on backend (`jobs/src/coactra/jobs/workflow/domain/models.py:14-110`, `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:366-560`). `ProcedureRunner` is the local run-to-completion protocol (`jobs/src/coactra/jobs/workflow/runtime/engine.py:25-45`); `WorkflowEngine` is async durable start/resume (`jobs/src/coactra/jobs/workflow/runtime/durable.py:50-80`).
 
 Connections: work order facade, approval stores, capability registry, LangGraph backend, promotion store, organization escalation, agent collaborator.
 
 ### Organization
 
-Meaning: tenant-scoped OU-like hierarchy with members, seats, permissions, ownership, reporting, escalation, and policy references (`docs/organization/DESIGN.md:17-41`, `organization/src/coactra/organization/domain/organization.py:29-289`). Persistence is explicit through injected stores (`organization/src/coactra/organization/service.py:28-268`).
+Meaning: tenant-scoped OU-like hierarchy with members, seats, permissions, ownership, reporting, escalation, and policy references (`docs/directory/DESIGN.md:17-41`, `directory/src/coactra/directory/domain/organization.py:29-289`). Persistence is explicit through injected stores (`directory/src/coactra/directory/service.py:28-268`).
 
 Connections: workspace memory ACL, workflow escalation chain, agent organization port, OpenFGA authorizer seam.
 
@@ -308,7 +308,7 @@ Connections: intended to feed workflow induction and memory; currently local sto
 
 ### Router
 
-Meaning: tenant router classes build/cache per-tenant backends or runtimes: `TenantReasoningStoreRouter`, `TenantMemoryBackendRouter`, `TenantWorkspaceBackendRouter`, `TenantWorkStoreRouter`, `TenantProcedureStoreRouter`, `TenantWorkflowEngineRouter`, `TenantOrgStoreRouter`, `TenantAgentRouter` (`lib-ai/src/coactra/ai/routing.py:10-31`, `memory/src/coactra/memory/routing.py:12-43`, `workspace/src/coactra/workspace/routing.py:11-44`, `orchestration/src/coactra/orchestration/workflow/routing.py:13-49`, `organization/src/coactra/organization/repository/routing.py:11-50`, `agent/src/coactra/agent/routing.py:10-24`).
+Meaning: tenant router classes build/cache per-tenant backends or runtimes: `TenantReasoningStoreRouter`, `TenantMemoryBackendRouter`, `TenantWorkspaceBackendRouter`, `TenantWorkStoreRouter`, `TenantProcedureStoreRouter`, `TenantWorkflowEngineRouter`, `TenantOrgStoreRouter`, `TenantAgentRouter` (`lib-ai/src/coactra/ai/routing.py:10-31`, `memory/src/coactra/memory/routing.py:12-43`, `workspace/src/coactra/workspace/routing.py:11-44`, `jobs/src/coactra/jobs/workflow/routing.py:13-49`, `directory/src/coactra/directory/repository/routing.py:11-50`, `agent/src/coactra/agent/routing.py:10-24`).
 
 Connections: hard tenant silo deployments.
 
@@ -358,9 +358,9 @@ Connections: hard tenant silo deployments.
 - Current status: local backend implemented; remote/sandbox provider adapters are stubs.
 - Risks/problems: `TenantWorkspaceBackendRouter.exec` does not expose `ExecOptions` even though `WorkspaceBackend.exec` and `LocalFilesystemBackend.exec` accept options (`workspace/src/coactra/workspace/backends/base.py:48-54`, `workspace/src/coactra/workspace/backends/local.py:75-122`, `workspace/src/coactra/workspace/routing.py:43-44`). Some integrations use direct `Path` operations and are therefore local-backend-specific (`workspace/src/coactra/workspace/integrations/memory.py:21-31`, `workspace/src/coactra/workspace/integrations/workflow.py:41-47`).
 
-### Durable Work Package: `coactra.orchestration.work`
+### Durable Work Package: `coactra.jobs`
 
-- Location: `orchestration/src/coactra/orchestration/work/`
+- Location: `jobs/src/coactra/jobs/work/`
 - What it does: durable work order vocabulary, state machine, stores, adapters.
 - Important classes/functions: `WorkOrder`, `WorkStatus`, `WorkManager`, `InMemoryWorkStore`, `SqlWorkStore`, `EventEnvelope`, `Artifact`, `CapabilityDescriptor`.
 - Inputs: work orders, leases, checkpoints, approvals, artifacts, decisions, budgets.
@@ -369,20 +369,20 @@ Connections: hard tenant silo deployments.
 - Current status: active; SQL work store implemented for production-like persistence.
 - Risks/problems: optional dispatch adapters are thin bridges and marked experimental in docs; durable work ledger remains source of truth.
 
-### Workflow Package: `coactra.orchestration.workflow`
+### Workflow Package: `coactra.jobs.workflow`
 
-- Location: `orchestration/src/coactra/orchestration/workflow/`
+- Location: `jobs/src/coactra/jobs/workflow/`
 - What it does: procedure model, run context, handlers, durable engine protocols, LangGraph backends, workflow induction/promotion.
 - Important classes/functions: `Procedure`, `Step`, `RunContext`, `ProcedureRunner`, `WorkflowEngine`, `DurableLangGraphEngine`, `CapabilityRegistry`, `verify_done_criteria`, `InMemoryProcedurePromotionStore`.
 - Inputs: procedures/workflow docs, state dicts, approvals, tool invocations, capability specs, done criteria.
 - Outputs: run results, interrupts, verification results, promoted procedure versions.
 - Dependencies: Pydantic; optional LangGraph and runtime integrations.
 - Current status: active; rich durable LangGraph backend exists. Temporal/Prefect workflow adapters are implemented as thin host-runtime bridges and still need real-service integration tests.
-- Risks/problems: in-memory approval store is the only approval store found (`orchestration/src/coactra/orchestration/workflow/runtime/approval.py:46-81`); `TenantProcedureStoreRouter` does not implement the full `ProcedureStore` protocol (`orchestration/src/coactra/orchestration/workflow/store.py:16-40`, `orchestration/src/coactra/orchestration/workflow/routing.py:13-22`).
+- Risks/problems: in-memory approval store is the only approval store found (`jobs/src/coactra/jobs/workflow/runtime/approval.py:46-81`); `TenantProcedureStoreRouter` does not implement the full `ProcedureStore` protocol (`jobs/src/coactra/jobs/workflow/store.py:16-40`, `jobs/src/coactra/jobs/workflow/routing.py:13-22`).
 
 ### Orchestration Facade
 
-- Location: `orchestration/src/coactra/orchestration/facade.py`
+- Location: `jobs/src/coactra/jobs/facade.py`
 - What it does: links work orders to local or durable workflow runs.
 - Important classes/functions: `Orchestrator`, `DurableOrchestrator`, `_apply_run`.
 - Inputs: work orders, procedures, scope, worker ids, approvals.
@@ -391,16 +391,16 @@ Connections: hard tenant silo deployments.
 - Current status: active.
 - Risks/problems: durable resume semantics depend on host-provided engine/checkpointer and persisted work state; document restart/resume requirements clearly.
 
-### Organization Package: `coactra.organization`
+### Organization Package: `coactra.directory`
 
-- Location: `organization/src/coactra/organization/`
+- Location: `directory/src/coactra/directory/`
 - What it does: multi-tenant org tree, membership, reporting, escalation, permissions, stores, authorizer.
 - Important classes/functions: `Organization.root`, `add_child`, `hire`, `can`, `save_org`, `load_org`, `SqliteOrgStore`, `AsyncPostgresOrgStore`, `OpenFGAAuthorizer`, `TenantOrgStoreRouter`.
 - Inputs: tenant ids, departments, seats, members, grants, policy refs, authorization requests.
 - Outputs: org tree/domain objects, directory snapshots, authorization decisions.
 - Dependencies: SQLModel/SQLAlchemy; optional Postgres/OpenFGA/Neo4j.
 - Current status: active SQL path; Neo4j stub.
-- Risks/problems: `AsyncPostgresOrgStore` wraps the SQL repository with worker-thread async methods (`organization/src/coactra/organization/repository/async_store.py:1-69`); naming may imply a native async driver when it is a thread-backed facade.
+- Risks/problems: `AsyncPostgresOrgStore` wraps the SQL repository with worker-thread async methods (`directory/src/coactra/directory/repository/async_store.py:1-69`); naming may imply a native async driver when it is a thread-backed facade.
 
 ### Agent Package: `coactra.agent`
 
@@ -469,7 +469,7 @@ WorkManager.submit(WorkOrder)
   -> work store persists state and audit events
 ```
 
-Evidence: `WorkManager.submit`, `claim`, `start`, `checkpoint`, approval methods, and terminal methods are in `work/service.py` (`orchestration/src/coactra/orchestration/work/service.py:64-294`). `Orchestrator.run` and `DurableOrchestrator.start/resume` bridge work orders and procedure/workflow runs (`orchestration/src/coactra/orchestration/facade.py:74-123`, `orchestration/src/coactra/orchestration/facade.py:160-264`, `orchestration/src/coactra/orchestration/facade.py:280-332`).
+Evidence: `WorkManager.submit`, `claim`, `start`, `checkpoint`, approval methods, and terminal methods are in `work/service.py` (`jobs/src/coactra/jobs/work/service.py:64-294`). `Orchestrator.run` and `DurableOrchestrator.start/resume` bridge work orders and procedure/workflow runs (`jobs/src/coactra/jobs/facade.py:74-123`, `jobs/src/coactra/jobs/facade.py:160-264`, `jobs/src/coactra/jobs/facade.py:280-332`).
 
 ### API Request / A2A Request -> Agent Runtime -> Response
 
@@ -495,7 +495,7 @@ workflow durable LangGraph tool node
   -> state update or error
 ```
 
-Evidence: `make_tool_node` requires a `tool_invoker`, validates capabilities, gates red-tier tools, and calls the invoker (`orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:161-187`). Capability registry validation lives in `runtime/capabilities.py` (`orchestration/src/coactra/orchestration/workflow/runtime/capabilities.py:73-192`).
+Evidence: `make_tool_node` requires a `tool_invoker`, validates capabilities, gates red-tier tools, and calls the invoker (`jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:161-187`). Capability registry validation lives in `runtime/capabilities.py` (`jobs/src/coactra/jobs/workflow/runtime/capabilities.py:73-192`).
 
 ### Memory Write/Read Flow
 
@@ -511,7 +511,7 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 
 ### Error Handling Flow
 
-- Work store concurrency errors and lease errors are raised to workers; docs tell workers to reload/back off on `ConflictError` or `LeaseError` (`docs/orchestration/WORK-ORDERS.md:177-180`).
+- Work store concurrency errors and lease errors are raised to workers; docs tell workers to reload/back off on `ConflictError` or `LeaseError` (`docs/jobs/WORK-ORDERS.md:177-180`).
 - Local workspace exec fails closed unless explicitly enabled (`workspace/src/coactra/workspace/backends/local.py:75-122`).
 - Token passthrough attempts raise `TokenPassthroughError` (`agent/src/coactra/agent/identity.py:90-94`, `agent/src/coactra/agent/adapters/keycloak.py:126-129`).
 - Optional backend/adapters raise missing-extra errors when used without dependencies or real implementations (`workspace/src/coactra/workspace/adapters/_stub.py:10-13`, `agent/src/coactra/agent/adapters/_stub.py:10-13`, `memory/src/coactra/memory/backends/_errors.py:1-11`).
@@ -531,12 +531,12 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 | `coactra.memory.make_backend` | name/config | backend | memory backend factory | `memory/src/coactra/memory/factory.py:17-30` |
 | `coactra.workspace.open_workspace` | scope/base/exec options | `Workspace` | open persistent or temp desk | `workspace/src/coactra/workspace/desk.py:177-204` |
 | `coactra.workspace.Workspace.write/read/run` | path/data/command | file text or `ExecResult` | desk file/exec operations | `workspace/src/coactra/workspace/desk.py:32-174` |
-| `coactra.orchestration.work.WorkManager` | work orders, leases, approvals | updated orders/events | durable work lifecycle | `orchestration/src/coactra/orchestration/work/service.py:50-436` |
-| `coactra.orchestration.workflow.Procedure` | steps | validated procedure | reusable workflow model | `orchestration/src/coactra/orchestration/workflow/domain/models.py:14-110` |
-| `coactra.orchestration.Orchestrator` | work/procedure | completed/failed/paused order | local work/procedure bridge | `orchestration/src/coactra/orchestration/facade.py:51-123` |
-| `coactra.orchestration.DurableOrchestrator` | work id/scope/worker/resume | workflow run state/order | durable engine bridge | `orchestration/src/coactra/orchestration/facade.py:134-332` |
-| `coactra.organization.Organization` | tenant tree/member actions | org nodes/permissions | multi-tenant org model | `organization/src/coactra/organization/domain/organization.py:29-289` |
-| `coactra.organization.save_org/load_org` | org/store or tenant/store | persisted/reloaded org | explicit persistence | `organization/src/coactra/organization/service.py:28-268` |
+| `coactra.jobs.WorkManager` | work orders, leases, approvals | updated orders/events | durable work lifecycle | `jobs/src/coactra/jobs/work/service.py:50-436` |
+| `coactra.jobs.workflow.Procedure` | steps | validated procedure | reusable workflow model | `jobs/src/coactra/jobs/workflow/domain/models.py:14-110` |
+| `coactra.jobs.Orchestrator` | jobs/procedure | completed/failed/paused order | local jobs/procedure bridge | `jobs/src/coactra/jobs/facade.py:51-123` |
+| `coactra.jobs.DurableOrchestrator` | work id/scope/worker/resume | workflow run state/order | durable engine bridge | `jobs/src/coactra/jobs/facade.py:134-332` |
+| `coactra.directory.Organization` | tenant tree/member actions | org nodes/permissions | multi-tenant org model | `directory/src/coactra/directory/domain/organization.py:29-289` |
+| `coactra.directory.save_org/load_org` | org/store or tenant/store | persisted/reloaded org | explicit persistence | `directory/src/coactra/directory/service.py:28-268` |
 | `coactra.agent.make_agent` | scope and ports | `Agent` | composition root | `agent/src/coactra/agent/factory.py:43-107` |
 | `coactra.agent.Agent` | port calls, mounts, grants | tool names, identity, port outputs | runtime facade | `agent/src/coactra/agent/agent.py:39-181` |
 | `coactra.agent.integrations.make_coactra_agent` | real sibling facades | `Agent` | full-stack adapter wiring | `agent/src/coactra/agent/integrations/factory.py:24-69` |
@@ -547,9 +547,9 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 |---|---|---|
 | `make test` | run tests for all packages | `Makefile:1-6` |
 | `make test-core` | run core package tests subset | `Makefile:7-10` |
-| `PYTHONPATH=agent/src:orchestration/src python3 examples/basic_incident_triage.py` | run minimal incident example | `docs/EXAMPLES.md:5-13` |
+| `PYTHONPATH=agent/src:jobs/src python3 examples/basic_incident_triage.py` | run minimal incident example | `docs/EXAMPLES.md:5-13` |
 | `PYTHONPATH=memory/src python3 examples/projects/customer_support_memory/app.py` | run memory sample | `examples/projects/README.md:5-10` |
-| `PYTHONPATH=orchestration/src python3 examples/projects/release_runner/app.py` | run durable work sample | `examples/projects/README.md:5-10` |
+| `PYTHONPATH=jobs/src python3 examples/projects/release_runner/app.py` | run durable work sample | `examples/projects/README.md:5-10` |
 | `PYTHONPATH=workspace/src python3 examples/projects/workspace_research_desk/app.py` | run workspace sample | `examples/projects/README.md:5-10` |
 | `PYTHONPATH=agent/src python3 examples/projects/multi_agent_policy/app.py` | run collaboration sample | `examples/projects/README.md:5-10` |
 
@@ -565,40 +565,40 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 - `MCPServerPort.list_tools() -> list[str]`: server tool list protocol (`agent/src/coactra/agent/mounting.py:32-36`).
 - `MountRegistry.stage/begin_turn/active_tools/lookup`: session-level MCP mount orchestration (`agent/src/coactra/agent/mounting.py:146-203`).
 - `workspace.integrations.mcp.register_recall_tool`: registers memory recall tool with optional prebound aliases and publish ACL (`workspace/src/coactra/workspace/integrations/mcp.py:19-84`).
-- `MCPTasksAdapter`: exposes work orders as experimental MCP Task-shaped records (`orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py:54-119`).
+- `MCPTasksAdapter`: exposes work orders as experimental MCP Task-shaped records (`jobs/src/coactra/jobs/work/adapters/mcp_tasks.py:54-119`).
 
 ### Store Interfaces
 
 - `MemoryBackend`: async remember/recall/dump/ingest/capabilities (`memory/src/coactra/memory/backends/base.py:34-56`).
 - `WorkspaceBackend`: file and exec protocol (`workspace/src/coactra/workspace/backends/base.py:1-54`).
-- `WorkStore` / `AtomicWorkStore`: durable work protocol (`orchestration/src/coactra/orchestration/work/store.py:17-55`).
-- `ProcedureStore`: procedure persistence protocol (`orchestration/src/coactra/orchestration/workflow/store.py:16-40`).
-- `ApprovalStore`: pending approval protocol (`orchestration/src/coactra/orchestration/workflow/runtime/approval.py:36-43`).
-- `OrgStore`: organization repository protocol (`organization/src/coactra/organization/repository/store.py:43-194`).
+- `WorkStore` / `AtomicWorkStore`: durable work protocol (`jobs/src/coactra/jobs/work/store.py:17-55`).
+- `ProcedureStore`: procedure persistence protocol (`jobs/src/coactra/jobs/workflow/store.py:16-40`).
+- `ApprovalStore`: pending approval protocol (`jobs/src/coactra/jobs/workflow/runtime/approval.py:36-43`).
+- `OrgStore`: organization repository protocol (`directory/src/coactra/directory/repository/store.py:43-194`).
 - Agent ports: six capability Protocols (`agent/src/coactra/agent/ports/protocols.py:31-107`).
 
 ### Authentication/Security Interfaces
 
 - `TokenExchanger` and `AsyncTokenExchanger`: exchange subject tokens and extend delegation chains (`agent/src/coactra/agent/identity.py:54-80`).
 - `KeycloakExchanger` / `AsyncKeycloakExchanger`: RFC 8693 token exchange (`agent/src/coactra/agent/adapters/keycloak.py:102-262`).
-- `Authorizer.check(AuthorizationRequest)`: async auth decision seam (`organization/src/coactra/organization/authorization.py:16-90`).
-- `OpenFGAAuthorizer`: maps auth requests to OpenFGA SDK (`organization/src/coactra/organization/adapters/openfga.py:17-53`).
+- `Authorizer.check(AuthorizationRequest)`: async auth decision seam (`directory/src/coactra/directory/authorization.py:16-90`).
+- `OpenFGAAuthorizer`: maps auth requests to OpenFGA SDK (`directory/src/coactra/directory/adapters/openfga.py:17-53`).
 - `MemoryAuthorizer` and `AuthorizedMemory`: memory read/write ACLs (`memory/src/coactra/memory/authorization.py:17-83`).
 
 ## 8. Database / Storage / State
 
 ### Work SQL Store
 
-- Tables: `coactra_work_orders` and `coactra_work_events` (`orchestration/src/coactra/orchestration/work/backends/sql.py:96-138`).
-- Stored data: full `WorkOrder` JSON snapshot plus indexed `tenant_id`, `namespace`, `status`, `idempotency_key`, and `version` (`docs/orchestration/WORK-ORDERS.md:153-156`).
-- Concurrency: optimistic `UPDATE ... WHERE version = ...` semantics (`docs/orchestration/WORK-ORDERS.md:177-180`, `orchestration/src/coactra/orchestration/work/backends/sql.py:145-224`).
+- Tables: `coactra_work_orders` and `coactra_work_events` (`jobs/src/coactra/jobs/work/backends/sql.py:96-138`).
+- Stored data: full `WorkOrder` JSON snapshot plus indexed `tenant_id`, `namespace`, `status`, `idempotency_key`, and `version` (`docs/jobs/WORK-ORDERS.md:153-156`).
+- Concurrency: optimistic `UPDATE ... WHERE version = ...` semantics (`docs/jobs/WORK-ORDERS.md:177-180`, `jobs/src/coactra/jobs/work/backends/sql.py:145-224`).
 - Use: production work ledger for multi-process workers and restart-safe work state (`docs/PRODUCTION.md:20-44`).
 
 ### Organization SQL Store
 
-- Tables/classes: `TenantRow`, `DepartmentRow`, `SeatRow`, `MemberRow`, `MembershipRow`, `ReportingEdgeRow`, `EscalationRouteRow`, `PolicyRefRow`, `NodeGrantRow`, `MemberOverrideRow` (`organization/src/coactra/organization/models.py:46-163`).
+- Tables/classes: `TenantRow`, `DepartmentRow`, `SeatRow`, `MemberRow`, `MembershipRow`, `ReportingEdgeRow`, `EscalationRouteRow`, `PolicyRefRow`, `NodeGrantRow`, `MemberOverrideRow` (`directory/src/coactra/directory/models.py:46-163`).
 - Stored data: tenants, org tree nodes, seats, members, memberships, reporting/escalation metadata, policy refs, node grants, member overrides.
-- Use: `SqliteOrgStore` and thread-backed `AsyncPostgresOrgStore` implement tenant-filtered repository operations (`organization/src/coactra/organization/repository/sqlite_store.py:1-510`, `organization/src/coactra/organization/repository/async_store.py:1-69`).
+- Use: `SqliteOrgStore` and thread-backed `AsyncPostgresOrgStore` implement tenant-filtered repository operations (`directory/src/coactra/directory/repository/sqlite_store.py:1-510`, `directory/src/coactra/directory/repository/async_store.py:1-69`).
 
 ### Memory Stores
 
@@ -624,18 +624,18 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 - Agent MCP mounts: pending and active tool trie live in `MountRegistry` (`agent/src/coactra/agent/mounting.py:146-203`).
 - Delegated identity cache: `CachedAsyncTokenExchanger` stores TTL-scoped exchanged identities keyed by tenant, actor, audience, scopes, and token hash (`agent/src/coactra/agent/identity.py:148-205`).
 - Collaboration policy: in-process allow rules live in `AllowSameTenant` (`agent/src/coactra/agent/collaboration.py:52-79`).
-- Durable workflow pending thread metadata: `DurableLangGraphEngine` keeps a procedure map for thread IDs and raises if resume lacks procedure after restart (`orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:809-944`).
+- Durable workflow pending thread metadata: `DurableLangGraphEngine` keeps a procedure map for thread IDs and raises if resume lacks procedure after restart (`jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:809-944`).
 
 ### Environment Variables and Secrets
 
-- Work docs show `COACTRA_WORK_DATABASE_URL` and `WORKER_ID` for worker setup (`docs/orchestration/WORK-ORDERS.md:160-169`).
+- Work docs show `COACTRA_WORK_DATABASE_URL` and `WORKER_ID` for worker setup (`docs/jobs/WORK-ORDERS.md:160-169`).
 - Memory live tests expect `OPENAI_API_KEY` and `NEO4J_URI` for live Graphiti/mem0 readiness (`memory/tests/test_live_integration.py:24-25`).
 - Keycloak adapter accepts token endpoint, client id, client secret, audience, and actor tokens through constructor parameters, not environment-specific code (`agent/src/coactra/agent/adapters/keycloak.py:107-125`).
 - Production docs warn not to put long-lived secrets in workspace files or capability manifests (`docs/PRODUCTION.md:82-90`).
 
 ### Logs and Generated State
 
-- Audit events are explicit `EventEnvelope` records in work stores (`orchestration/src/coactra/orchestration/work/domain/events.py:29-39`, `orchestration/src/coactra/orchestration/work/store.py:57-70`).
+- Audit events are explicit `EventEnvelope` records in work stores (`jobs/src/coactra/jobs/work/domain/events.py:29-39`, `jobs/src/coactra/jobs/work/store.py:57-70`).
 - No standalone logs directory was found in the repository inventory.
 - `.pytest_cache`, `.ruff_cache`, `dist`, and `uv.lock` files are generated or lock/build artifacts; index only if the chatbot needs dependency pinning.
 
@@ -644,13 +644,13 @@ Evidence: `InProcessMemoryBackend` stores by `scope.key` and lexical matches (`m
 ### Easy for an AI Agent to Understand
 
 - Package boundaries are documented in `docs/LIBRARIES.md` and package READMEs (`docs/LIBRARIES.md:95-139`).
-- Public APIs are exported from package roots with tests such as `agent/tests/test_public_api.py`, `memory/tests/test_public_api.py`, `orchestration/tests/test_work_public_api.py`, and `organization/tests/test_public_api.py`.
+- Public APIs are exported from package roots with tests such as `agent/tests/test_public_api.py`, `memory/tests/test_public_api.py`, `jobs/tests/test_work_public_api.py`, and `directory/tests/test_public_api.py`.
 - Protocol boundaries are explicit and small: agent ports, memory backend, workspace backend, work store, procedure store, org store.
 - Tests describe many intended invariants in plain language, especially mounting, no-passthrough identity, collaboration denial, local exec safety, and Graphiti normalization.
 
 ### Hard for an AI Agent to Understand
 
-- The repo is in a dirty transition state with many staged/unstaged renames from `work`/`workflow` to `orchestration`; both compatibility paths and new paths exist.
+- The repo is in a package-naming transition: durable execution moved to `jobs`, org/role authority moved to `directory`, and thin compatibility import paths still exist for old callers.
 - Several adapters are intentionally stubs, while others are thin experimental adapters. A chatbot needs maturity metadata to avoid recommending stub classes as production-ready.
 - Some production seams are documented but not fully implemented in reusable form, such as persisted approval storage.
 - Optional dependency behavior is environment-dependent; tests may skip when `langgraph`, `a2a`, `sqlalchemy`, `graphiti_core`, or other extras are missing.
@@ -738,24 +738,24 @@ The companion file `docs/IMPROVEMENT_BACKLOG.md` contains the prioritized backlo
 
 - FastMCP adapter is a stub (`agent/src/coactra/agent/adapters/fastmcp.py:1-12`).
 - Workspace Daytona/E2B/OpenHands adapters are stubs (`workspace/src/coactra/workspace/adapters/daytona.py:1-13`, `workspace/src/coactra/workspace/adapters/e2b.py:1-13`, `workspace/src/coactra/workspace/adapters/openhands.py:1-13`).
-- Organization Neo4j store is a stub (`organization/src/coactra/organization/repository/neo4j_store.py:1-14`).
-- Workflow Temporal and Prefect adapters are implemented thin bridges (`orchestration/src/coactra/orchestration/workflow/adapters/temporal.py`, `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`); production readiness depends on host runtime wiring and integration tests.
-- MCP Tasks adapter is experimental by docs (`docs/orchestration/WORK-ORDERS.md:90-97`).
+- Organization Neo4j store is a stub (`directory/src/coactra/directory/repository/neo4j_store.py:1-14`).
+- Workflow Temporal and Prefect adapters are implemented thin bridges (`jobs/src/coactra/jobs/workflow/adapters/temporal.py`, `jobs/src/coactra/jobs/workflow/adapters/prefect.py`); production readiness depends on host runtime wiring and integration tests.
+- MCP Tasks adapter is experimental by docs (`docs/jobs/WORK-ORDERS.md:90-97`).
 - DBOS/Temporal/Dapr dispatch adapters are documented as thin/experimental integration bridges (`docs/LIBRARIES.md:195`).
 
 ### Duplicate or Compatibility Paths
 
-- `coactra.work` and `coactra.workflow` compatibility aliases remain after packaging-level merge (`orchestration/README.md:72-78`, `docs/LIBRARIES.md:179-185`).
+- `coactra.jobs` and `coactra.jobs.workflow` compatibility aliases remain after packaging-level merge (`jobs/README.md:72-78`, `docs/LIBRARIES.md:179-185`).
 - Agent root deprecated exports still resolve internal adapter names (`agent/src/coactra/agent/__init__.py:114-145`).
-- Organization compatibility imports for older store paths remain (`organization/README.md:47-51`).
+- Organization compatibility imports for older store paths remain (`directory/README.md:47-51`).
 - Workspace compatibility imports for `backend.py` and `local.py` remain (`workspace/README.md:76-77`).
 
 ### Confusing or Incomplete Areas
 
-- `AsyncPostgresOrgStore` is async by thread offload over SQLAlchemy-style repository methods, not clearly a native async DB driver (`organization/src/coactra/organization/repository/async_store.py:1-69`).
+- `AsyncPostgresOrgStore` is async by thread offload over SQLAlchemy-style repository methods, not clearly a native async DB driver (`directory/src/coactra/directory/repository/async_store.py:1-69`).
 - `TenantWorkspaceBackendRouter.exec` loses command options (`workspace/src/coactra/workspace/routing.py:43-44`).
-- `TenantProcedureStoreRouter` only exposes part of `ProcedureStore` (`orchestration/src/coactra/orchestration/workflow/routing.py:13-22`).
-- Durable workflow approval storage is in-memory only in reusable code (`orchestration/src/coactra/orchestration/workflow/runtime/approval.py:46-81`).
+- `TenantProcedureStoreRouter` only exposes part of `ProcedureStore` (`jobs/src/coactra/jobs/workflow/routing.py:13-22`).
+- Durable workflow approval storage is in-memory only in reusable code (`jobs/src/coactra/jobs/workflow/runtime/approval.py:46-81`).
 - Graphiti export/dump is an approximate empty-query search, not a complete engine-native export (`memory/src/coactra/memory/backends/graphiti.py:357-361`).
 - No standalone migration files exist for SQL stores; schemas are source-defined.
 
@@ -793,8 +793,8 @@ packages/
   coactra-ai/
   coactra-memory/
   coactra-workspace/
-  coactra-orchestration/
-  coactra-organization/
+  coactra-jobs/
+  coactra-directory/
   coactra-agent/
 examples/
 tests-integration/

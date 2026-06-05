@@ -33,14 +33,14 @@ Application docs and examples should prefer:
 - `coactra.ai`
 - `coactra.memory`
 - `coactra.workspace`
-- `coactra.orchestration`
-- `coactra.orchestration.work`
-- `coactra.orchestration.workflow`
-- `coactra.organization`
+- `coactra.jobs`
+- `coactra.jobs`
+- `coactra.jobs.workflow`
+- `coactra.directory`
 - `coactra.agent`
 - `coactra.agent.integrations`
 
-Compatibility imports such as `coactra.work` and `coactra.workflow` should remain documented as aliases, not preferred roots.
+Compatibility imports such as `coactra.jobs` and `coactra.jobs.workflow` should remain documented as aliases, not preferred roots.
 
 ## Deprecation Rules
 

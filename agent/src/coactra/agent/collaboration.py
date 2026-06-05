@@ -10,7 +10,7 @@ DESIGN: collaboration targets are TENANT-QUALIFIED and DENIABLE. A target is an
 policy can adjudicate cross-TENANT talk and DENY it. A bare-string agent id (e.g. a
 workflow `ask` step's `agent`) is lifted to an `AgentRef` in the caller's tenant.
 
-Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies coactra.orchestration.workflow's
+Inter-library seam: PolicyGatedCollaborator STRUCTURALLY satisfies coactra.jobs.workflow's
 `Collaborator` (.ask(agent, question, state)) and `EscalationRouter` (.route(escalation,
 chain)) Protocols — verified verbatim against orchestration/workflow/runtime/handlers.py. We do not import
 workflow; structural typing is the contract. The `ask` first parameter is WIDENED to
@@ -118,7 +118,7 @@ class PolicyGatedCollaborator:
     """Gates an A2A transport behind a CollaborationPolicy.
 
     Implements BOTH workflow seams by structural typing (signatures verified against
-    coactra.orchestration.workflow.handlers):
+    coactra.jobs.workflow.handlers):
       ask(agent, question, state) -> str          (workflow.Collaborator)
       route(escalation, chain) -> decider id       (workflow.EscalationRouter)
 

@@ -15,10 +15,17 @@ Start with [QUICKSTART.md](QUICKSTART.md) if you are building your first app, th
 | Model calls and reasoning reuse | `coactra.ai` | `ask`, `structured`, `Client`, `ReasoningEngine` |
 | Long-term memory | `coactra.memory` | `Memory`, `MemoryBackend`, `make_backend`, `AuthorizedMemory` |
 | Persistent workspace | `coactra.workspace` | `Workspace`, `open_workspace`, `WorkspaceBackend`, `CliPolicy` |
-| Procedures and durable work | `coactra.orchestration` | `Orchestrator`, `DurableOrchestrator`, `Procedure`, `WorkManager` |
-| Work-order lifecycle | `coactra.orchestration.work` | `WorkOrder`, `WorkManager`, `WorkStore`, `AtomicWorkStore`, `SqlWorkStore` |
-| Tenant directory and authority | `coactra.organization` | `Organization`, `OrgStore`, `Authorizer`, `CompanySpec` |
+| Procedures and durable work | `coactra.jobs` | `Orchestrator`, `DurableOrchestrator`, `Procedure`, `WorkManager` |
+| Work-order lifecycle | `coactra.jobs` | `WorkOrder`, `WorkManager`, `WorkStore`, `AtomicWorkStore`, `SqlWorkStore` |
+| Tenant directory and authority | `coactra.directory` | `Organization`, `OrgStore`, `Authorizer`, `CompanySpec` |
 | Runtime composition | `coactra.agent` | `Agent`, `make_agent`, ports, identity, collaboration policy |
+
+## Naming Boundary
+
+Use `coactra.jobs` for durable jobs, procedures, approvals, retries, and status.
+Use `coactra.workspace` for files, handoff notes, command execution, and the persistent agent desk.
+Use `coactra.directory` for tenants, members, roles, permissions, and escalation targets.
+
 
 ## Normal Application Shape
 
@@ -36,7 +43,7 @@ def answer_support_question(question: str) -> str:
 When work must be durable, add `WorkManager`:
 
 ```python
-from coactra.orchestration.work import Scope, WorkManager, WorkOrder
+from coactra.jobs import Scope, WorkManager, WorkOrder
 
 work = WorkManager()
 scope = Scope(tenant_id="acme", namespace="support")
@@ -88,7 +95,7 @@ Use it only when one deployed agent service must call another deployed agent ser
 |---|---|
 | `coactra.agent` | `CollaborationPolicy`, `AllowSameTenant`, `PolicyGatedCollaborator`, `AsyncPolicyGatedCollaborator`, `A2ATransportPort`, `AsyncA2ATransportPort` |
 | `coactra.agent.adapters` | `OfficialA2ATransport`, `build_a2a_app`, `A2AInboundRequest` |
-| `coactra.orchestration.work.adapters` | `to_a2a_agent_card`, `to_a2a_skill`, `to_a2a_artifact` |
+| `coactra.jobs.adapters` | `to_a2a_agent_card`, `to_a2a_skill`, `to_a2a_artifact` |
 
 Outbound async A2A host:
 

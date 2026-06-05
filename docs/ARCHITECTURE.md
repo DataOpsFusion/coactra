@@ -51,9 +51,9 @@ Application functions
 | `coactra-ai` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
 | `coactra-memory` | backend-neutral memory contract | a custom vector/graph memory engine |
 | `coactra-workspace` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
-| `coactra-orchestration.work` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
-| `coactra-orchestration.workflow` | procedure data model and engine adapters | custom durable engine beyond adapters/gates |
-| `coactra-organization` | tenant org tree, permissions, escalation | workflow execution or messaging |
+| `coactra-jobs` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
+| `coactra-jobs` | procedure data model and engine adapters | custom durable engine beyond adapters/gates |
+| `coactra-directory` | tenant org tree, permissions, escalation | workflow execution or messaging |
 | `coactra-agent` | composition, tool mount policy, identity, collaboration | sibling package internals |
 
 ## Runtime Adoption Rule
@@ -79,7 +79,7 @@ WorkOrder / Procedure / Approval / Artifact / Audit
 
 - `docs/LIBRARIES.md` defines the thin-wrapper philosophy and package boundaries.
 - `docs/agent/DESIGN.md` defines ports and composition root as locked principles.
-- `docs/orchestration/WORK-ORDERS.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
+- `docs/jobs/WORK-ORDERS.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
 - `workspace/README.md` says workspace stores the desk while agent owns MCP mounting and organization owns hierarchy/policy.
 
 ## Runtime Factory

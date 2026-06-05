@@ -11,8 +11,8 @@ from pprint import pprint
 
 from coactra.agent import Scope as AgentScope
 from coactra.agent import make_agent
-from coactra.orchestration.work import Scope as WorkScope
-from coactra.orchestration.work import WorkManager, WorkOrder
+from coactra.jobs import Scope as WorkScope
+from coactra.jobs import WorkManager, WorkOrder
 
 
 def incident_key(incident: str) -> str:

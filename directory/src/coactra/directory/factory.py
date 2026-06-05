@@ -1,0 +1,35 @@
+"""Factory — the composition root that selects an OrgStore backend from a config URL.
+
+``make_org_store("sqlite://")`` returns the default SQLite-backed store;
+``make_org_store("sqlite:///path/org.db")`` a file-backed one; ``neo4j://…`` routes to
+the (raise-on-use) Neo4j stub. The aggregate NEVER instantiates a store inline — this
+function is the one place a backend is chosen, then injected into the service layer.
+"""
+
+from __future__ import annotations
+
+from coactra.directory.engine import make_engine
+from coactra.directory.repository.neo4j_store import Neo4jOrgStore
+from coactra.directory.repository.async_store import AsyncPostgresOrgStore
+from coactra.directory.repository.sqlite_store import SqliteOrgStore
+from coactra.directory.repository.store import OrgStore
+
+
+def make_org_store(config: str = "sqlite://") -> OrgStore:
+    """Return an OrgStore for the given backend config URL.
+
+    Supported schemes:
+      - ``sqlite://`` / ``sqlite:///path`` — the default SQLModel-backed store.
+      - ``neo4j://…``                      — the optional-extra stub (raises on use).
+    Any other scheme is an unsupported backend.
+    """
+    if config.startswith("sqlite"):
+        return SqliteOrgStore(engine=make_engine(config))
+    if config.startswith("neo4j"):
+        return Neo4jOrgStore(uri=config)
+    raise ValueError(f"unsupported org-store backend: {config!r}")
+
+
+def make_async_org_store(config: str) -> AsyncPostgresOrgStore:
+    """Return the async Postgres org-store facade for a shared fleet database."""
+    return AsyncPostgresOrgStore(config)

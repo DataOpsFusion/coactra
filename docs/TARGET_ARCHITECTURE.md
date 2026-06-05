@@ -44,8 +44,8 @@ The current package split is coherent and should stay:
 - `coactra-ai`: model calls, structured output, embeddings, reasoning replay.
 - `coactra-memory`: backend-neutral long-term memory.
 - `coactra-workspace`: persistent agent desk and execution policy.
-- `coactra-orchestration`: durable work orders plus reusable workflow procedures.
-- `coactra-organization`: tenant/org/permission/authorization directory.
+- `coactra-jobs`: durable work orders plus reusable workflow procedures.
+- `coactra-directory`: tenant/org/permission/authorization directory.
 - `coactra-agent`: composition, MCP mounting, delegated identity, collaboration policy.
 
 Evidence: `docs/LIBRARIES.md` defines these packages and their dependency shape (`docs/LIBRARIES.md:116-139`). The agent design locks ports and dependency injection (`docs/agent/DESIGN.md:11-23`).
@@ -65,9 +65,9 @@ Evidence:
 - Agent ports: `agent/src/coactra/agent/ports/protocols.py:31-107`
 - Memory backend: `memory/src/coactra/memory/backends/base.py:34-56`
 - Workspace backend: `workspace/src/coactra/workspace/backends/base.py:1-54`
-- Work store: `orchestration/src/coactra/orchestration/work/store.py:17-55`
-- Procedure store: `orchestration/src/coactra/orchestration/workflow/store.py:16-40`
-- Org store: `organization/src/coactra/organization/repository/store.py:43-194`
+- Work store: `jobs/src/coactra/jobs/work/store.py:17-55`
+- Procedure store: `jobs/src/coactra/jobs/workflow/store.py:16-40`
+- Org store: `directory/src/coactra/directory/repository/store.py:43-194`
 
 Target rule: every public Protocol should have a reusable conformance test suite. The goal is not just type compatibility; every adapter and tenant router should prove the same behavioral contract.
 
@@ -83,7 +83,7 @@ Coactra should continue wrapping mature external protocols and engines rather th
 - Keycloak/RFC 8693 for delegated identity.
 - OpenFGA for authorization.
 
-Evidence: `docs/LIBRARIES.md:27-38`, `agent/README.md:5-18`, `memory/README.md:8-16`, `docs/orchestration/WORK-ORDERS.md:90-97`.
+Evidence: `docs/LIBRARIES.md:27-38`, `agent/README.md:5-18`, `memory/README.md:8-16`, `docs/jobs/WORK-ORDERS.md:90-97`.
 
 ### Keep the public shell smaller than the package graph
 
@@ -169,7 +169,7 @@ Use lock files only for dependency auditing.
 
 ### Clarify `AsyncPostgresOrgStore`
 
-Current state: `AsyncPostgresOrgStore` wraps SQL repository calls with worker-thread async forwarding (`organization/src/coactra/organization/repository/async_store.py:1-69`).
+Current state: `AsyncPostgresOrgStore` wraps SQL repository calls with worker-thread async forwarding (`directory/src/coactra/directory/repository/async_store.py:1-69`).
 
 Target choices:
 
@@ -193,11 +193,11 @@ Recommended path: make them backend-aware where practical because remote workspa
 
 Keep compatibility paths for migration, but document preferred imports:
 
-- Prefer `coactra.orchestration.work` over `coactra.work`.
-- Prefer `coactra.orchestration.workflow` over `coactra.workflow`.
+- Prefer `coactra.jobs` over `coactra.jobs`.
+- Prefer `coactra.jobs.workflow` over `coactra.jobs.workflow`.
 - Prefer adapter imports from `coactra.agent.adapters` rather than deprecated package-root lookups.
 
-Evidence: `orchestration/README.md:72-78`, `agent/src/coactra/agent/__init__.py:114-145`, `organization/README.md:47-51`, `workspace/README.md:76-77`.
+Evidence: `jobs/README.md:72-78`, `agent/src/coactra/agent/__init__.py:114-145`, `directory/README.md:47-51`, `workspace/README.md:76-77`.
 
 ## 5. What Should Become a Library, Module, or Service
 
@@ -206,8 +206,8 @@ Evidence: `orchestration/README.md:72-78`, `agent/src/coactra/agent/__init__.py:
 - `coactra-ai`
 - `coactra-memory`
 - `coactra-workspace`
-- `coactra-orchestration`
-- `coactra-organization`
+- `coactra-jobs`
+- `coactra-directory`
 - `coactra-agent`
 - `coactra` umbrella
 
@@ -258,8 +258,8 @@ Each service should import the libraries and wire production backends. The libra
 Do not remove now. Mark for later cleanup after migration windows:
 
 - Deprecated root/internal exports in `coactra.agent.__getattr__`.
-- Old `coactra.work` and `coactra.workflow` compatibility aliases, after downstream users migrate.
-- `organization/src/coactra/organization/__init__.py.orig`, if it is only a backup artifact.
+- Old `coactra.jobs` and `coactra.jobs.workflow` compatibility aliases, after downstream users migrate.
+- `directory/src/coactra/directory/__init__.py.orig`, if it is only a backup artifact.
 - Stub classes from public adapter imports if they keep causing confusion. Alternative: keep them but make maturity metadata explicit.
 
 Removal criteria:
@@ -533,8 +533,8 @@ library/
     coactra-ai/
     coactra-memory/
     coactra-workspace/
-    coactra-orchestration/
-    coactra-organization/
+    coactra-jobs/
+    coactra-directory/
     coactra-agent/
   docs/
   examples/

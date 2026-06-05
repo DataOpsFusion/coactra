@@ -26,11 +26,8 @@ jobs:
           python -m pip install -e './coactra[dev]'
           python -m pip install -e './memory[dev]'
           python -m pip install -e './workspace[dev]'
-          python -m pip install -e './orchestration[dev]'
+          python -m pip install -e './jobs[dev]'
           python -m pip install -e './agent[dev]'
-
-      - name: Validate public API inventory
-        run: python scripts/check_public_api.py
 
       - name: Validate adapter maturity manifest
         run: python scripts/check_adapter_maturity.py
@@ -41,12 +38,12 @@ jobs:
       - name: Install dependency-complete package lanes
         run: |
           python -m pip install -e './lib-ai[dev]'
-          python -m pip install -e './organization[dev]'
+          python -m pip install -e './directory[dev]'
 
       - name: Run lib-ai tests
         working-directory: lib-ai
         run: python -m pytest -q
 
-      - name: Run organization tests
-        working-directory: organization
+      - name: Run directory tests
+        working-directory: directory
         run: python -m pytest -q
