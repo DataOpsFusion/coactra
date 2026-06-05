@@ -12,22 +12,22 @@ The public API is meant to stay boring:
 
 ## Install
 
-> **Pre-release:** the `coactra-*` distributions are **not on PyPI yet**. Today you
-> install them editable from this monorepo (`pip install -e './agent[dev]'`, etc. —
-> see [CONTRIBUTING.md](CONTRIBUTING.md)). The `pip install coactra-*` lines below are
-> the intended public interface once the suite is published.
+> **Pre-release:** `coactra` is **not on PyPI yet**. Today you install it editable
+> from this repo (`pip install -e './coactra[dev]'` — see
+> [CONTRIBUTING.md](CONTRIBUTING.md)). The `pip install "coactra[...]"` lines below are
+> the intended public interface once it is published.
 
-Install only the pieces you need:
+Coactra is a single distribution; pick the capabilities you need with extras:
 
 ```bash
-pip install coactra-agent coactra-jobs
-pip install "coactra-jobs[sql]"   # durable SQL work store
+pip install "coactra[agent]"      # agent facade (jobs/WorkManager are in the base package)
+pip install "coactra[sql]"        # durable SQL work store
 ```
 
-From this repo, the dependency-light suite is:
+From this repo, run the test suite with:
 
 ```bash
-make test-core
+make test
 ```
 
 ## Quick Example

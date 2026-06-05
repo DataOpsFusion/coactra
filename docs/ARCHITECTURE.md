@@ -28,7 +28,7 @@ The project should use an adopt-first rule for generic infrastructure:
 - PydanticAI is a useful API-design reference for typed dependencies, tools, and structured output, but adopting its vocabulary should not force a rewrite of Coactra's package model.
 - LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra-ai`.
 
-See [ROADMAP_V1.md](ROADMAP_V1.md) and [RELEASE_POLICY.md](RELEASE_POLICY.md) for the concrete v1 plan.
+See [internal/ROADMAP_V1.md](internal/ROADMAP_V1.md) and [internal/RELEASE_POLICY.md](internal/RELEASE_POLICY.md) for the concrete v1 plan.
 
 ## Target Stack
 

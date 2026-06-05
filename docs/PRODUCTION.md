@@ -6,19 +6,19 @@ This guide describes the minimum production posture for Coactra applications.
 
 Use stable package roots for application code and keep experimental adapters behind explicit imports and configuration.
 
-> **Pre-release:** the `coactra-*` distributions are not on PyPI yet — install them
-> editable from the monorepo today (see [../CONTRIBUTING.md](../CONTRIBUTING.md)). Pin
-> versions and extras in your deployment lockfile once they are published.
+> **Pre-release:** `coactra` is not on PyPI yet — install it editable from the repo
+> today (see [../CONTRIBUTING.md](../CONTRIBUTING.md)). Pin the version and extras in
+> your deployment lockfile once it is published.
 
 ```bash
-pip install "coactra-jobs[sql]" coactra-agent coactra-workspace coactra-memory
+pip install "coactra[sql,agent,workspace,memory]"
 ```
 
-Use package-specific extras only where required:
+Add extras only where required:
 
 ```bash
-pip install "coactra-agent[oauth]"        # Keycloak/OAuth token exchange with httpx
-pip install "coactra-jobs[sql]"  # SQLAlchemy-backed durable WorkStore
+pip install "coactra[agent,oauth]"        # Keycloak/OAuth token exchange with httpx
+pip install "coactra[sql]"                # SQLAlchemy-backed durable WorkStore
 ```
 
 ## Durable work execution
