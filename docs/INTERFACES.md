@@ -134,6 +134,6 @@ The official A2A SDK path is async. The default `make_agent(...)` path is sync b
 ## Examples
 
 - [EXAMPLES.md](EXAMPLES.md): the full runnable sample catalog.
-- [../examples/basic_incident_triage.py](../examples/basic_incident_triage.py): normal function-first app using `make_agent` and `WorkManager`.
-- [../examples/projects](../examples/projects): diverse sample projects for memory, durable work, workspace, and multi-agent policy.
-- [../examples/function_first_agent.py](../examples/function_first_agent.py): advanced port-injection demo showing that Coactra accepts structural ports without subclassing.
+- [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py): normal function-first app using `make_agent` and `WorkManager`.
+- [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects): diverse sample projects for memory, durable work, workspace, and multi-agent policy.
+- [https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py): advanced port-injection demo showing that Coactra accepts structural ports without subclassing.
