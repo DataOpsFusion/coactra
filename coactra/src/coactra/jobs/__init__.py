@@ -100,7 +100,7 @@ for _suffix in (
 
 # Expose the work-order vocabulary at the jobs root. This keeps the common import
 # path short: ``from coactra.jobs import Scope, WorkManager, WorkOrder``.
-from coactra.jobs import work as _work_module
+from coactra.jobs import work as _work_module  # noqa: E402  -- re-export at module end, after the canonical jobs API is defined
 
 for _name in _work_module.__all__:
     if _name != "__version__":

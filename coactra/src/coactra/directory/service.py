@@ -179,7 +179,6 @@ def load_org(tenant: str, *, store: OrgStore) -> Organization | None:
     if not d.nodes:
         return None
 
-    by_id: dict[int, Department] = {n.id: n for n in d.nodes}
     children: dict[int | None, list[Department]] = {}
     for n in d.nodes:
         children.setdefault(n.parent_id, []).append(n)
