@@ -1,7 +1,7 @@
 """Tenant-routed work stores for hard physical silo isolation."""
 from __future__ import annotations
 
-from coactra.jobs._tenant_router import TenantRouter
+from coactra._routing import TenantRouter
 from coactra.jobs.work.domain.events import EventEnvelope
 from coactra.jobs.work.domain.models import WorkOrder, WorkStatus
 from coactra.jobs.work.domain.scope import Scope

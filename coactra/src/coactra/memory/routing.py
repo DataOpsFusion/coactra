@@ -1,33 +1,28 @@
 """Tenant-routed memory backends for hard physical silo isolation."""
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 
+from coactra._routing import TenantRouter
 from coactra.memory.backends.base import MemoryBackend
 from coactra.memory.capabilities import Capability
 from coactra.memory.export import ExportReport
 from coactra.memory.types import MemoryEvent, Recollection, Scope
 
 
-class TenantMemoryBackendRouter:
-    """Delegate each scoped operation to one cached backend per tenant."""
+class TenantMemoryBackendRouter(TenantRouter[MemoryBackend]):
+    """Delegate each scoped operation to one cached backend per tenant.
 
-    def __init__(self, factory: Callable[[str], MemoryBackend]) -> None:
-        self._factory = factory
-        self._backends: dict[str, MemoryBackend] = {}
-
-    def for_tenant(self, tenant: str) -> MemoryBackend:
-        backend = self._backends.get(tenant)
-        if backend is None:
-            backend = self._factory(tenant)
-            self._backends[tenant] = backend
-        return backend
+    Caching/dispatch comes from :class:`coactra._routing.TenantRouter`; this subclass
+    adds the ``MemoryBackend`` contract delegators plus capability intersection across
+    the live per-tenant backends.
+    """
 
     async def capabilities(self) -> set[Capability]:
         """Routers may span heterogeneous silos; advertise only universal capabilities."""
-        if not self._backends:
+        if not self._cache:
             return set()
-        per_backend = [await backend.capabilities() for backend in self._backends.values()]
+        per_backend = [await backend.capabilities() for backend in self._cache.values()]
         return set.intersection(*per_backend)
 
     async def remember(self, events: Sequence[MemoryEvent], scope: Scope) -> None:

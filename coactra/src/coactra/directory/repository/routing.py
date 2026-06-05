@@ -1,26 +1,20 @@
 """Tenant-routed organization stores for hard physical silo isolation."""
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 
+from coactra._routing import TenantRouter
 from coactra.directory.models import Tenant
 from coactra.directory.repository.store import ORG_STORE_METHODS, OrgStore
 
 
-class TenantOrgStoreRouter:
-    """Delegate each tenant operation to one cached physical ``OrgStore``."""
+class TenantOrgStoreRouter(TenantRouter[OrgStore]):
+    """Delegate each tenant operation to one cached physical ``OrgStore``.
 
-    def __init__(self, factory: Callable[[str], OrgStore]) -> None:
-        self._factory = factory
-        self._stores: dict[str, OrgStore] = {}
-
-    def for_tenant(self, tenant_id: str) -> OrgStore:
-        store = self._stores.get(tenant_id)
-        if store is None:
-            store = self._factory(tenant_id)
-            self._stores[tenant_id] = store
-        return store
+    Caching/dispatch (``for_tenant``) comes from :class:`coactra._routing.TenantRouter`;
+    this subclass binds the directory SPI as tenant-keyed routing methods (see the
+    module-level loop below) plus the dynamic ``__getattr__`` catch-all for extras.
+    """
 
     def add_tenant(self, tenant: Tenant):
         return self.for_tenant(tenant.tenant_id).add_tenant(tenant)
