@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from coactra.jobs._tenant_router import TenantRouter
+from coactra._routing import TenantRouter
 from coactra.jobs.workflow.domain.models import Procedure
 from coactra.jobs.workflow.domain.scope import Scope
 from coactra.jobs.workflow.runtime import RunContext, WorkflowEngine, WorkflowRun

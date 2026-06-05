@@ -1,26 +1,18 @@
 """Tenant-routed workspace backends for hard physical silo isolation."""
 from __future__ import annotations
 
-from collections.abc import Callable
-
+from coactra._routing import TenantRouter
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.models import ExecOptions, ExecResult
 from coactra.workspace.scope import Scope
 
 
-class TenantWorkspaceBackendRouter:
-    """Delegate each scoped operation to one cached backend per tenant."""
+class TenantWorkspaceBackendRouter(TenantRouter[WorkspaceBackend]):
+    """Delegate each scoped operation to one cached backend per tenant.
 
-    def __init__(self, factory: Callable[[str], WorkspaceBackend]) -> None:
-        self._factory = factory
-        self._backends: dict[str, WorkspaceBackend] = {}
-
-    def for_tenant(self, tenant_id: str) -> WorkspaceBackend:
-        backend = self._backends.get(tenant_id)
-        if backend is None:
-            backend = self._factory(tenant_id)
-            self._backends[tenant_id] = backend
-        return backend
+    Caching/dispatch comes from :class:`coactra._routing.TenantRouter`; this subclass
+    adds only the ``WorkspaceBackend`` contract delegators.
+    """
 
     def root_for(self, scope: Scope) -> str:
         return self.for_tenant(scope.tenant_id).root_for(scope)
