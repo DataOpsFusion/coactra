@@ -7,6 +7,7 @@ installed and no client/runner was injected.
 
 from __future__ import annotations
 
+# Re-export the canonical MissingExtraError; kept importable from this path.
+from coactra.errors import MissingExtraError
 
-class MissingExtraError(RuntimeError):
-    """Raised when an optional-extra engine dependency is missing at use time."""
+__all__ = ["MissingExtraError"]
