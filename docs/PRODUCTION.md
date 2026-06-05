@@ -93,9 +93,9 @@ Do not enable broad shell execution for user-provided commands.
 
 Use `AsyncKeycloakExchanger` or a cached async exchanger in async services. Avoid blocking token exchange in request handlers. Keep client secrets in the platform secret manager and never store tokens in work payloads or event metadata.
 
-## Adapter maturity
+## Adapter posture
 
-Treat stub and experimental adapters as integration seams, not production backends. The full matrix in [`docs/ADAPTER_MATURITY.md`](ADAPTER_MATURITY.md) — mirrored machine-readably in [`docs/adapter_maturity.json`](adapter_maturity.json), kept in sync by CI — is the source of truth for which adapters are production-oriented today. (The matrix in `docs/LIBRARIES.md` is an abridged summary.)
+Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as integration seams, not production backends. Prefer the reference/implemented backends: `SqlWorkStore` over `InMemoryWorkStore`, sandboxed or remote workspaces over local exec, a persistent-checkpointer `DurableLangGraphEngine` with an explicit restart contract, and real token exchange over the in-process exchanger.
 
 ## Deployment checklist
 

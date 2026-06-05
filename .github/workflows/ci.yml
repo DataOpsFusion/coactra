@@ -29,9 +29,6 @@ jobs:
           python -m pip install -e './jobs[dev]'
           python -m pip install -e './agent[dev]'
 
-      - name: Validate adapter maturity manifest
-        run: python scripts/check_adapter_maturity.py
-
       - name: Run dependency-light core tests
         run: make test-core
 

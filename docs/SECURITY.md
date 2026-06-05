@@ -53,4 +53,3 @@ Coactra is a library suite. The host application remains responsible for product
 - durable workflow runtime persistence configured
 - memory backend retention and deletion policy defined
 - tenant isolation tests in place
-- adapter maturity checked before deployment

@@ -45,16 +45,11 @@ dependency or environment is absent.
 ## CI guardrails
 
 `.github/workflows/ci.yml` runs `make test-core`, the `lib-ai` and `organization`
-suites, and two inventory checks you can run locally:
+suites, and a public API inventory check you can run locally:
 
 ```bash
 python scripts/check_public_api.py        # public API inventory vs docs/API_INDEX.md
-python scripts/check_adapter_maturity.py  # adapter manifest vs docs/ADAPTER_MATURITY.md
 ```
-
-If you add or move an adapter, update **both** `docs/ADAPTER_MATURITY.md` and
-`docs/adapter_maturity.json` (the parity check fails otherwise), and add/refresh its
-file path so the manifest's existence check stays green.
 
 ## Public API and release discipline
 

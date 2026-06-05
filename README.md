@@ -77,8 +77,8 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a complete walkthrough, [docs/E
 - [Examples](docs/EXAMPLES.md): runnable sample projects for memory, durable work, workspace, and multi-agent policy.
 - [Interface map](docs/INTERFACES.md): package roots, stable API surfaces, and where A2A fits.
 - [Production guide](docs/PRODUCTION.md): SQL work store, scope consistency, auth, and deployment posture.
-- [Library map](docs/LIBRARIES.md): package boundaries and adapter maturity.
+- [Library map](docs/LIBRARIES.md): package boundaries and adapters.
 
 ## Maturity
 
-Coactra is alpha-quality library infrastructure. The core facades and Protocols are the intended stable surface. Stub and experimental adapters are named as integration seams, not production backends.
+Coactra is alpha-quality library infrastructure. The core facades and Protocols are the intended stable surface. Experimental adapters are integration seams, not production backends — prefer the reference/implemented backends documented in [docs/PRODUCTION.md](docs/PRODUCTION.md).
