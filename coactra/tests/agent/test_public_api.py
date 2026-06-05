@@ -125,10 +125,10 @@ def _load_workflow_handlers():
     from pathlib import Path
 
     here = Path(__file__).resolve()
-    # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/jobs/src/coactra/jobs/workflow/...
-    repo_root = here.parents[2]
+    # repo layout: <repo>/coactra/tests/agent/test_public_api.py  ->  <repo>/coactra/src/coactra/jobs/workflow/...
+    pkg_root = here.parents[2]
     handlers_path = (
-        repo_root / "jobs" / "src" / "coactra" / "jobs" / "workflow" / "runtime" / "handlers.py"
+        pkg_root / "src" / "coactra" / "jobs" / "workflow" / "runtime" / "handlers.py"
     )
     assert handlers_path.is_file(), (
         f"real workflow handlers not found at {handlers_path}"

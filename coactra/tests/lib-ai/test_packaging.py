@@ -9,5 +9,6 @@ def test_namespace_package_imports():
 
 def test_no_top_level_init():
     # PEP 420: coactra must NOT have its own __init__.py
-    root = pathlib.Path(__file__).resolve().parent.parent
+    # layout: <repo>/coactra/tests/lib-ai/test_packaging.py -> <repo>/coactra/src/coactra/
+    root = pathlib.Path(__file__).resolve().parents[2]
     assert not (root / "src" / "coactra" / "__init__.py").exists()
