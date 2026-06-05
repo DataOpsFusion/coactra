@@ -105,7 +105,9 @@ Genuinely novel cores: **lib-ai's reasoning-replay** and **the un-tangled compos
 itself**. The rest is "better seams over a crowded field" — worth building, but don't
 reinvent mem0/langgraph by accident.
 
-> **Design verdict:** procedures + the work-order ledger now ship as `coactra-jobs`.
+> **Note:** the workspace control layer ships only the reference `LocalFilesystemBackend`
+> today; provider integrations (Daytona/E2B/OpenHands, etc.) are intended seams, not
+> shipped backends. **Design verdict:** procedures + the work-order ledger now ship as `coactra-jobs`.
 > Headline: wrap the solved layers (model calls, memory engines, sandboxes, MCP/A2A
 > protocols); build thin connector, composition, and policy layers on top. Nothing here
 > re-implements a backend; the value is the small contracts between them. See
@@ -186,12 +188,12 @@ Python aliases so existing homelab imports can migrate dependency-first.
 Other flat modules that remain are similarly thin compatibility imports, not duplicate
 implementations. Remove them only in a future breaking release.
 
-## Adapter maturity matrix
+## Adapter matrix
 
-| Package | Adapter | Maturity | Notes |
-|---|---|---|---|
-| coactra-workspace | LocalFilesystemBackend | reference | File confinement; local exec is opt-in and not a sandbox. |
-| coactra-workspace | DaytonaBackend / E2BBackend / OpenHandsBackend | stub | Names the intended seam only; not production implementations. |
-| coactra-agent | KeycloakExchanger | implemented | RFC 8693 token exchange with no token passthrough; async variant available with `coactra-agent[oauth]`. |
-| coactra-agent | OfficialA2ATransport | implemented | Official SDK bridge; import from `coactra.agent.adapters`. |
-| coactra-jobs | DBOS / Temporal / Dapr dispatchers | experimental | Thin dispatch bridges; the durable work ledger remains Phase 3. |
+| Package | Adapter | Notes |
+|---|---|---|
+| coactra-workspace | LocalFilesystemBackend | File confinement; local exec is opt-in and **not a sandbox** — use a remote/sandboxed backend for untrusted commands. |
+| coactra-agent | KeycloakExchanger | RFC 8693 token exchange with no token passthrough; async variant available with `coactra-agent[oauth]`. |
+| coactra-agent | OfficialA2ATransport | Official SDK bridge; import from `coactra.agent.adapters`. Inbound A2A services require a verifier in production. |
+| coactra-jobs | DurableLangGraphEngine / TemporalEngine / PrefectEngine | `WorkflowEngine` adapters; durable resume requires explicit checkpointer/runtime configuration. |
+| coactra-jobs | DBOS / Temporal / Dapr dispatchers | Experimental thin dispatch bridges; the Coactra ledger remains the source of truth. |

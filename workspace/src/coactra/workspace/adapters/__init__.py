@@ -10,14 +10,7 @@ from coactra.workspace.adapters.daytona import DaytonaBackend
 from coactra.workspace.adapters.e2b import E2BBackend
 from coactra.workspace.adapters.openhands import OpenHandsBackend
 
-ADAPTER_MATURITY = {
-    "DaytonaBackend": "stub",
-    "E2BBackend": "stub",
-    "OpenHandsBackend": "stub",
-}
-
 __all__ = [
-    "ADAPTER_MATURITY",
     "DaytonaBackend",
     "E2BBackend",
     "MissingExtraError",
