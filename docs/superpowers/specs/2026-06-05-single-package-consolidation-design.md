@@ -1,7 +1,7 @@
 # Design: Collapse Coactra into one package with per-capability extras
 
 - Date: 2026-06-05
-- Status: Draft for review
+- Status: Draft for review. **Prerequisites already landed on `main`:** folder rename `orchestration→jobs`, `organization→directory` (`6433092`); docs cleanup + `docs/internal/` (`dbf374b`); removal of the adapter-maturity apparatus + the raising stub adapters (`777cc71`, `254e8bc`). Import namespaces (`coactra.orchestration`, `coactra.organization`) are unchanged — folder-only rename.
 - Scope: Repackage the seven Coactra distributions into a single `coactra` distribution whose capabilities are selected via optional extras; unify the duplicated cross-cutting primitives into a single source of truth. Repo: `/home/developer/mcp/library`, branch `main`.
 
 ## 1. Summary
@@ -59,14 +59,16 @@ Base install = `pydantic` only (all capability *code* importable; heavy backends
 [project.optional-dependencies]
 ai            = ["litellm>=1.40", "instructor>=1.0", "numpy>=1.26"]
 memory        = ["mem0ai>=0.1", "graphiti-core>=0.3"]
-workspace     = ["daytona-sdk>=0.10", "e2b>=1.0"]
+# workspace: the local filesystem backend is pydantic-only (no extra needed). The
+# sandbox backends (Daytona/E2B/OpenHands) were removed as unimplemented stubs;
+# re-add a workspace extra when a real sandbox backend lands.
 work          = ["sqlalchemy>=2.0"]
 workflow      = ["langgraph>=1.0", "langgraph-checkpoint>=2.0", "cel-python>=0.5,<0.6", "Jinja2>=3.1"]
 orchestration = ["coactra[work]", "coactra[workflow]"]   # convenience = both
 organization  = ["sqlmodel", "openfga-sdk"]
 agent         = ["pydantic-ai-slim>=1.0", "a2a-sdk>=1,<2"]
 oauth         = ["httpx"]                                  # Keycloak token exchange
-all           = ["coactra[ai,memory,workspace,orchestration,organization,agent,oauth]"]
+all           = ["coactra[ai,memory,orchestration,organization,agent,oauth]"]
 # finer runtime adapters remain available, e.g.:
 # orchestration-temporal = ["temporalio>=1,<2"], orchestration-prefect = ["prefect>=3"], ...
 ```
@@ -99,7 +101,7 @@ Consolidate error types into `coactra/errors.py` and any base `Port`/`Protocol` 
 
 ## 8. Migration plan (incremental, verify each step)
 
-0. **Docs cleanup (subtractive, independent — do first, own commit):** delete the generated custom API inventory and its CI guard; keep the maintained docs and make `INTERFACES.md` the concise package-boundary guide. This only removes custom inventory work from the steps below; it touches no feature code.
+0. **(DONE)** Subtractive docs cleanup + `docs/internal/`, plus removal of the adapter-maturity apparatus and the raising stub adapters — already committed (`dbf374b`, `777cc71`, `254e8bc`). `INTERFACES.md` is the package-boundary guide.
 1. **Skeleton:** create the one-package `pyproject.toml` (extras per §5) and move the seven `src/coactra/*` trees + tests into the single `coactra` package. Confirm the whole suite imports and `make test`-equivalent passes.
 2. **Unify `Scope`:** introduce `coactra/scope.py::Scope` (canonical), repoint all capability imports, delete the five duplicates, convert `CoactraScope` to a deprecation shim. Run full suite.
 3. **Unify `TenantRouter`:** promote the generic to `coactra/_routing.py`, replace the five bespoke routers, add bounded-cache eviction. Run router/conformance tests.
@@ -110,9 +112,9 @@ Consolidate error types into `coactra/errors.py` and any base `Port`/`Protocol` 
 ## 9. Testing
 
 - Offline-first; the existing per-capability suites move wholesale and must stay green at every step.
-- CI guard `check_adapter_maturity.py` updated for the package paths and kept passing. The custom API inventory guard is removed; package-root API expectations stay covered by focused tests and docs.
+- No adapter-maturity or custom-API-inventory CI guards (both already removed); package-root API expectations stay covered by focused tests and docs.
 - Build check: `uv build` produces one sdist + wheel; `twine check` passes.
-- A focused test that a base install (`coactra` with no extras) imports every capability's pure-Python core, and that omitting an extra makes only that capability's heavy backend raise the existing `MissingExtraError`.
+- A focused test that a base install (`coactra` with no extras) imports every capability's pure-Python core, and that a real optional backend (e.g. `Mem0Backend`, `SqlWorkStore`) raises a clear missing-dependency error when its extra isn't installed.
 
 ## 10. Risks
 
