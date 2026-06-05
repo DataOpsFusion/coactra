@@ -60,7 +60,7 @@ from coactra.agent.ports import (
     WorkPort,
 )
 from coactra.agent.routing import TenantAgentRouter
-from coactra.agent.sdk import Agent as SdkAgent  # elegant facade; umbrella `from coactra import Agent` lands in a later slice
+from coactra.agent.sdk import Agent as SdkAgent  # noqa: F401  -- elegant-facade re-export, deliberately kept out of __all__ (public-surface test pins __all__)
 
 __all__ = [
     "__version__",
