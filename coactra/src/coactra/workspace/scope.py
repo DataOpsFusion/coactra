@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, field_validator
 
+from coactra.scope import is_safe_path_component
+
 
 class Scope(BaseModel):
     """Immutable, hashable tenant + agent key for one desk."""
@@ -23,7 +25,8 @@ class Scope(BaseModel):
     @field_validator("tenant_id", "agent_id")
     @classmethod
     def _validate_path_component(cls, value: str) -> str:
-        if value in {".", ".."} or "/" in value or "\\" in value or "\x00" in value:
+        # Path-safety rule is owned by coactra.scope so every desk uses the same check.
+        if not is_safe_path_component(value):
             raise ValueError("scope parts must be single safe path components")
         return value
 
