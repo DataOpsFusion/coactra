@@ -5,7 +5,8 @@ and nothing more. Filesystem confinement for file operations is mandatory; secur
 execution requires a sandbox-backed adapter. All desk features (CLI policy, handoff, compact, manifest) live in the
 Workspace facade above it, which is what keeps the backend swappable. Every method takes a
 Scope; confinement to <root>/<tenant_id>/<agent_id> is part of the contract. The default is
-LocalFilesystemBackend; Daytona/E2B/OpenHands are optional-extra stubs.
+LocalFilesystemBackend; provider integrations (Daytona/E2B/OpenHands, etc.) satisfy this
+same seam when implemented.
 
 DESIGN OVERRIDE (locked): exec() takes an arg-list (argv: list[str]) and runs it with
 shell=False — never a shell string.

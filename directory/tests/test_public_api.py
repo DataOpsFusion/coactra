@@ -53,7 +53,6 @@ def test_v2_domain_surface_is_exported():
         "load_org",
         "save_org",
         "Directory",
-        "Neo4jOrgStore",
         "Action",
         "Effect",
         "PermissionSet",

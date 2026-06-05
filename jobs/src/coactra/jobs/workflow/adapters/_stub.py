@@ -1,14 +1,12 @@
-"""Shared helper for optional-extra engine stubs."""
+"""Shared error for optional-extra workflow engine adapters.
+
+``MissingExtraError`` is raised by the real Prefect/Temporal adapters when their
+optional runtime dependency (``coactra-jobs[prefect]`` / ``[temporal]``) is not
+installed and no client/runner was injected.
+"""
 
 from __future__ import annotations
 
 
 class MissingExtraError(RuntimeError):
-    """Raised when an optional-extra engine is used before its extra/impl exist."""
-
-
-def require_extra(extra: str) -> None:
-    raise MissingExtraError(
-        f"engine requires the optional '{extra}' extra and a real implementation; "
-        f"install with: pip install coactra-jobs[{extra}] (stub not yet implemented)"
-    )
+    """Raised when an optional-extra engine dependency is missing at use time."""

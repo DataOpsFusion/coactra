@@ -1,18 +1,10 @@
-"""Experimental workspace backend adapters.
+"""Workspace backend adapters.
 
-These names are intentionally not exported from ``coactra.workspace``. Provider adapters
-remain explicit opt-ins, and the current Daytona/E2B/OpenHands classes are stubs until real
-SDK-backed implementations land.
+Provider adapters are explicit opt-ins and are not exported from
+``coactra.workspace``. There are no shipped provider adapters today; the only
+backend is the reference ``LocalFilesystemBackend`` in ``coactra.workspace``.
+Real SDK-backed provider adapters (e.g. Daytona/E2B/OpenHands) land here when
+implemented.
 """
 
-from coactra.workspace.adapters._stub import MissingExtraError
-from coactra.workspace.adapters.daytona import DaytonaBackend
-from coactra.workspace.adapters.e2b import E2BBackend
-from coactra.workspace.adapters.openhands import OpenHandsBackend
-
-__all__ = [
-    "DaytonaBackend",
-    "E2BBackend",
-    "MissingExtraError",
-    "OpenHandsBackend",
-]
+__all__: list[str] = []

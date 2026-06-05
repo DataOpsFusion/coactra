@@ -1,8 +1,9 @@
 """coactra.workspace — the persistent agent desk.
 
 A thin control layer ABOVE persistent sandbox backends (local filesystem by default;
-Daytona / E2B / OpenHands optional and currently experimental/stubbed). The backend
-persists files and may run commands; this layer adds the "desk": scoped files, a CLI
+provider integrations such as Daytona / E2B / OpenHands satisfy the same
+``WorkspaceBackend`` seam when implemented). The backend persists files and may run
+commands; this layer adds the "desk": scoped files, a CLI
 policy gate, a handoff/day-note, rule-based auto-compact, and storage for a
 capability-manifest REFERENCE. It does NOT mount MCP capabilities (the agent runtime does)
 and does NOT own hierarchy/policy (organization does).
