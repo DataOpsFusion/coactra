@@ -20,10 +20,10 @@ Related files:
 Related components:
 
 - `coactra-agent`
-- `coactra-orchestration`
+- `coactra-jobs`
 - `coactra-memory`
 - `coactra-workspace`
-- `coactra-organization`
+- `coactra-directory`
 - `coactra-ai`
 
 Questions this chunk can answer:
@@ -36,10 +36,10 @@ Questions this chunk can answer:
 ## KB Chunk: Package Boundary Map
 
 Summary:
-The monorepo contains six main capability packages plus an umbrella package. `coactra-ai` handles model utilities and reasoning replay. `coactra-memory` handles remember/recall. `coactra-workspace` provides an agent desk. `coactra-orchestration` combines durable work orders and workflows. `coactra-organization` models tenants, hierarchy, permissions, and authorization. `coactra-agent` wires these through ports and owns session-level policy.
+The monorepo contains six main capability packages plus an umbrella package. `coactra-ai` handles model utilities and reasoning replay. `coactra-memory` handles remember/recall. `coactra-workspace` provides an agent desk. `coactra-jobs` combines durable work orders and workflows. `coactra-directory` models tenants, hierarchy, permissions, and authorization. `coactra-agent` wires these through ports and owns session-level policy.
 
 Keywords:
-package boundaries, coactra-ai, coactra-memory, coactra-workspace, coactra-orchestration, coactra-organization, coactra-agent
+package boundaries, coactra-ai, coactra-memory, coactra-workspace, coactra-jobs, coactra-directory, coactra-agent
 
 Related files:
 
@@ -48,8 +48,8 @@ Related files:
 - `lib-ai/pyproject.toml`
 - `memory/pyproject.toml`
 - `workspace/pyproject.toml`
-- `orchestration/pyproject.toml`
-- `organization/pyproject.toml`
+- `jobs/pyproject.toml`
+- `directory/pyproject.toml`
 - `agent/pyproject.toml`
 
 Related components:
@@ -80,7 +80,7 @@ Related files:
 - `memory/src/coactra/memory/types.py`
 - `workspace/src/coactra/workspace/scope.py`
 - `agent/src/coactra/agent/domain/scope.py`
-- `orchestration/src/coactra/orchestration/work/domain/scope.py`
+- `jobs/src/coactra/jobs/work/domain/scope.py`
 - `docs/INTERFACES.md`
 
 Related components:
@@ -88,7 +88,7 @@ Related components:
 - `CoactraScope`
 - memory `Scope`
 - workspace `Scope`
-- work/workflow/agent scope objects
+- jobs/workflow/agent scope objects
 - tenant routers
 
 Questions this chunk can answer:
@@ -483,21 +483,21 @@ Questions this chunk can answer:
 ## KB Chunk: Durable Work Orders and SQL Ledger
 
 Summary:
-`coactra.orchestration.work` models a real unit of work with lifecycle state, attempts, leases, checkpoints, approvals, elicitations, decisions, budgets, artifacts, and audit events. `WorkManager` owns lifecycle transitions. `SqlWorkStore` persists complete work order snapshots and events with optimistic concurrency.
+`coactra.jobs` models a real unit of work with lifecycle state, attempts, leases, checkpoints, approvals, elicitations, decisions, budgets, artifacts, and audit events. `WorkManager` owns lifecycle transitions. `SqlWorkStore` persists complete work order snapshots and events with optimistic concurrency.
 
 Keywords:
 WorkOrder, WorkManager, WorkStatus, lease, checkpoint, approval, artifact, SqlWorkStore, coactra_work_orders
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/work/domain/models.py`
-- `orchestration/src/coactra/orchestration/work/domain/artifacts.py`
-- `orchestration/src/coactra/orchestration/work/domain/events.py`
-- `orchestration/src/coactra/orchestration/work/service.py`
-- `orchestration/src/coactra/orchestration/work/store.py`
-- `orchestration/src/coactra/orchestration/work/backends/inmemory.py`
-- `orchestration/src/coactra/orchestration/work/backends/sql.py`
-- `docs/orchestration/WORK-ORDERS.md`
+- `jobs/src/coactra/jobs/work/domain/models.py`
+- `jobs/src/coactra/jobs/work/domain/artifacts.py`
+- `jobs/src/coactra/jobs/work/domain/events.py`
+- `jobs/src/coactra/jobs/work/service.py`
+- `jobs/src/coactra/jobs/work/store.py`
+- `jobs/src/coactra/jobs/work/backends/inmemory.py`
+- `jobs/src/coactra/jobs/work/backends/sql.py`
+- `docs/jobs/WORK-ORDERS.md`
 - `orchestration/tests/test_work_lifecycle.py`
 - `orchestration/tests/test_work_sql_store.py`
 
@@ -530,15 +530,15 @@ work adapters, A2A, CloudEvents, OpenTelemetry, fsspec, DBOS, Temporal, Dapr, MC
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/work/adapters/a2a.py`
-- `orchestration/src/coactra/orchestration/work/adapters/cloudevents.py`
-- `orchestration/src/coactra/orchestration/work/adapters/opentelemetry.py`
-- `orchestration/src/coactra/orchestration/work/adapters/fsspec.py`
-- `orchestration/src/coactra/orchestration/work/adapters/dbos.py`
-- `orchestration/src/coactra/orchestration/work/adapters/temporal.py`
-- `orchestration/src/coactra/orchestration/work/adapters/dapr.py`
-- `orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py`
-- `docs/orchestration/WORK-ORDERS.md`
+- `jobs/src/coactra/jobs/work/adapters/a2a.py`
+- `jobs/src/coactra/jobs/work/adapters/cloudevents.py`
+- `jobs/src/coactra/jobs/work/adapters/opentelemetry.py`
+- `jobs/src/coactra/jobs/work/adapters/fsspec.py`
+- `jobs/src/coactra/jobs/work/adapters/dbos.py`
+- `jobs/src/coactra/jobs/work/adapters/temporal.py`
+- `jobs/src/coactra/jobs/work/adapters/dapr.py`
+- `jobs/src/coactra/jobs/work/adapters/mcp_tasks.py`
+- `docs/jobs/WORK-ORDERS.md`
 
 Related components:
 
@@ -560,19 +560,19 @@ Questions this chunk can answer:
 ## KB Chunk: Workflow Procedures and Runtime Handlers
 
 Summary:
-`coactra.orchestration.workflow` models reusable procedures made of steps. A `RunContext` carries scope, approver, collaborator, router, and escalation chain. Runtime handlers implement approvals, collaboration, and escalation seams without importing agent/organization directly.
+`coactra.jobs.workflow` models reusable procedures made of steps. A `RunContext` carries scope, approver, collaborator, router, and escalation chain. Runtime handlers implement approvals, collaboration, and escalation seams without importing agent/organization directly.
 
 Keywords:
 Procedure, Step, workflow, RunContext, Approver, Collaborator, EscalationRouter, ask, escalate
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/workflow/domain/models.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/engine.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/handlers.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/approval.py`
+- `jobs/src/coactra/jobs/workflow/domain/models.py`
+- `jobs/src/coactra/jobs/workflow/runtime/engine.py`
+- `jobs/src/coactra/jobs/workflow/runtime/handlers.py`
+- `jobs/src/coactra/jobs/workflow/runtime/approval.py`
 - `orchestration/tests/test_workflow_engine_handlers.py`
-- `docs/orchestration/PROCEDURES.md`
+- `docs/jobs/PROCEDURES.md`
 
 Related components:
 
@@ -602,10 +602,10 @@ DurableLangGraphEngine, LangGraph, interrupt, resume, capability registry, red t
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/capabilities.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/verification.py`
-- `orchestration/src/coactra/orchestration/workflow/runtime/tools.py`
+- `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py`
+- `jobs/src/coactra/jobs/workflow/runtime/capabilities.py`
+- `jobs/src/coactra/jobs/workflow/runtime/verification.py`
+- `jobs/src/coactra/jobs/workflow/runtime/tools.py`
 - `orchestration/tests/test_workflow_durable_langgraph.py`
 
 Related components:
@@ -635,8 +635,8 @@ workflow induction, AWM, candidate procedure, promotion, rollback, InMemoryProce
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/workflow/induction.py`
-- `orchestration/src/coactra/orchestration/workflow/promotion.py`
+- `jobs/src/coactra/jobs/workflow/induction.py`
+- `jobs/src/coactra/jobs/workflow/promotion.py`
 - `orchestration/tests/test_workflow_induction.py`
 - `orchestration/tests/test_workflow_promotion.py`
 - `workspace/src/coactra/workspace/integrations/workflow.py`
@@ -658,19 +658,19 @@ Questions this chunk can answer:
 ## KB Chunk: Organization Domain Model
 
 Summary:
-`coactra-organization` models an AD-inspired multi-tenant OU tree. Tenants are isolation boundaries. Organization nodes contain children, members, seats, reporting/escalation metadata, policy refs, grants, and ownership. Permission resolution walks from member node up to root, respecting deny-before-allow and inheritance blocking.
+`coactra-directory` models an AD-inspired multi-tenant OU tree. Tenants are isolation boundaries. Organization nodes contain children, members, seats, reporting/escalation metadata, policy refs, grants, and ownership. Permission resolution walks from member node up to root, respecting deny-before-allow and inheritance blocking.
 
 Keywords:
 organization, tenant, OU tree, Member, Seat, permission inheritance, reporting, escalation, ownership
 
 Related files:
 
-- `organization/src/coactra/organization/domain/organization.py`
-- `organization/src/coactra/organization/domain/member.py`
-- `organization/src/coactra/organization/domain/seat.py`
-- `organization/src/coactra/organization/domain/permission.py`
-- `organization/src/coactra/organization/domain/directory.py`
-- `docs/organization/DESIGN.md`
+- `directory/src/coactra/directory/domain/organization.py`
+- `directory/src/coactra/directory/domain/member.py`
+- `directory/src/coactra/directory/domain/seat.py`
+- `directory/src/coactra/directory/domain/permission.py`
+- `directory/src/coactra/directory/domain/directory.py`
+- `docs/directory/DESIGN.md`
 - `organization/tests/test_domain_tree.py`
 - `organization/tests/test_domain_permissions.py`
 - `organization/tests/test_escalation.py`
@@ -702,14 +702,14 @@ OrgStore, save_org, load_org, SqliteOrgStore, AsyncPostgresOrgStore, OpenFGA, Au
 
 Related files:
 
-- `organization/src/coactra/organization/models.py`
-- `organization/src/coactra/organization/repository/store.py`
-- `organization/src/coactra/organization/repository/sqlite_store.py`
-- `organization/src/coactra/organization/repository/async_store.py`
-- `organization/src/coactra/organization/repository/routing.py`
-- `organization/src/coactra/organization/service.py`
-- `organization/src/coactra/organization/authorization.py`
-- `organization/src/coactra/organization/adapters/openfga.py`
+- `directory/src/coactra/directory/models.py`
+- `directory/src/coactra/directory/repository/store.py`
+- `directory/src/coactra/directory/repository/sqlite_store.py`
+- `directory/src/coactra/directory/repository/async_store.py`
+- `directory/src/coactra/directory/repository/routing.py`
+- `directory/src/coactra/directory/service.py`
+- `directory/src/coactra/directory/authorization.py`
+- `directory/src/coactra/directory/adapters/openfga.py`
 
 Related components:
 
@@ -739,10 +739,10 @@ Orchestrator, DurableOrchestrator, work order, workflow run, checkpoint, approva
 
 Related files:
 
-- `orchestration/src/coactra/orchestration/facade.py`
+- `jobs/src/coactra/jobs/facade.py`
 - `orchestration/tests/test_orchestrator.py`
 - `orchestration/tests/test_durable_orchestrator.py`
-- `orchestration/README.md`
+- `jobs/README.md`
 
 Related components:
 
@@ -774,9 +774,9 @@ Related files:
 - `agent/src/coactra/agent/adapters/_stub.py`
 - `agent/src/coactra/agent/adapters/fastmcp.py`
 - `workspace/src/coactra/workspace/adapters/__init__.py`
-- `organization/src/coactra/organization/repository/neo4j_store.py`
-- `orchestration/src/coactra/orchestration/workflow/adapters/temporal.py`
-- `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`
+- `directory/src/coactra/directory/repository/neo4j_store.py`
+- `jobs/src/coactra/jobs/workflow/adapters/temporal.py`
+- `jobs/src/coactra/jobs/workflow/adapters/prefect.py`
 
 Related components:
 
@@ -872,9 +872,9 @@ Related files:
 
 - `docs/PRODUCTION.md`
 - `docs/INTERFACES.md`
-- `docs/orchestration/WORK-ORDERS.md`
+- `docs/jobs/WORK-ORDERS.md`
 - `workspace/README.md`
-- `organization/README.md`
+- `directory/README.md`
 - `agent/README.md`
 
 Related components:

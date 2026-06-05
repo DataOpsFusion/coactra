@@ -1,10 +1,10 @@
 # Publishing Coactra to PyPI
 
-Status as of 2026-06-04 — **publish-ready**:
+Status as of 2026-06-05 — **pre-publish checklist**:
 
-- All 7 distributions build (sdist + wheel) and pass `twine check`. ✓
-- Metadata correct: URLs → `github.com/DataOpsFusion/coactra`, classifiers, per-package READMEs. ✓
-- Sibling extras resolve in-monorepo for dev (`[tool.uv.sources]`); published wheels carry normal version deps (e.g. `coactra-memory>=0.2`). ✓
+- Build all 7 distributions and run `twine check` before publishing.
+- Verify URLs, classifiers, per-package READMEs, and package names before publishing.
+- Verify sibling extras resolve in-monorepo for dev and published wheels carry normal version deps.
 - **Not yet on PyPI** — the names still need to be claimed (this is the first publish).
 
 ## The 7 distributions
@@ -13,10 +13,10 @@ Status as of 2026-06-04 — **publish-ready**:
 |---|---|---|
 | coactra-ai | 0.2.0 | `lib-ai/` |
 | coactra-memory | 0.2.0 | `memory/` |
-| coactra-organization | 0.2.0 | `organization/` |
+| coactra-directory | 0.2.0 | `directory/` |
 | coactra-agent | 0.2.0 | `agent/` |
 | coactra-workspace | 0.1.0 | `workspace/` |
-| coactra-orchestration | 0.1.0 | `orchestration/` |
+| coactra-jobs | 0.1.0 | `jobs/` |
 | coactra (umbrella) | 0.1.0 | `coactra/` |
 
 Versions are independent by policy (`docs/RELEASE_POLICY.md`); the umbrella pins the compatible sibling ranges. For a first public release you may keep these as-is or set them all to one number — your call.
@@ -25,7 +25,7 @@ Versions are independent by policy (`docs/RELEASE_POLICY.md`); the umbrella pins
 
 ```bash
 rm -rf dist-all
-for p in lib-ai memory workspace orchestration organization agent coactra; do
+for p in lib-ai memory workspace jobs directory agent coactra; do
   (cd "$p" && uv build --out-dir ../dist-all)
 done
 uvx twine check dist-all/*          # must say PASSED for all 14 artifacts
@@ -75,10 +75,10 @@ Manual upload (Option A) is unaffected by this.
 ## What you need to do (human-only)
 
 1. Have a PyPI account; pick **Option A** (token, simplest) or **Option B** (trusted publishing).
-2. Confirm the 7 names are free on PyPI: `coactra`, `coactra-ai`, `coactra-memory`, `coactra-workspace`, `coactra-orchestration`, `coactra-organization`, `coactra-agent`. If any is taken, rename that distribution before publishing.
+2. Confirm the 7 names are free on PyPI: `coactra`, `coactra-ai`, `coactra-memory`, `coactra-workspace`, `coactra-jobs`, `coactra-directory`, `coactra-agent`. If any is taken, rename that distribution before publishing.
 3. Decide first-release versioning (keep the mixed 0.1/0.2, or unify).
 4. Merge `chore/packaging-docs-hygiene` → `main` so the corrected metadata is what ships.
 5. (Optional but recommended) dry-run to TestPyPI, then publish.
 6. Tag the release after merge.
 
-Everything up to step 5 is automated/verified here; steps 1–6 require your PyPI account and the irreversible upload, so they're yours to run.
+Run the build/check commands locally before publishing. Uploading to PyPI is irreversible for a version, so the final upload should be manual or a deliberate trusted-publishing release.

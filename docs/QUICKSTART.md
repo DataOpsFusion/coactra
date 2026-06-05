@@ -12,13 +12,13 @@ This guide builds a small incident-triage agent. It is intentionally function-fi
 For a local prototype:
 
 ```bash
-pip install coactra-agent coactra-orchestration
+pip install coactra-agent coactra-jobs
 ```
 
 For durable work in a real service:
 
 ```bash
-pip install "coactra-orchestration[sql]"
+pip install "coactra-jobs[sql]"
 ```
 
 ## 2. Start With A Task Function
@@ -37,7 +37,7 @@ The `agent` argument can be a Coactra `Agent`, a test fake, or any object with t
 Use `WorkManager` when a task needs an id, lifecycle state, retries, leases, audit events, or persistence.
 
 ```python
-from coactra.orchestration.work import Scope, WorkManager, WorkOrder
+from coactra.jobs import Scope, WorkManager, WorkOrder
 
 work = WorkManager()
 scope = Scope(tenant_id="acme", namespace="support")
@@ -72,7 +72,7 @@ The default agent is dependency-light and uses in-process defaults — including
 import hashlib
 
 from coactra.agent import Scope as AgentScope, make_agent
-from coactra.orchestration.work import Scope as WorkScope, WorkManager, WorkOrder
+from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
 
 
 def incident_key(incident: str) -> str:
@@ -108,7 +108,7 @@ A runnable version lives at [../examples/basic_incident_triage.py](../examples/b
 Replace only the backend boundary. The application functions do not need to change.
 
 ```python
-from coactra.orchestration.work import SqlWorkStore, WorkManager
+from coactra.jobs import SqlWorkStore, WorkManager
 
 store = SqlWorkStore.from_url("postgresql+psycopg://coactra:secret@db/coactra")
 work = WorkManager(store=store)
@@ -130,7 +130,7 @@ Coactra keeps A2A at adapter edges:
 
 - `coactra.agent` owns the collaboration policy and transport Protocols
 - `coactra.agent.adapters` owns the official A2A SDK client/server helpers
-- `coactra.orchestration.work.adapters` converts skills and artifacts into A2A shapes
+- `coactra.jobs.adapters` converts skills and artifacts into A2A shapes
 
 ## 8. When To Use Classes
 

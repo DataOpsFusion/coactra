@@ -116,19 +116,19 @@ def test_end_to_end_composition():
 
 
 def _load_workflow_handlers():
-    # Load the REAL coactra.orchestration.workflow.runtime.handlers module DIRECTLY by file path. handlers.py is
+    # Load the REAL coactra.jobs.workflow.runtime.handlers module DIRECTLY by file path. handlers.py is
     # leaf-importable (it imports only typing + pydantic), so this gives us the ACTUAL
-    # Protocols the inter-lib contract is defined against WITHOUT importing coactra.orchestration.workflow
+    # Protocols the inter-lib contract is defined against WITHOUT importing coactra.jobs.workflow
     # (without pulling an optional backend). The test can therefore never drift from
     # the real workflow contract — if workflow renames/reshapes a seam, this breaks.
     import importlib.util
     from pathlib import Path
 
     here = Path(__file__).resolve()
-    # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/orchestration/src/coactra/orchestration/workflow/...
+    # repo layout: <repo>/agent/tests/test_public_api.py  ->  <repo>/jobs/src/coactra/jobs/workflow/...
     repo_root = here.parents[2]
     handlers_path = (
-        repo_root / "orchestration" / "src" / "coactra" / "orchestration" / "workflow" / "runtime" / "handlers.py"
+        repo_root / "jobs" / "src" / "coactra" / "jobs" / "workflow" / "runtime" / "handlers.py"
     )
     assert handlers_path.is_file(), (
         f"real workflow handlers not found at {handlers_path}"
@@ -143,7 +143,7 @@ def _load_workflow_handlers():
 
 
 def test_collaborator_is_workflow_runcontext_ready():
-    # The agent's collaborator STRUCTURALLY satisfies coactra.orchestration.workflow's Collaborator /
+    # The agent's collaborator STRUCTURALLY satisfies coactra.jobs.workflow's Collaborator /
     # EscalationRouter Protocols. We assert against the REAL Protocols loaded by file path
     # (no langgraph import) so this can't drift from workflow's actual contract.
     import inspect

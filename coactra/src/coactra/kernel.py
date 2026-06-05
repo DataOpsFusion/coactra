@@ -19,8 +19,8 @@ class Task:
     """Small task DTO for the umbrella shell.
 
     ``Task`` is intentionally generic. Durable business work still belongs in
-    ``coactra.orchestration.work.WorkOrder``; reusable procedures still belong in
-    ``coactra.orchestration.workflow.Procedure``.
+    ``coactra.jobs.WorkOrder``; reusable procedures still belong in
+    ``coactra.jobs.workflow.Procedure``.
     """
 
     name: str

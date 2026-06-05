@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-Today Coactra ships seven independently-distributed packages (`coactra-ai`, `coactra-memory`, `coactra-workspace`, `coactra-orchestration`, `coactra-organization`, `coactra-agent`, and the `coactra` umbrella installer) that, by rule, "depend on nothing." That rule forces every package to re-define shared primitives — most visibly **`Scope` (defined 6×)** and **tenant routing (implemented 6×)** — with a `CoactraScope` converter class existing solely to translate between the duplicate `Scope` types.
+Today Coactra ships seven independently-distributed packages (`coactra-ai`, `coactra-memory`, `coactra-workspace`, `coactra-jobs`, `coactra-directory`, `coactra-agent`, and the `coactra` umbrella installer) that, by rule, "depend on nothing." That rule forces every package to re-define shared primitives — most visibly **`Scope` (defined 6×)** and **tenant routing (implemented 6×)** — with a `CoactraScope` converter class existing solely to translate between the duplicate `Scope` types.
 
 We will **collapse the seven distributions into one `coactra` distribution** whose capabilities are chosen with **optional extras** (`pip install "coactra[memory,workflow]"`). Because it is one package, the shared primitives are defined **once** (single source of truth, structurally enforced), while users still compose any subset of capabilities à la carte. Public import paths (`from coactra.memory import …`) are unchanged.
 
@@ -44,7 +44,7 @@ src/coactra/
   ai/               # capability submodules — internals unchanged
   memory/
   workspace/
-  orchestration/    # contains work/ and workflow/ submodules
+  orchestration/    # contains jobs/ and workflow/ submodules
   organization/
   agent/            # contains agent/sdk/ (the just-landed elegant facade)
 ```
@@ -99,6 +99,7 @@ Consolidate error types into `coactra/errors.py` and any base `Port`/`Protocol` 
 
 ## 8. Migration plan (incremental, verify each step)
 
+0. **Docs cleanup (subtractive, independent — do first, own commit):** delete the generated custom API inventory and its CI guard; keep the maintained docs and make `INTERFACES.md` the concise package-boundary guide. This only removes custom inventory work from the steps below; it touches no feature code.
 1. **Skeleton:** create the one-package `pyproject.toml` (extras per §5) and move the seven `src/coactra/*` trees + tests into the single `coactra` package. Confirm the whole suite imports and `make test`-equivalent passes.
 2. **Unify `Scope`:** introduce `coactra/scope.py::Scope` (canonical), repoint all capability imports, delete the five duplicates, convert `CoactraScope` to a deprecation shim. Run full suite.
 3. **Unify `TenantRouter`:** promote the generic to `coactra/_routing.py`, replace the five bespoke routers, add bounded-cache eviction. Run router/conformance tests.
@@ -109,7 +110,7 @@ Consolidate error types into `coactra/errors.py` and any base `Port`/`Protocol` 
 ## 9. Testing
 
 - Offline-first; the existing per-capability suites move wholesale and must stay green at every step.
-- CI guards (`check_public_api.py`, `check_adapter_maturity.py`) updated for the single-package paths and kept passing.
+- CI guard `check_adapter_maturity.py` updated for the package paths and kept passing. The custom API inventory guard is removed; package-root API expectations stay covered by focused tests and docs.
 - Build check: `uv build` produces one sdist + wheel; `twine check` passes.
 - A focused test that a base install (`coactra` with no extras) imports every capability's pure-Python core, and that omitting an extra makes only that capability's heavy backend raise the existing `MissingExtraError`.
 

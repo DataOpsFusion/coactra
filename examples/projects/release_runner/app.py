@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 from pprint import pprint
 
-from coactra.orchestration.work import (
+from coactra.jobs import (
     Artifact,
     ArtifactPart,
     Scope,

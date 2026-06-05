@@ -32,8 +32,8 @@ siblings = [
     "coactra-ai",
     "coactra-memory",
     "coactra-workspace",
-    "coactra-orchestration",
-    "coactra-organization",
+    "coactra-jobs",
+    "coactra-directory",
 ]
 mcp = ["fastmcp>=2"]
 a2a = ["a2a-sdk>=1.0,<2.0"]
@@ -64,8 +64,8 @@ include = ["src/coactra", "README.md", "tests"]
 coactra-ai = { path = "../lib-ai", editable = true }
 coactra-memory = { path = "../memory", editable = true }
 coactra-workspace = { path = "../workspace", editable = true }
-coactra-orchestration = { path = "../orchestration", editable = true }
-coactra-organization = { path = "../organization", editable = true }
+coactra-jobs = { path = "../jobs", editable = true }
+coactra-directory = { path = "../directory", editable = true }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

@@ -25,18 +25,20 @@ classifiers = [
 ai = ["coactra-ai>=0.2,<0.3"]
 memory = ["coactra-memory>=0.2,<0.3"]
 workspace = ["coactra-workspace>=0.1,<0.2"]
-orchestration = ["coactra-orchestration>=0.1,<0.2"]
-# Deprecated install aliases: both capabilities now ship in coactra-orchestration.
-workflow = ["coactra-orchestration>=0.1,<0.2"]
-work = ["coactra-orchestration>=0.1,<0.2"]
-organization = ["coactra-organization>=0.2,<0.3"]
+jobs = ["coactra-jobs>=0.1,<0.2"]
+work = ["coactra-jobs>=0.1,<0.2"]
+directory = ["coactra-directory>=0.2,<0.3"]
+# Deprecated install aliases retained for local transition.
+orchestration = ["coactra-jobs>=0.1,<0.2"]
+workflow = ["coactra-jobs>=0.1,<0.2"]
+organization = ["coactra-directory>=0.2,<0.3"]
 agent = ["coactra-agent[siblings]>=0.2,<0.3"]
 all = [
     "coactra-ai>=0.2,<0.3",
     "coactra-memory>=0.2,<0.3",
     "coactra-workspace>=0.1,<0.2",
-    "coactra-orchestration>=0.1,<0.2",
-    "coactra-organization>=0.2,<0.3",
+    "coactra-jobs>=0.1,<0.2",
+    "coactra-directory>=0.2,<0.3",
     "coactra-agent>=0.2,<0.3",
 ]
 dev = ["pytest>=8"]
@@ -63,6 +65,6 @@ testpaths = ["tests"]
 coactra-ai = { path = "../lib-ai", editable = true }
 coactra-memory = { path = "../memory", editable = true }
 coactra-workspace = { path = "../workspace", editable = true }
-coactra-orchestration = { path = "../orchestration", editable = true }
-coactra-organization = { path = "../organization", editable = true }
+coactra-jobs = { path = "../jobs", editable = true }
+coactra-directory = { path = "../directory", editable = true }
 coactra-agent = { path = "../agent", editable = true }

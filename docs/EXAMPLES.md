@@ -7,7 +7,7 @@ The examples are meant to be copied. They are small, local, and dependency-light
 Because this repository is a multi-package workspace, run examples with the package `src` directory on `PYTHONPATH` unless you have installed the packages already.
 
 ```bash
-PYTHONPATH=agent/src:orchestration/src python3 examples/basic_incident_triage.py
+PYTHONPATH=agent/src:jobs/src python3 examples/basic_incident_triage.py
 ```
 
 If you installed the packages with `pip install -e`, you can run the same files without `PYTHONPATH`.
@@ -40,7 +40,7 @@ Use this shape when your app needs to remember prior tickets, customer preferenc
 Run:
 
 ```bash
-PYTHONPATH=orchestration/src python3 examples/projects/release_runner/app.py
+PYTHONPATH=jobs/src python3 examples/projects/release_runner/app.py
 ```
 
 Use this shape when work should have a stable id, lifecycle status, retries, checkpoints, artifacts, and audit events.

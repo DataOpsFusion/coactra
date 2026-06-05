@@ -11,14 +11,14 @@ Use stable package roots for application code and keep experimental adapters beh
 > versions and extras in your deployment lockfile once they are published.
 
 ```bash
-pip install "coactra-orchestration[sql]" coactra-agent coactra-workspace coactra-memory
+pip install "coactra-jobs[sql]" coactra-agent coactra-workspace coactra-memory
 ```
 
 Use package-specific extras only where required:
 
 ```bash
 pip install "coactra-agent[oauth]"        # Keycloak/OAuth token exchange with httpx
-pip install "coactra-orchestration[sql]"  # SQLAlchemy-backed durable WorkStore
+pip install "coactra-jobs[sql]"  # SQLAlchemy-backed durable WorkStore
 ```
 
 ## Durable work execution
@@ -28,9 +28,9 @@ Use `SqlWorkStore` for backend services, long-running workers, serverless resume
 SQLite is useful for local development:
 
 ```python
-from coactra.orchestration.work import Scope, SqlWorkStore, WorkManager, WorkOrder
+from coactra.jobs import Scope, SqlWorkStore, WorkManager, WorkOrder
 
-store = SqlWorkStore.from_url("sqlite:///./coactra-work.db")
+store = SqlWorkStore.from_url("sqlite:///./coactra-jobs.db")
 manager = WorkManager(store)
 scope = Scope(tenant_id="tenant-a", namespace="prod")
 ```
@@ -38,7 +38,7 @@ scope = Scope(tenant_id="tenant-a", namespace="prod")
 Postgres-compatible deployments should use a SQLAlchemy URL and run the same store API:
 
 ```python
-from coactra.orchestration.work import SqlWorkStore
+from coactra.jobs import SqlWorkStore
 
 store = SqlWorkStore.from_url(
     "postgresql+psycopg://coactra:${COACTRA_DB_PASSWORD}@db.internal:5432/coactra"

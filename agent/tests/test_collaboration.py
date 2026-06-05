@@ -120,7 +120,7 @@ def test_cross_tenant_ask_never_hits_the_wire():
 def test_collaborator_satisfies_workflows_collaborator_shape():
     # The concrete inter-lib seam: workflow's `ask` step calls a Collaborator with
     # .ask(agent, question, state). PolicyGatedCollaborator structurally matches it, so it
-    # drops straight into a coactra.orchestration.workflow RunContext without an adapter.
+    # drops straight into a coactra.jobs.workflow RunContext without an adapter.
     c = PolicyGatedCollaborator(
         transport=FakeTransport(), policy=AllowSameTenant(), scope=ACME, me="agent:a"
     )

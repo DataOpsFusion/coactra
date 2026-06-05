@@ -28,12 +28,13 @@ e2b = ["e2b>=1.0"]
 openhands = []  # no pinned dep yet; stub adapter only
 office = ["pyyaml>=6.0", "tiktoken>=0.7"]
 memory = ["coactra-memory>=0.2", "structlog>=24.0"]
-organization = ["coactra-organization>=0.2"]
+directory = ["coactra-directory>=0.2"]
+organization = ["coactra-directory>=0.2"]
 mcp = []  # server registration is duck typed; FastMCP is supplied by the host
 workflow = []  # candidate drafting uses a caller-provided LLM
 integrations = [
     "coactra-memory>=0.2",
-    "coactra-organization>=0.2",
+    "coactra-directory>=0.2",
     "pyyaml>=6.0",
     "structlog>=24.0",
     "tiktoken>=0.7",
@@ -60,4 +61,4 @@ testpaths = ["tests"]
 # from the local monorepo instead of PyPI during editable dev installs.
 [tool.uv.sources]
 coactra-memory = { path = "../memory", editable = true }
-coactra-organization = { path = "../organization", editable = true }
+coactra-directory = { path = "../directory", editable = true }

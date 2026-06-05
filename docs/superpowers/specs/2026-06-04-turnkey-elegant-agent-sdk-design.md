@@ -189,14 +189,14 @@ Errors → typed `CoactraError`/`ErrorCode` (tool failures → `ToolResult(error
 | `peers` | — | `{name: {url, audience?}}` | OfficialA2ATransport |
 | `memory` | `"inprocess"\|"mem0"\|"graphiti"` | `{backend, ...}` | `coactra.memory.make_backend` |
 | `workspace` | `"local"` | `{backend, root?, ...}` | local (impl); daytona/e2b/openhands (stub) |
-| `organization` | `"sqlite"` | `{backend:"sqlite"\|"postgres", url}` | Sqlite/AsyncPostgres OrgStore |
-| `work` | — | `{store:"memory"\|"sql", url?}` | InMemory/Sql WorkStore |
+| `directory` | `"sqlite"` | `{backend:"sqlite"\|"postgres", url}` | Sqlite/AsyncPostgres OrgStore |
+| `jobs` | — | `{store:"memory"\|"sql", url?}` | InMemory/Sql WorkStore |
 
 ## 8. Backward compatibility & packaging
 
 - `make_agent` / `coactra.agent.Agent` untouched; facade composes them.
 - New deps: `pydantic-ai` (agent extra), MCP client/server (`coactra-agent[mcp]`). A2A deps via existing agent extras.
-- Additive minor version bumps + changelog per `docs/RELEASE_POLICY.md`; public API registered in `docs/API_INDEX.md` / `public_api.json`.
+- Additive minor version bumps + changelog per `docs/RELEASE_POLICY.md`; package-root API expectations stay covered by focused tests.
 
 ## 9. Testing strategy (offline-first, security-first)
 

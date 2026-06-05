@@ -11,12 +11,12 @@ This project has several kinds of state. Do not call something durable unless it
 | Memory events/facts | `coactra-memory` | in-process dict | mem0 or Graphiti/Neo4j | Export is lossy; Graphiti dump is approximate. |
 | Workspace files | `coactra-workspace` | local filesystem | future sandbox provider | Local backend confines paths under tenant/agent root. |
 | Workspace exec output | `coactra-workspace` | subprocess result | sandbox provider | Local exec disabled by default and not a jail. |
-| Work orders | `coactra-orchestration.work` | in-memory store | `SqlWorkStore` | SQL store persists full JSON snapshot plus indexed columns. |
-| Work audit events | `coactra-orchestration.work` | in-memory events | `SqlWorkStore` events table | Used for lifecycle/audit trail. |
-| Workflow approvals | `coactra-orchestration.workflow` | `InMemoryApprovalStore` | host-owned or future SQL store | Clarify whether work-order pending approval is source of truth. |
+| Work orders | `coactra-jobs` | in-memory store | `SqlWorkStore` | SQL store persists full JSON snapshot plus indexed columns. |
+| Work audit events | `coactra-jobs` | in-memory events | `SqlWorkStore` events table | Used for lifecycle/audit trail. |
+| Workflow approvals | `coactra-jobs` | `InMemoryApprovalStore` | host-owned or future SQL store | Clarify whether work-order pending approval is source of truth. |
 | Workflow runtime checkpoint | workflow backend | backend-specific | LangGraph/Temporal/Prefect checkpointer/runtime | Coactra should wrap, not reimplement, generic checkpointing. |
 | Procedure library | `ProcedureStore` | in-process store | future SQL/document store | Tenant router now forwards full store contract. |
-| Organization directory | `coactra-organization` | SQLModel store | SQLite/Postgres URL | Stores tenants, departments, seats, members, reporting, escalation, grants. |
+| Organization directory | `coactra-directory` | SQLModel store | SQLite/Postgres URL | Stores tenants, departments, seats, members, reporting, escalation, grants. |
 | Authorization decisions | `Authorizer` | in-memory authorizer | OpenFGA | Decisions should be auditable by host. |
 | Token exchange cache | `CachedAsyncTokenExchanger` | in-process TTL dict | none | Convenience cache only; not durable auth state. |
 | MCP mounted tools | `MountRegistry` | in-process pending/active trie | host/session-owned | Visible only after `begin_turn`. |
@@ -43,7 +43,7 @@ Sandbox workspace backend for untrusted command execution
 
 ## Schema Sources
 
-- Work SQL tables are defined in `orchestration/src/coactra/orchestration/work/backends/sql.py`.
-- Organization SQLModel tables are defined in `organization/src/coactra/organization/models.py`.
+- Work SQL tables are defined in `jobs/src/coactra/jobs/work/backends/sql.py`.
+- Organization SQLModel tables are defined in `directory/src/coactra/directory/models.py`.
 - Workspace state is implemented by `workspace/src/coactra/workspace/backends/local.py` and `workspace/src/coactra/workspace/desk.py`.
 - Memory persistence is backend-specific under `memory/src/coactra/memory/backends/`.

@@ -7,17 +7,18 @@ import pytest
 
 pytest.importorskip("pytest_asyncio")
 pytest.importorskip("structlog")
-pytest.importorskip("coactra.organization")
+pytest.importorskip("coactra.directory")
 pytest.importorskip("coactra.memory")
 
 from coactra.memory import Scope
 from coactra.workspace.integrations.memory import distill_journal
-from coactra.workspace.integrations.organization import (
+from coactra.workspace.integrations.directory import (
     MemoryAcl,
     ScopeViolation,
     scope_write_action,
     write_action,
 )
+from coactra.workspace.integrations.organization import MemoryAcl as LegacyMemoryAcl
 
 
 def test_acl_allows_own_scope_and_denies_other_scope():
@@ -26,6 +27,10 @@ def test_acl_allows_own_scope_and_denies_other_scope():
     with pytest.raises(ScopeViolation):
         acl.check_write("platform", Scope(tenant="default", agent="security"))
     assert write_action("default", "platform") == "memory:write:default:platform"
+
+
+def test_legacy_organization_integration_import_still_points_to_directory_acl():
+    assert LegacyMemoryAcl is MemoryAcl
 
 
 def test_acl_can_allow_named_department_scope_without_company_scope():

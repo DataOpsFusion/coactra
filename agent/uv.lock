@@ -443,8 +443,8 @@ oauth = [
 siblings = [
     { name = "coactra-ai" },
     { name = "coactra-memory" },
-    { name = "coactra-orchestration" },
-    { name = "coactra-organization" },
+    { name = "coactra-jobs" },
+    { name = "coactra-directory" },
     { name = "coactra-workspace" },
 ]
 
@@ -454,8 +454,8 @@ requires-dist = [
     { name = "authlib", marker = "extra == 'oauth'", specifier = ">=1.3" },
     { name = "coactra-ai", marker = "extra == 'siblings'", editable = "../lib-ai" },
     { name = "coactra-memory", marker = "extra == 'siblings'", editable = "../memory" },
-    { name = "coactra-orchestration", marker = "extra == 'siblings'", editable = "../orchestration" },
-    { name = "coactra-organization", marker = "extra == 'siblings'", editable = "../organization" },
+    { name = "coactra-jobs", marker = "extra == 'siblings'", editable = "../jobs" },
+    { name = "coactra-directory", marker = "extra == 'siblings'", editable = "../directory" },
     { name = "coactra-workspace", marker = "extra == 'siblings'", editable = "../workspace" },
     { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=2" },
     { name = "pydantic", specifier = ">=2.7" },
@@ -507,9 +507,9 @@ requires-dist = [
 provides-extras = ["mem0", "graphiti", "dev"]
 
 [[package]]
-name = "coactra-orchestration"
+name = "coactra-jobs"
 version = "0.1.0"
-source = { editable = "../orchestration" }
+source = { editable = "../jobs" }
 dependencies = [
     { name = "pydantic" },
 ]
@@ -540,9 +540,9 @@ requires-dist = [
 provides-extras = ["langgraph", "dbos", "dapr", "temporal", "prefect", "a2a", "cloudevents", "fsspec", "otel", "integrations", "dev"]
 
 [[package]]
-name = "coactra-organization"
+name = "coactra-directory"
 version = "0.2.0"
-source = { editable = "../organization" }
+source = { editable = "../directory" }
 dependencies = [
     { name = "pydantic" },
     { name = "sqlmodel" },
@@ -572,8 +572,8 @@ dependencies = [
 requires-dist = [
     { name = "coactra-memory", marker = "extra == 'integrations'", specifier = ">=0.2" },
     { name = "coactra-memory", marker = "extra == 'memory'", specifier = ">=0.2" },
-    { name = "coactra-organization", marker = "extra == 'integrations'", specifier = ">=0.2" },
-    { name = "coactra-organization", marker = "extra == 'organization'", specifier = ">=0.2" },
+    { name = "coactra-directory", marker = "extra == 'integrations'", specifier = ">=0.2" },
+    { name = "coactra-directory", marker = "extra == 'organization'", specifier = ">=0.2" },
     { name = "daytona-sdk", marker = "extra == 'daytona'", specifier = ">=0.10" },
     { name = "e2b", marker = "extra == 'e2b'", specifier = ">=1.0" },
     { name = "pydantic", specifier = ">=2.7" },

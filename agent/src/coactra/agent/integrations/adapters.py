@@ -113,7 +113,7 @@ class WorkflowAdapter:
         if self._context_factory is not None:
             return self._context_factory(**kwargs)
 
-        from coactra.orchestration.workflow import RunContext
+        from coactra.jobs.workflow import RunContext
 
         return RunContext(**kwargs)
 
@@ -154,7 +154,7 @@ class WorkAdapter:
         if self._scope_factory is not None:
             return self._scope_factory(scope)
 
-        from coactra.orchestration import WorkScope
+        from coactra.jobs import WorkScope
 
         return WorkScope(tenant_id=scope.tenant_id, namespace=scope.namespace)
 

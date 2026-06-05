@@ -23,11 +23,11 @@ The distributions are **not on PyPI yet** — install editable from the monorepo
 python -m pip install -e './coactra[dev]'
 python -m pip install -e './memory[dev]'
 python -m pip install -e './workspace[dev]'
-python -m pip install -e './orchestration[dev]'
+python -m pip install -e './jobs[dev]'
 python -m pip install -e './agent[dev]'
 # dependency-complete lanes:
 python -m pip install -e './lib-ai[dev]'
-python -m pip install -e './organization[dev]'
+python -m pip install -e './directory[dev]'
 ```
 
 ## Tests

@@ -23,7 +23,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: package boundaries are clear, but compatibility promises, deprecation windows, and adapter maturity are not yet tied to release gates.
 - Evidence from files:
   - Package versions differ across `*/pyproject.toml`.
-  - Compatibility aliases are documented in `orchestration/README.md:72-78` and `docs/API_INDEX.md`.
+  - Compatibility aliases are documented in `jobs/README.md:72-78` and `docs/API_INDEX.md`.
 - Why it matters: users and chatbot agents need to know which imports are stable, beta, experimental, compatibility, or internal.
 - Recommended fix: keep `docs/RELEASE_POLICY.md` as source of truth, add API diff checks later, and require changelog categories for public changes.
 - Difficulty: Low
@@ -34,8 +34,8 @@ This backlog is based on static source inspection and later architecture-alignme
 - Status: Roadmap and maturity docs updated; adapter metadata/enforcement pending.
 - Problem: LangGraph, Temporal, and Prefect can all run durable workflows, but `resume(thread_id, ...)` does not mean the same thing unless the adapter declares its semantics.
 - Evidence from files:
-  - `WorkflowEngine.start/resume` protocol in `orchestration/src/coactra/orchestration/workflow/runtime/durable.py:50-80`.
-  - Runtime factory names LangGraph, Temporal, and Prefect in `orchestration/src/coactra/orchestration/workflow/runtime/defaults.py`.
+  - `WorkflowEngine.start/resume` protocol in `jobs/src/coactra/jobs/workflow/runtime/durable.py:50-80`.
+  - Runtime factory names LangGraph, Temporal, and Prefect in `jobs/src/coactra/jobs/workflow/runtime/defaults.py`.
   - Current adapter maturity doc now defines `same-thread`, `new-run-with-prior-state`, `unsupported`, and `host-owned`.
 - Why it matters: operators may assume Temporal-like signal/resume behavior from adapters that only trigger a new run or delegate resume to host code.
 - Recommended fix: keep `resume_semantics` in the machine-readable adapter manifest and add real-service integration tests for Temporal and Prefect behind the same `WorkflowEngine` contract.
@@ -48,7 +48,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: the research correctly emphasizes contract testing. Coactra has many Protocol seams, but not every adapter/router has a reusable conformance suite.
 - Evidence from files:
   - Existing memory conformance in `memory/src/coactra/memory/conformance.py`.
-  - Existing work conformance in `orchestration/src/coactra/orchestration/work/conformance.py`.
+  - Existing work conformance in `jobs/src/coactra/jobs/work/conformance.py`.
   - Agent conformance in `agent/src/coactra/agent/conformance.py`.
   - Router drift was already found in workspace and procedure routers.
 - Why it matters: adapter drift is the main failure mode of a thin library suite.
@@ -88,8 +88,8 @@ This backlog is based on static source inspection and later architecture-alignme
 - Status: Implemented in the first architecture-alignment pass.
 - Problem: `ProcedureStore` includes `exists`, `replace`, and `delete`, but the tenant router exposes only `save`, `get`, and `list`.
 - Evidence from files:
-  - `ProcedureStore` protocol in `orchestration/src/coactra/orchestration/workflow/store.py:16-40`.
-  - `TenantProcedureStoreRouter` in `orchestration/src/coactra/orchestration/workflow/routing.py:13-22`.
+  - `ProcedureStore` protocol in `jobs/src/coactra/jobs/workflow/store.py:16-40`.
+  - `TenantProcedureStoreRouter` in `jobs/src/coactra/jobs/workflow/routing.py:13-22`.
 - Why it matters: code using the router as a `ProcedureStore` can fail at runtime for valid protocol methods.
 - Recommended fix: add `exists`, `replace`, and `delete` forwarding methods. Add protocol conformance and behavior tests.
 - Difficulty: Low
@@ -99,8 +99,8 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: reusable workflow approval storage is in-memory, while production docs mention persisted approvals as a production seam.
 - Evidence from files:
-  - `InMemoryApprovalStore` is the only approval store found in `orchestration/src/coactra/orchestration/workflow/runtime/approval.py:46-81`.
-  - `DurableOrchestrator` maps approval interrupts into work order approval state in `orchestration/src/coactra/orchestration/facade.py:280-332`.
+  - `InMemoryApprovalStore` is the only approval store found in `jobs/src/coactra/jobs/workflow/runtime/approval.py:46-81`.
+  - `DurableOrchestrator` maps approval interrupts into work order approval state in `jobs/src/coactra/jobs/facade.py:280-332`.
   - README names "persisted approvals" as a production seam in `README.md:15-17`.
 - Why it matters: approval state that only exists in memory can be lost across process restart unless the host maps it into durable work state consistently.
 - Recommended fix: either add a SQL-backed `ApprovalStore` or document the exact host contract: approval state is persisted through `WorkOrder.pending_approval`, not `InMemoryApprovalStore`. Add restart/resume tests around approval flows.
@@ -128,8 +128,8 @@ This backlog is based on static source inspection and later architecture-alignme
   - Adapter maturity matrix in `docs/LIBRARIES.md:187-195`.
   - Workspace adapter maturity mapping in `workspace/src/coactra/workspace/adapters/__init__.py:1-17`.
   - Agent FastMCP stub in `agent/src/coactra/agent/adapters/fastmcp.py:1-12`.
-  - Organization Neo4j stub in `organization/src/coactra/organization/repository/neo4j_store.py:1-14`.
-  - `TemporalEngine` and `PrefectEngine` in `orchestration/src/coactra/orchestration/workflow/adapters/temporal.py` and `orchestration/src/coactra/orchestration/workflow/adapters/prefect.py`; resume semantics now differ by runtime.
+  - Organization Neo4j stub in `directory/src/coactra/directory/repository/neo4j_store.py:1-14`.
+  - `TemporalEngine` and `PrefectEngine` in `jobs/src/coactra/jobs/workflow/adapters/temporal.py` and `jobs/src/coactra/jobs/workflow/adapters/prefect.py`; resume semantics now differ by runtime.
 - Why it matters: chatbots and users can easily confuse named seams with implemented production backends.
 - Recommended fix: add `docs/ADAPTER_MATURITY.md` plus a small JSON/YAML manifest listing adapter, package, extra, maturity, dependency, production status, and replacement path.
 - Difficulty: Low
@@ -139,9 +139,9 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: durable workflow resume depends on checkpointer/thread state and procedure availability. The engine stores thread-to-procedure mapping in memory and raises if procedure is not available after restart.
 - Evidence from files:
-  - Scoped thread IDs and snapshots in `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:809-840`.
-  - Resume behavior and missing-procedure error path in `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:843-944`.
-  - `WorkflowEngine.start/resume` protocol in `orchestration/src/coactra/orchestration/workflow/runtime/durable.py:50-80`.
+  - Scoped thread IDs and snapshots in `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:809-840`.
+  - Resume behavior and missing-procedure error path in `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:843-944`.
+  - `WorkflowEngine.start/resume` protocol in `jobs/src/coactra/jobs/workflow/runtime/durable.py:50-80`.
 - Why it matters: users may assume "durable" means restart-safe without knowing what must be persisted by the host.
 - Recommended fix: document required durable inputs: checkpointer, thread id, workflow document/procedure version, work order checkpoint, pending approval/input state. Add a restart simulation test if feasible.
 - Difficulty: Medium
@@ -151,10 +151,10 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: the name implies native async Postgres, but implementation wraps the synchronous SQL repository and forwards work through `asyncio.to_thread`.
 - Evidence from files:
-  - Thread-backed async facade described in `organization/src/coactra/organization/repository/async_store.py:1-6`.
-  - Dynamic async forwards in `organization/src/coactra/organization/repository/async_store.py:32-69`.
+  - Thread-backed async facade described in `directory/src/coactra/directory/repository/async_store.py:1-6`.
+  - Dynamic async forwards in `directory/src/coactra/directory/repository/async_store.py:32-69`.
 - Why it matters: host services may make incorrect assumptions about connection pooling, transaction behavior, and async DB driver requirements.
-- Recommended fix: either rename to `AsyncThreadedOrgStore`/`AsyncSqlOrgStore`, or implement a native async SQLAlchemy/Postgres store. At minimum, document the current behavior in `organization/README.md`.
+- Recommended fix: either rename to `AsyncThreadedOrgStore`/`AsyncSqlOrgStore`, or implement a native async SQLAlchemy/Postgres store. At minimum, document the current behavior in `directory/README.md`.
 - Difficulty: Medium
 - Priority: P2
 
@@ -176,20 +176,20 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: compatibility modules and root-level deprecated exports create duplicate APIs for retrieval.
 - Evidence from files:
-  - `coactra.work` and `coactra.workflow` compatibility aliases documented in `orchestration/README.md:72-78`.
+  - `coactra.jobs` and `coactra.jobs.workflow` compatibility aliases documented in `jobs/README.md:72-78`.
   - Agent root deprecated lookup map in `agent/src/coactra/agent/__init__.py:114-145`.
-  - Organization compatibility imports in `organization/README.md:47-51`.
+  - Organization compatibility imports in `directory/README.md:47-51`.
   - Workspace compatibility imports in `workspace/README.md:76-77`.
 - Why it matters: a chatbot may answer with old import paths unless aliases are tagged.
 - Recommended fix: create a compatibility manifest with preferred import path, alias path, deprecation status, and removal horizon. Use it in docs and retrieval metadata.
 - Difficulty: Low
 - Priority: P2
 
-### 10. Remove or explain `organization/src/coactra/organization/__init__.py.orig`
+### 10. Remove or explain `directory/src/coactra/directory/__init__.py.orig`
 
 - Problem: `.orig` source file appears in the repo inventory.
 - Evidence from files:
-  - `organization/src/coactra/organization/__init__.py.orig` appears in `rg --files`.
+  - `directory/src/coactra/directory/__init__.py.orig` appears in `rg --files`.
 - Why it matters: backup/original files are confusing for package readers and chatbots.
 - Recommended fix: inspect whether it is needed. If not, remove it in a separate cleanup change. If it is intentional, move it under docs or test fixtures and explain it.
 - Difficulty: Low
@@ -201,10 +201,10 @@ This backlog is based on static source inspection and later architecture-alignme
 - Evidence from files:
   - `lib-ai/pyproject.toml:5-33`
   - `memory/pyproject.toml:5-29`
-  - `organization/pyproject.toml:5-29`
+  - `directory/pyproject.toml:5-29`
   - `agent/pyproject.toml:5-45`
   - `workspace/pyproject.toml:5-41`
-  - `orchestration/pyproject.toml:5-47`
+  - `jobs/pyproject.toml:5-47`
   - `coactra/pyproject.toml:5-32`
 - Why it matters: users need to know whether versions move independently or as a coordinated suite.
 - Recommended fix: add `docs/RELEASE_POLICY.md` explaining package versioning, compatibility aliases, and extras.
@@ -218,7 +218,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: public API roots exist, but there is no single API inventory for humans or chatbots.
 - Evidence from files:
   - `docs/INTERFACES.md:20-31` lists stable roots.
-  - Package `__init__.py` files export many names, such as `agent/src/coactra/agent/__init__.py:64-112` and `orchestration/src/coactra/orchestration/__init__.py:36-64`.
+  - Package `__init__.py` files export many names, such as `agent/src/coactra/agent/__init__.py:64-112` and `jobs/src/coactra/jobs/__init__.py:36-64`.
 - Why it matters: retrieval and onboarding improve when public names have one canonical source.
 - Recommended fix: generate `docs/API_INDEX.md` grouped by package, class/function, source file, public/compat/internal status, and one-line purpose.
 - Difficulty: Low
@@ -228,8 +228,8 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: persistent state is spread across SQL store code, SQLModel models, workspace files, memory backends, and in-memory caches.
 - Evidence from files:
-  - Work tables in `orchestration/src/coactra/orchestration/work/backends/sql.py:96-138`.
-  - Org tables in `organization/src/coactra/organization/models.py:46-163`.
+  - Work tables in `jobs/src/coactra/jobs/work/backends/sql.py:96-138`.
+  - Org tables in `directory/src/coactra/directory/models.py:46-163`.
   - Workspace storage in `workspace/src/coactra/workspace/backends/local.py:24-122`.
   - Memory backends in `memory/src/coactra/memory/backends/`.
   - Agent token cache in `agent/src/coactra/agent/identity.py:148-205`.
@@ -246,7 +246,7 @@ This backlog is based on static source inspection and later architecture-alignme
   - Memory scope key behavior in `memory/src/coactra/memory/types.py:24-87`.
   - Workspace path-safe scope in `workspace/src/coactra/workspace/scope.py:15-32`.
   - Collaboration cross-tenant denial in `agent/src/coactra/agent/collaboration.py:52-79`.
-  - Organization tenant isolation in `docs/organization/DESIGN.md:69-76`.
+  - Organization tenant isolation in `docs/directory/DESIGN.md:69-76`.
 - Why it matters: tenant isolation is a selling point and a security boundary.
 - Recommended fix: create `docs/TENANT_ISOLATION.md` with per-package semantics, cross-tenant denial, router usage, and known limitations.
 - Difficulty: Low
@@ -269,7 +269,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: many important paths depend on optional extras and may skip locally.
 - Evidence from files:
-  - Optional extras in `orchestration/pyproject.toml:17-47`, `agent/pyproject.toml:17-45`, `memory/pyproject.toml:15-29`, `workspace/pyproject.toml:15-41`.
+  - Optional extras in `jobs/pyproject.toml:17-47`, `agent/pyproject.toml:17-45`, `memory/pyproject.toml:15-29`, `workspace/pyproject.toml:15-41`.
   - Live memory tests are environment-gated in `memory/tests/test_live_integration.py:1-60`.
 - Why it matters: adapter drift is likely when tests do not run with real optional dependencies.
 - Recommended fix: add CI jobs for core, SQL, LangGraph, A2A, memory engines, org SQL/OpenFGA mocks, workspace integrations. Keep live external service jobs separately gated.
@@ -280,7 +280,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: router classes are simple but can drift from protocols, as seen with workspace and procedure routers.
 - Evidence from files:
-  - Router files: `lib-ai/src/coactra/ai/routing.py`, `memory/src/coactra/memory/routing.py`, `workspace/src/coactra/workspace/routing.py`, `orchestration/src/coactra/orchestration/workflow/routing.py`, `organization/src/coactra/organization/repository/routing.py`, `agent/src/coactra/agent/routing.py`.
+  - Router files: `lib-ai/src/coactra/ai/routing.py`, `memory/src/coactra/memory/routing.py`, `workspace/src/coactra/workspace/routing.py`, `jobs/src/coactra/jobs/workflow/routing.py`, `directory/src/coactra/directory/repository/routing.py`, `agent/src/coactra/agent/routing.py`.
 - Why it matters: routers are used for tenant silo deployments, where missing methods become production runtime failures.
 - Recommended fix: for each router, create a fake backend that records all protocol calls and assert every protocol method forwards scope and options correctly.
 - Difficulty: Medium
@@ -290,8 +290,8 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: durable workflow engine has rich resume behavior but restart assumptions are subtle.
 - Evidence from files:
-  - Durable runtime protocol in `orchestration/src/coactra/orchestration/workflow/runtime/durable.py:50-80`.
-  - Durable LangGraph state and resume code in `orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py:676-944`.
+  - Durable runtime protocol in `jobs/src/coactra/jobs/workflow/runtime/durable.py:50-80`.
+  - Durable LangGraph state and resume code in `jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py:676-944`.
 - Why it matters: "durable" is only meaningful if restart behavior is well tested or clearly scoped.
 - Recommended fix: simulate engine restart with persisted checkpointer and procedure/version reload. Assert expected behavior for pending interrupt, approval resolution, and missing procedure.
 - Difficulty: High
@@ -386,7 +386,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: `docs/LIBRARIES.md` and package design files contain dense cross-cutting decisions that could retrieve too broadly.
 - Evidence from files:
   - `docs/LIBRARIES.md` covers philosophy, tenancy, package boundaries, dependency shape, adapter maturity, and compatibility aliases.
-  - `docs/agent/DESIGN.md`, `docs/organization/DESIGN.md`, and package READMEs contain multiple concepts per file.
+  - `docs/agent/DESIGN.md`, `docs/directory/DESIGN.md`, and package READMEs contain multiple concepts per file.
 - Why it matters: smaller chunks reduce hallucinated cross-package ownership.
 - Recommended fix: generate or maintain `docs/kb/*.md` chunk files from the knowledge base in this report.
 - Difficulty: Low

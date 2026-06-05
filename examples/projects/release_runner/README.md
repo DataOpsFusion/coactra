@@ -13,13 +13,13 @@ What it demonstrates:
 Run from the repo root:
 
 ```bash
-PYTHONPATH=orchestration/src python3 examples/projects/release_runner/app.py
+PYTHONPATH=jobs/src python3 examples/projects/release_runner/app.py
 ```
 
 Production swap:
 
 ```python
-from coactra.orchestration.work import SqlWorkStore, WorkManager
+from coactra.jobs import SqlWorkStore, WorkManager
 
 work = WorkManager(store=SqlWorkStore.from_url("postgresql+psycopg://..."))
 ```

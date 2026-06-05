@@ -88,117 +88,117 @@
       "production_notes": "Named workspace seam only; raises MissingExtraError on construction."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "InMemoryWorkStore",
-      "file": "orchestration/src/coactra/orchestration/work/backends/inmemory.py",
+      "file": "jobs/src/coactra/jobs/work/backends/inmemory.py",
       "extra": null,
       "maturity": "reference",
       "production_notes": "Process-local work ledger for tests/demos."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "SqlWorkStore",
-      "file": "orchestration/src/coactra/orchestration/work/backends/sql.py",
+      "file": "jobs/src/coactra/jobs/work/backends/sql.py",
       "extra": "sql",
       "maturity": "implemented",
       "production_notes": "Durable SQL ledger with optimistic concurrency."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "DBOSDispatcher",
-      "file": "orchestration/src/coactra/orchestration/work/adapters/dbos.py",
+      "file": "jobs/src/coactra/jobs/work/adapters/dbos.py",
       "extra": "dbos",
       "maturity": "experimental",
       "production_notes": "Thin dispatch bridge; the Coactra ledger remains source of truth."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "TemporalDispatcher",
-      "file": "orchestration/src/coactra/orchestration/work/adapters/temporal.py",
+      "file": "jobs/src/coactra/jobs/work/adapters/temporal.py",
       "extra": "temporal",
       "maturity": "experimental",
       "production_notes": "Thin dispatch bridge; not a full workflow backend."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "DaprDispatcher",
-      "file": "orchestration/src/coactra/orchestration/work/adapters/dapr.py",
+      "file": "jobs/src/coactra/jobs/work/adapters/dapr.py",
       "extra": "dapr",
       "maturity": "experimental",
       "production_notes": "Thin dispatch bridge."
     },
     {
-      "package": "coactra-orchestration.work",
+      "package": "coactra-jobs.work",
       "name": "MCPTasksAdapter",
-      "file": "orchestration/src/coactra/orchestration/work/adapters/mcp_tasks.py",
+      "file": "jobs/src/coactra/jobs/work/adapters/mcp_tasks.py",
       "extra": null,
       "maturity": "experimental",
       "production_notes": "MCP task shape bridge."
     },
     {
-      "package": "coactra-orchestration.workflow",
+      "package": "coactra-jobs.workflow",
       "name": "LangGraphEngine",
-      "file": "orchestration/src/coactra/orchestration/workflow/backends/langgraph.py",
+      "file": "jobs/src/coactra/jobs/workflow/backends/langgraph.py",
       "extra": "langgraph",
       "maturity": "implemented",
       "resume_semantics": "unsupported",
       "production_notes": "Optional LangGraph procedure runner; non-durable (use DurableLangGraphEngine for resume)."
     },
     {
-      "package": "coactra-orchestration.workflow",
+      "package": "coactra-jobs.workflow",
       "name": "DurableLangGraphEngine",
-      "file": "orchestration/src/coactra/orchestration/workflow/backends/durable_langgraph.py",
+      "file": "jobs/src/coactra/jobs/workflow/backends/durable_langgraph.py",
       "extra": "langgraph",
       "maturity": "implemented",
       "resume_semantics": "same-thread",
       "production_notes": "Requires persistent checkpointer and procedure/version reload after restart."
     },
     {
-      "package": "coactra-orchestration.workflow",
+      "package": "coactra-jobs.workflow",
       "name": "TemporalEngine",
-      "file": "orchestration/src/coactra/orchestration/workflow/adapters/temporal.py",
+      "file": "jobs/src/coactra/jobs/workflow/adapters/temporal.py",
       "extra": "temporal",
       "maturity": "implemented",
       "resume_semantics": "same-thread",
       "production_notes": "Host supplies Temporal client, workflow definition, task queue, and worker deployment."
     },
     {
-      "package": "coactra-orchestration.workflow",
+      "package": "coactra-jobs.workflow",
       "name": "PrefectEngine",
-      "file": "orchestration/src/coactra/orchestration/workflow/adapters/prefect.py",
+      "file": "jobs/src/coactra/jobs/workflow/adapters/prefect.py",
       "extra": "prefect",
       "maturity": "implemented",
       "resume_semantics": "new-run-with-prior-state",
       "production_notes": "Resume starts a deployment run carrying prior thread state; host flow owns true resume behavior."
     },
     {
-      "package": "coactra-organization",
+      "package": "coactra-directory",
       "name": "SqliteOrgStore",
-      "file": "organization/src/coactra/organization/repository/sqlite_store.py",
+      "file": "directory/src/coactra/directory/repository/sqlite_store.py",
       "extra": null,
       "maturity": "reference",
       "production_notes": "SQLModel/SQLAlchemy repository."
     },
     {
-      "package": "coactra-organization",
+      "package": "coactra-directory",
       "name": "AsyncPostgresOrgStore",
-      "file": "organization/src/coactra/organization/repository/async_store.py",
+      "file": "directory/src/coactra/directory/repository/async_store.py",
       "extra": null,
       "maturity": "implemented",
       "production_notes": "Async facade over the SQL repository using worker-thread offload (see backlog #7 on naming)."
     },
     {
-      "package": "coactra-organization",
+      "package": "coactra-directory",
       "name": "OpenFGAAuthorizer",
-      "file": "organization/src/coactra/organization/adapters/openfga.py",
+      "file": "directory/src/coactra/directory/adapters/openfga.py",
       "extra": null,
       "maturity": "implemented",
       "production_notes": "Authorization seam over the OpenFGA SDK."
     },
     {
-      "package": "coactra-organization",
+      "package": "coactra-directory",
       "name": "Neo4jOrgStore",
-      "file": "organization/src/coactra/organization/repository/neo4j_store.py",
+      "file": "directory/src/coactra/directory/repository/neo4j_store.py",
       "extra": null,
       "maturity": "stub",
       "production_notes": "Named seam only; raises MissingExtraError on construction."

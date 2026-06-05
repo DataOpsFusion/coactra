@@ -23,20 +23,20 @@ Use this file before recommending an adapter for production. A named adapter is 
 | `coactra-workspace` | `DaytonaBackend` | stub | Seam only. |
 | `coactra-workspace` | `E2BBackend` | stub | Seam only. |
 | `coactra-workspace` | `OpenHandsBackend` | stub | Seam only. |
-| `coactra-orchestration.work` | `InMemoryWorkStore` | reference | Process-local work ledger for tests/demos. |
-| `coactra-orchestration.work` | `SqlWorkStore` | implemented | Durable SQL ledger with optimistic concurrency. |
-| `coactra-orchestration.work` | `DBOSDispatcher` | experimental | Thin dispatch bridge; Coactra ledger remains source of truth. |
-| `coactra-orchestration.work` | `TemporalDispatcher` | experimental | Thin dispatch bridge; not a full workflow backend. |
-| `coactra-orchestration.work` | `DaprDispatcher` | experimental | Thin dispatch bridge. |
-| `coactra-orchestration.work` | `MCPTasksAdapter` | experimental | MCP task shape bridge. |
-| `coactra-orchestration.workflow` | `LangGraphEngine` | implemented | Optional LangGraph procedure runner. |
-| `coactra-orchestration.workflow` | `DurableLangGraphEngine` | implemented | Official default durable workflow adapter when `coactra-orchestration[langgraph]` is installed; restart contract must be explicit. |
-| `coactra-orchestration.workflow` | `TemporalEngine` | implemented | Thin `WorkflowEngine` adapter over a host Temporal client/workflow/task queue; same-thread resume via workflow signal. |
-| `coactra-orchestration.workflow` | `PrefectEngine` | implemented | Thin deployment-run adapter; resume starts a new run carrying prior thread state and decision payload. |
-| `coactra-organization` | `SqliteOrgStore` | reference | SQLModel/SQLAlchemy repository. |
-| `coactra-organization` | `AsyncPostgresOrgStore` | implemented | Async facade over SQL repository using worker-thread offload. |
-| `coactra-organization` | `OpenFGAAuthorizer` | implemented | Authorization seam over OpenFGA SDK. |
-| `coactra-organization` | `Neo4jOrgStore` | stub | Seam only. |
+| `coactra-jobs` | `InMemoryWorkStore` | reference | Process-local work ledger for tests/demos. |
+| `coactra-jobs` | `SqlWorkStore` | implemented | Durable SQL ledger with optimistic concurrency. |
+| `coactra-jobs` | `DBOSDispatcher` | experimental | Thin dispatch bridge; Coactra ledger remains source of truth. |
+| `coactra-jobs` | `TemporalDispatcher` | experimental | Thin dispatch bridge; not a full workflow backend. |
+| `coactra-jobs` | `DaprDispatcher` | experimental | Thin dispatch bridge. |
+| `coactra-jobs` | `MCPTasksAdapter` | experimental | MCP task shape bridge. |
+| `coactra-jobs` | `LangGraphEngine` | implemented | Optional LangGraph procedure runner. |
+| `coactra-jobs` | `DurableLangGraphEngine` | implemented | Official default durable workflow adapter when `coactra-jobs[langgraph]` is installed; restart contract must be explicit. |
+| `coactra-jobs` | `TemporalEngine` | implemented | Thin `WorkflowEngine` adapter over a host Temporal client/workflow/task queue; same-thread resume via workflow signal. |
+| `coactra-jobs` | `PrefectEngine` | implemented | Thin deployment-run adapter; resume starts a new run carrying prior thread state and decision payload. |
+| `coactra-directory` | `SqliteOrgStore` | reference | SQLModel/SQLAlchemy repository. |
+| `coactra-directory` | `AsyncPostgresOrgStore` | implemented | Async facade over SQL repository using worker-thread offload. |
+| `coactra-directory` | `OpenFGAAuthorizer` | implemented | Authorization seam over OpenFGA SDK. |
+| `coactra-directory` | `Neo4jOrgStore` | stub | Seam only. |
 | `coactra-agent` | `InProcessExchanger` | reference | Local no-passthrough token exchanger for tests/demos. |
 | `coactra-agent` | `KeycloakExchanger` | implemented | RFC 8693 token exchange over configured token endpoint. |
 | `coactra-agent` | `OfficialA2ATransport` | implemented | Outbound official A2A SDK adapter. |

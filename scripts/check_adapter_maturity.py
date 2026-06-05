@@ -10,7 +10,7 @@ guardrail existed). It checks, for every adapter entry:
 - the JSON entry count matches the row count of the ``## Current Matrix`` table
   in ``docs/ADAPTER_MATURITY.md`` (parity guard against one-sided edits)
 
-It is intentionally lightweight, in the same spirit as ``check_public_api.py``.
+It is intentionally lightweight and only validates adapter maturity metadata.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "docs" / "adapter_maturity.json"
 MATRIX_MD = ROOT / "docs" / "ADAPTER_MATURITY.md"
-WORKFLOW_PACKAGE = "coactra-orchestration.workflow"
+WORKFLOW_PACKAGE = "coactra-jobs.workflow"
 
 
 def _markdown_matrix_row_count(text: str) -> int:
