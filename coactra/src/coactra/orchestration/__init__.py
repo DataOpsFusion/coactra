@@ -1,11 +1,18 @@
-"""Compatibility alias for :mod:`coactra.jobs`.
-
-Install ``coactra-jobs`` and prefer ``coactra.jobs`` for new code.
-"""
+"""Deprecated shim — import from ``coactra.jobs`` instead."""
 from __future__ import annotations
 
+import warnings
 from importlib import import_module
 import sys
+
+_WARNED = False
+if not _WARNED:
+    warnings.warn(
+        "coactra.orchestration is deprecated; import from coactra.jobs / coactra.directory instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _WARNED = True
 
 _impl = import_module("coactra.jobs")
 for _suffix in (

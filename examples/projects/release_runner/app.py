@@ -12,13 +12,12 @@ from pprint import pprint
 from coactra.jobs import (
     Artifact,
     ArtifactPart,
-    Scope,
     WorkManager,
     WorkOrder,
+    WorkScope,
 )
 
-
-WORK_SCOPE = Scope(tenant_id="acme", namespace="release")
+WORK_SCOPE = WorkScope(tenant_id="acme", namespace="release")
 
 
 def release_key(version: str) -> str:

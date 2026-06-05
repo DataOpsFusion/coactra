@@ -1,4 +1,4 @@
-"""coactra.jobs - durable work orders plus reusable procedures."""
+"""coactra.jobs — durable work orders and reusable procedures."""
 
 from coactra.jobs.facade import (
     DurableOrchestrationResult,
@@ -33,6 +33,8 @@ from coactra.jobs.workflow import (
 )
 from coactra.jobs.workflow.domain.scope import Scope as WorkflowScope
 
+Scope = WorkScope
+
 __all__ = [
     "__version__",
     "DurableOrchestrationResult",
@@ -57,14 +59,13 @@ __all__ = [
     "check_done_criteria",
     "verify_done_criteria",
     "WorkflowEngineRequiredError",
+    "Scope",
     "WorkflowScope",
     "WorkManager",
     "WorkOrder",
     "WorkScope",
 ]
 
-# Convenience aliases: work-order internals remain under ``coactra.jobs.work`` but
-# adapter/backend imports are common enough to expose at the package root.
 from importlib import import_module as _import_module
 import sys as _sys
 
@@ -98,9 +99,7 @@ for _suffix in (
         f"coactra.jobs.work.{_suffix}"
     )
 
-# Expose the work-order vocabulary at the jobs root. This keeps the common import
-# path short: ``from coactra.jobs import Scope, WorkManager, WorkOrder``.
-from coactra.jobs import work as _work_module  # noqa: E402  -- re-export at module end, after the canonical jobs API is defined
+from coactra.jobs import work as _work_module  # noqa: E402
 
 for _name in _work_module.__all__:
     if _name != "__version__":

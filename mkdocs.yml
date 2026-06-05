@@ -25,8 +25,12 @@ nav:
       - Basic Incident Triage: examples/basic-incident-triage.md
       - Composed Support Agent: examples/composed-support-agent.md
       - Offline Agent SDK: examples/offline-agent-sdk.md
+      - Work Orders:
+          - Work Order Lifecycle: examples/work-order-lifecycle.md
+          - Procedure-Backed Work: examples/procedure-backed-work.md
       - Sample Projects:
           - Customer Support Memory: examples/customer-support-memory.md
+          - Support Desk: examples/support-desk.md
           - Release Runner: examples/release-runner.md
           - Workspace Research Desk: examples/workspace-research-desk.md
           - Multi-Agent Policy: examples/multi-agent-policy.md
@@ -34,6 +38,7 @@ nav:
       - Architecture: concepts/architecture.md
       - Interfaces: concepts/interfaces.md
       - Library Map: concepts/library-map.md
+      - Naming Migration: concepts/naming-migration.md
       - State and Storage: concepts/state-and-storage.md
       - Tenant Isolation: concepts/tenant-isolation.md
       - Security: concepts/security.md
