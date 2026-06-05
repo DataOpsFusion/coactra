@@ -12,11 +12,6 @@ The public API is meant to stay boring:
 
 ## Install
 
-> **Pre-release:** `coactra` is **not on PyPI yet**. Today you install it editable
-> from this repo (`pip install -e './coactra[dev]'` — see
-> [CONTRIBUTING.md](CONTRIBUTING.md)). The `pip install "coactra[...]"` lines below are
-> the intended public interface once it is published.
-
 Coactra is a single distribution; pick the capabilities you need with extras:
 
 ```bash
@@ -73,6 +68,7 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for a complete walkthrough, [docs/E
 
 ## Documentation
 
+- [Docs site](docs/index.md): the public documentation entrypoint.
 - [Quickstart](docs/QUICKSTART.md): build a small incident-triage app with plain functions.
 - [Examples](docs/EXAMPLES.md): runnable sample projects for memory, durable work, workspace, and multi-agent policy.
 - [Interface map](docs/INTERFACES.md): package roots, stable API surfaces, and where A2A fits.

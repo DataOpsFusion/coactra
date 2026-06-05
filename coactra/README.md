@@ -12,7 +12,8 @@ pip install coactra[agent]
 pip install coactra[all]
 ```
 
-Each capability remains independently installable, such as `pip install coactra-memory`.
+The former split-package roots are compatibility paths; new installs should use
+the single `coactra` distribution plus extras.
 
 
 ## Dependency-Light Shell
