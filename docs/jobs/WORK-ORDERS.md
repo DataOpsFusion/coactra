@@ -1,4 +1,4 @@
-# coactra-jobs work orders
+# coactra.jobs work orders
 
 Durable, tenant-scoped work orders for agent systems. A workflow describes a procedure;
 a `WorkOrder` tracks one real unit of work across assignment, attempts, pauses, retries,
@@ -10,13 +10,13 @@ Production execution belongs to established runtimes through optional adapters.
 ## Install
 
 ```bash
-pip install coactra-jobs
-pip install 'coactra-jobs[sql]'
-pip install 'coactra-jobs[dbos]'
-pip install 'coactra-jobs[temporal]'
-pip install 'coactra-jobs[dapr]'
-pip install 'coactra-jobs[fsspec]'
-pip install 'coactra-jobs[integrations]'
+pip install coactra
+pip install 'coactra[sql]'
+pip install 'coactra[dbos]'
+pip install 'coactra[temporal]'
+pip install 'coactra[dapr]'
+pip install 'coactra[fsspec]'
+pip install 'coactra[integrations]'
 ```
 
 ## Quick Start
@@ -123,7 +123,7 @@ manager.checkpoint(lease, scope, {"step": "compiled"})
 Install the SQL extra, then use a file-backed SQLite database:
 
 ```bash
-pip install 'coactra-jobs[sql]'
+pip install 'coactra[sql]'
 ```
 
 ```python
@@ -140,7 +140,7 @@ multiple hosts or high write concurrency, use Postgres.
 use a Postgres URL:
 
 ```bash
-pip install 'coactra-jobs[sql]' psycopg[binary]
+pip install 'coactra[sql]' psycopg[binary]
 ```
 
 ```python

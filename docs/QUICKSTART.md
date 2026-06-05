@@ -4,21 +4,21 @@ This guide builds a small incident-triage agent. It is intentionally function-fi
 
 ## 1. Install
 
-> **Pre-release:** the `coactra-*` distributions are not on PyPI yet — install them
-> editable from the monorepo today (`pip install -e './agent[dev]'`, etc.). See
-> [../CONTRIBUTING.md](../CONTRIBUTING.md). The `pip install coactra-*` commands below
-> are the intended public interface once published.
+> **Pre-release:** `coactra` is not on PyPI yet — install it editable from the repo
+> today (`pip install -e './coactra[dev]'`). See
+> [../CONTRIBUTING.md](../CONTRIBUTING.md). The `pip install "coactra[...]"` commands
+> below are the intended public interface once published.
 
-For a local prototype:
+For a local prototype (jobs/`WorkManager` are in the base package):
 
 ```bash
-pip install coactra-agent coactra-jobs
+pip install "coactra[agent]"
 ```
 
 For durable work in a real service:
 
 ```bash
-pip install "coactra-jobs[sql]"
+pip install "coactra[sql]"
 ```
 
 ## 2. Start With A Task Function

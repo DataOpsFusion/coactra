@@ -1,28 +1,30 @@
 # Library Map
 
-Standalone, `pip install`-able libraries. Each has **one job**, a clean public
-interface, and its own tests. Built clean-room (not lifted from homelab-mcp).
-The main project later just installs + imports the ones it needs.
+One `pip install`-able distribution (`coactra`) made of capability modules. Each
+capability has **one job**, a clean public interface, and its own tests. Built
+clean-room (not lifted from homelab-mcp). The main project installs `coactra` and
+imports the modules it needs.
 
-> **CURRENT SHAPE:** six capability distributions plus the lightweight `coactra`
-> convenience installer. The sibling libraries remain standalone; `coactra-agent` consumes
-> them through ports and optional `coactra.agent.integrations`. Run `make test` from the
-> repository root for the package-by-package suite. Each library has a package `README.md`
-> charter and a design spec under `docs/<package>/`.
+> **CURRENT SHAPE:** a single `coactra` distribution; capabilities are selected via
+> extras (`pip install "coactra[memory,workflow]"`). The capability modules stay
+> decoupled; `coactra.agent` consumes them through ports and optional
+> `coactra.agent.integrations`. Run `make test` from the repository root for the full
+> suite. Each capability has a charter and a design spec under `docs/internal/<package>/`.
 
 ## Installation
 
-Install only the capability you need, or use the umbrella extras for convenience:
+One distribution, capabilities via extras:
 
 ```bash
-pip install coactra[memory]
-pip install coactra[orchestration]
-pip install coactra[agent]
-pip install coactra[all]
+pip install "coactra[memory]"
+pip install "coactra[memory,workflow]"
+pip install "coactra[agent]"
+pip install "coactra[all]"
 ```
 
-The umbrella distribution contains no business logic. Direct installs such as
-`pip install coactra-memory` remain supported.
+The base install (`pip install coactra`) carries the dependency-light core
+(including jobs/`WorkManager`); extras add the optional capability and backend
+dependencies. There are no separate `coactra-*` distributions.
 
 ## Design philosophy (north star — applies to every library, including future ones)
 
@@ -31,9 +33,9 @@ The umbrella distribution contains no business logic. Direct installs such as
   dependency already does.
 - The value is the **clean wiring + swappable backend** — the libraries must not
   tangle on top of each other.
-- **The set is open-ended.** Six is the current start. New libraries get added for new use
+- **The set is open-ended.** New capabilities get added for new use
   cases, each following the same rules.
-- Before adding a library, prove the gap: if an existing library already does it
+- Before adding a capability, prove the gap: if an existing library already does it
   cleanly, depend on it instead. Build only where the *generalized, non-tangling*
   interface genuinely doesn't exist yet.
 
@@ -50,8 +52,8 @@ of the flat fleet, never baked in.
 The missing piece is the **fleet layer**: many agents working together with clean,
 universal interfaces. Today that lives only as *customization inside homelab-mcp* — the
 pieces overlap, there's no universal interface, so it "turns ugly fast and is hard to
-fix." These six libraries are built **independently** to fix that: each is the
-**universal interface for one capability**, standalone and swappable, then re-imported
+fix." These capabilities are built **independently** to fix that: each is the
+**universal interface for one capability**, decoupled and swappable, then re-imported
 into homelab-mcp.
 
 **Multi-tenancy is cross-cutting** — every library is tenant-scoped/isolated (memory,
@@ -107,40 +109,41 @@ reinvent mem0/langgraph by accident.
 
 > **Note:** the workspace control layer ships only the reference `LocalFilesystemBackend`
 > today; provider integrations (Daytona/E2B/OpenHands, etc.) are intended seams, not
-> shipped backends. **Design verdict:** procedures + the work-order ledger now ship as `coactra-jobs`.
+> shipped backends. **Design verdict:** procedures + the work-order ledger now ship in `coactra.jobs`.
 > Headline: wrap the solved layers (model calls, memory engines, sandboxes, MCP/A2A
 > protocols); build thin connector, composition, and policy layers on top. Nothing here
 > re-implements a backend; the value is the small contracts between them. See
-> [docs/INTERFACES.md](docs/INTERFACES.md) for the application-facing API map.
+> [INTERFACES.md](INTERFACES.md) for the application-facing API map.
 
-## The six
+## The capabilities
 
-| # | Library | One job | Depends on | Notes |
+| # | Module / extra | One job | Depends on | Notes |
 |---|---------|---------|------------|-------|
-| 1 | **coactra-ai** | The model brain. Call LLMs + the reasoning-reuse idea: capture how a model reasoned through a problem and replay it next time instead of re-reasoning. | — | Foundation + differentiator. *Intended* reasoning substrate; today only `coactra-memory`'s optional Graphiti backend imports it — the others stay decoupled by design. |
-| 2 | **coactra-memory** | Long-term facts. Write "what happened / what was learned", recall later. | — | Persistent knowledge store + retrieval. |
-| 3 | **coactra-workspace** | **Persistent agent desk.** Files/state/CLI that persist across sessions (ephemeral mode optional). | — | A place the agent lives — not disposable scratch. |
-| 4 | **coactra-jobs** | Procedures plus durable work orders. Declarative recipes, real-job lifecycle, leases, retries, artifacts, decisions, and audit events. | — | One coherent control surface; execution remains delegated to mature runtimes. |
-| 5 | **coactra-directory** | The company model. Roles, hierarchy, reporting, delegate / escalate / hire. | — | Who's who. |
-| 6 | **coactra-agent** | The runtime that wires 1–6 into a working agent. **MCP (tool transport) and A2A (agent-to-agent wire) live in here** as plumbing — not separate libs. | all of the above | Wraps an LLM SDK (OpenAI) + the transports. Only lib that depends on everything. |
+| 1 | **coactra.ai** (`[ai]`) | The model brain. Call LLMs + the reasoning-reuse idea: capture how a model reasoned through a problem and replay it next time instead of re-reasoning. | — | Foundation + differentiator. *Intended* reasoning substrate; today only `coactra.memory`'s optional Graphiti backend imports it — the others stay decoupled by design. |
+| 2 | **coactra.memory** (`[memory]`) | Long-term facts. Write "what happened / what was learned", recall later. | — | Persistent knowledge store + retrieval. |
+| 3 | **coactra.workspace** (`[workspace]`) | **Persistent agent desk.** Files/state/CLI that persist across sessions (ephemeral mode optional). | — | A place the agent lives — not disposable scratch. |
+| 4 | **coactra.jobs** (`[work]`/`[workflow]`) | Procedures plus durable work orders. Declarative recipes, real-job lifecycle, leases, retries, artifacts, decisions, and audit events. | — | One coherent control surface (in the base package); execution remains delegated to mature runtimes. |
+| 5 | **coactra.directory** (`[organization]`) | The company model. Roles, hierarchy, reporting, delegate / escalate / hire. | — | Who's who. |
+| 6 | **coactra.agent** (`[agent]`) | The runtime that wires 1–6 into a working agent. **MCP (tool transport) and A2A (agent-to-agent wire) live in here** as plumbing. | all of the above | Wraps an LLM SDK (OpenAI) + the transports. Only module that depends on everything. |
 
 ## Dependency shape
 
 ```
-                lib-ai            (foundation)
+              coactra.ai          (foundation)
                /  |   \
-         memory workspace orchestration organization     (siblings — independent capabilities)
-               \  |   /  /            /
-                 agent  ────────────         (wires everything; holds MCP + A2A plumbing)
+   memory workspace jobs directory     (capability modules — independent)
+               \  |   /  /        /
+              coactra.agent  ───────       (wires everything; holds MCP + A2A plumbing)
 ```
 
-memory / workspace / orchestration / organization are **siblings** — none depends on
-another's core. The only cross-sibling coupling is optional and confined to
-`integrations/` modules (e.g. `workspace.integrations` importing `coactra.memory` /
-`coactra.directory`), never pulled in by the base install. They're capabilities
-`agent` picks up; only `agent` depends on everything. No circular dependencies.
+`coactra.memory` / `coactra.workspace` / `coactra.jobs` / `coactra.directory` are
+**independent capability modules** — none depends on another's core. The only
+cross-module coupling is optional and confined to `integrations/` modules (e.g.
+`coactra.workspace.integrations` importing `coactra.memory` / `coactra.directory`),
+never pulled in by the base install. They're capabilities `coactra.agent` picks up;
+only `coactra.agent` depends on everything. No circular dependencies.
 
-**Build order (bottom-up):** `lib-ai → memory + workspace → orchestration + organization → agent`
+**Layering (bottom-up):** `ai → memory + workspace → jobs + directory → agent`
 
 ## Open design questions (deferred — not deciding yet)
 
@@ -159,22 +162,22 @@ Add production-backed adapters one at a time under integration tests. The core s
 
 ## Production seams added
 
-The default installs remain small and offline-friendly. Production deployments can opt into:
+The base install remains small and offline-friendly. Production deployments can opt into:
 
-- `coactra-jobs`: async `WorkflowEngine.start/resume`, durable approval records,
+- `coactra.jobs`: async `WorkflowEngine.start/resume`, durable approval records,
   `DurableOrchestrator`, reviewable `ExecutionPlan` -> `ExecutionReceipt`, MCP Tasks
   translation, reviewed procedure promotion, work-store conformance probes, and
   tenant-routed jobs/procedure/runtime backends.
-- `coactra-directory`: `AsyncPostgresOrgStore`, full directory metadata round trips,
+- `coactra.directory`: `AsyncPostgresOrgStore`, full directory metadata round trips,
   archived principals, audit attribution, generic `Authorizer`, optional OpenFGA bridge,
   and `TenantOrgStoreRouter`.
-- `coactra-agent`: real RFC 8693 `KeycloakExchanger`, per-request audience/scopes,
+- `coactra.agent`: real RFC 8693 `KeycloakExchanger`, per-request audience/scopes,
   cached async token exchange, token-exchanger conformance probes, and `TenantAgentRouter`.
-- `coactra-workspace`: dated journal rotation, `TenantWorkspaceBackendRouter`, and an optional
+- `coactra.workspace`: dated journal rotation, `TenantWorkspaceBackendRouter`, and an optional
   office profile with memory, organization ACL, MCP recall, and workflow-drafting integrations.
-- `coactra-ai`: dependency-light token counting, optional tiktoken, and
+- `coactra.ai`: dependency-light token counting, optional tiktoken, and
   `TenantReasoningStoreRouter`.
-- `coactra-memory`: `TenantMemoryBackendRouter`, scoped `AuthorizedMemory`, and backend
+- `coactra.memory`: `TenantMemoryBackendRouter`, scoped `AuthorizedMemory`, and backend
   conformance probes.
 
 Pool mode remains the default. Each `Tenant*Router` is an opt-in silo-isolation adapter:
@@ -182,18 +185,18 @@ a tenant id selects one cached physical backend instance.
 
 ## Compatibility policy
 
-The old `coactra.work`, `coactra.workflow`, and `coactra.orchestration` import roots
-are compatibility aliases. The `coactra-jobs` wheel intentionally keeps those thin
-Python aliases so existing homelab imports can migrate dependency-first.
-Other flat modules that remain are similarly thin compatibility imports, not duplicate
-implementations. Remove them only in a future breaking release.
+The canonical namespaces are `coactra.jobs` and `coactra.directory`. The old
+`coactra.work`, `coactra.workflow`, `coactra.orchestration`, and `coactra.organization`
+import roots are compatibility shims — thin Python aliases the package intentionally
+keeps so existing homelab imports can migrate dependency-first. Remove them only in a
+future breaking release.
 
 ## Adapter matrix
 
-| Package | Adapter | Notes |
+| Module | Adapter | Notes |
 |---|---|---|
-| coactra-workspace | LocalFilesystemBackend | File confinement; local exec is opt-in and **not a sandbox** — use a remote/sandboxed backend for untrusted commands. |
-| coactra-agent | KeycloakExchanger | RFC 8693 token exchange with no token passthrough; async variant available with `coactra-agent[oauth]`. |
-| coactra-agent | OfficialA2ATransport | Official SDK bridge; import from `coactra.agent.adapters`. Inbound A2A services require a verifier in production. |
-| coactra-jobs | DurableLangGraphEngine / TemporalEngine / PrefectEngine | `WorkflowEngine` adapters; durable resume requires explicit checkpointer/runtime configuration. |
-| coactra-jobs | DBOS / Temporal / Dapr dispatchers | Experimental thin dispatch bridges; the Coactra ledger remains the source of truth. |
+| coactra.workspace | LocalFilesystemBackend | File confinement; local exec is opt-in and **not a sandbox** — use a remote/sandboxed backend for untrusted commands. |
+| coactra.agent | KeycloakExchanger | RFC 8693 token exchange with no token passthrough; async variant available with `coactra[oauth]`. |
+| coactra.agent | OfficialA2ATransport | Official SDK bridge; import from `coactra.agent.adapters`. Inbound A2A services require a verifier in production. |
+| coactra.jobs | DurableLangGraphEngine / TemporalEngine / PrefectEngine | `WorkflowEngine` adapters; durable resume requires explicit checkpointer/runtime configuration. |
+| coactra.jobs | DBOS / Temporal / Dapr dispatchers | Experimental thin dispatch bridges; the Coactra ledger remains the source of truth. |

@@ -1,9 +1,9 @@
 name: release
 
-# Publish all 7 Coactra distributions to PyPI via OIDC Trusted Publishing.
+# Publish the single Coactra distribution to PyPI via OIDC Trusted Publishing.
 # Trigger: push a tag matching v* (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
-# One-time setup: configure a Trusted Publisher (or pending publisher) for EACH of
-# the 7 project names on PyPI, pointing at this repo + this workflow + the `pypi`
+# One-time setup: configure a Trusted Publisher (or pending publisher) for the
+# `coactra` project name on PyPI, pointing at this repo + this workflow + the `pypi`
 # environment. See docs/PUBLISHING.md.
 
 on:
@@ -21,12 +21,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
 
-      - name: Build all 7 distributions
+      - name: Build the coactra distribution
         run: |
           rm -rf dist-all
-          for p in lib-ai memory workspace jobs directory agent coactra; do
-            (cd "$p" && uv build --out-dir ../dist-all)
-          done
+          (cd coactra && uv build --out-dir ../dist-all)
 
       - name: Validate metadata
         run: uvx twine check dist-all/*
