@@ -10,6 +10,7 @@ imports the modules it needs.
 > decoupled; `coactra.agent` consumes them through ports and optional
 > `coactra.agent.integrations`. Run `make test` from the repository root for the full
 > suite. Maintainer design notes live under the `maintainers` section of this docs site.
+> Import migration guide: [naming-migration.md](naming-migration.md).
 
 ## Installation
 

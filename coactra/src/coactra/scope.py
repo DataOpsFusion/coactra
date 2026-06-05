@@ -42,16 +42,7 @@ def is_safe_path_component(value: str) -> bool:
 
 
 class _TenantNamespaceScope(BaseModel):
-    """Canonical pydantic base for ``tenant_id`` + ``namespace`` capability scopes.
-
-    The agent, jobs.work, and jobs.workflow packages share an identical scope shape:
-    an immutable, hashable ``(tenant_id, namespace)`` key with a slash-joined ``key``.
-    Each exposes it under its own ``Scope`` name (and module path) by subclassing this
-    base, so the shape lives in exactly one place. Note this is intentionally distinct
-    from :class:`CoactraScope` (a frozen dataclass with a different, colon-joined key
-    and reserved-char validation); these capability scopes are pydantic models whose
-    public contract (slash key, pydantic validation) predates the canonical DTO.
-    """
+    """Shared pydantic base for tenant_id + namespace capability scopes."""
 
     model_config = {"frozen": True}
 
@@ -138,8 +129,6 @@ class CoactraScope:
         }
 
 
-# Canonical name for the composed scope DTO. ``CoactraScope`` is kept as a
-# documented alias for back-compat (kernel/plugins, homelab-mcp, examples).
 Scope = CoactraScope
 
 __all__ = [
