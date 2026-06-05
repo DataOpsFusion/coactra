@@ -10,8 +10,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 _RESERVED = {":", "*", "\x00"}
 _PATH_RESERVED = {"/", "\\"}
+# Components that must be a single, non-escaping path segment (workspace desks).
+_PATH_INVALID = {"/", "\\", "\x00"}
+_PATH_RESERVED_NAMES = {".", ".."}
 
 
 def _validate_component(name: str, value: str, *, path_safe: bool = False) -> None:
@@ -21,6 +26,41 @@ def _validate_component(name: str, value: str, *, path_safe: bool = False) -> No
     if any(ch in value for ch in invalid):
         chars = "".join(sorted(invalid))
         raise ValueError(f"{name} must not contain reserved characters: {chars!r}")
+
+
+def is_safe_path_component(value: str) -> bool:
+    """Return True if ``value`` is a single, non-escaping path segment.
+
+    Shared rule backing per-tenant/per-agent workspace desks: a value must not be
+    ``.``/``..`` and must not contain a path separator or NUL byte, so it can never
+    escape its desk root. This is the canonical home for the rule; capability Scope
+    classes delegate their path validation here.
+    """
+    if value in _PATH_RESERVED_NAMES:
+        return False
+    return not any(ch in value for ch in _PATH_INVALID)
+
+
+class _TenantNamespaceScope(BaseModel):
+    """Canonical pydantic base for ``tenant_id`` + ``namespace`` capability scopes.
+
+    The agent, jobs.work, and jobs.workflow packages share an identical scope shape:
+    an immutable, hashable ``(tenant_id, namespace)`` key with a slash-joined ``key``.
+    Each exposes it under its own ``Scope`` name (and module path) by subclassing this
+    base, so the shape lives in exactly one place. Note this is intentionally distinct
+    from :class:`CoactraScope` (a frozen dataclass with a different, colon-joined key
+    and reserved-char validation); these capability scopes are pydantic models whose
+    public contract (slash key, pydantic validation) predates the canonical DTO.
+    """
+
+    model_config = {"frozen": True}
+
+    tenant_id: str = Field(min_length=1)
+    namespace: str = Field(default="default", min_length=1)
+
+    @property
+    def key(self) -> str:
+        return f"{self.tenant_id}/{self.namespace}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,4 +138,12 @@ class CoactraScope:
         }
 
 
-__all__ = ["CoactraScope"]
+# Canonical name for the composed scope DTO. ``CoactraScope`` is kept as a
+# documented alias for back-compat (kernel/plugins, homelab-mcp, examples).
+Scope = CoactraScope
+
+__all__ = [
+    "Scope",
+    "CoactraScope",
+    "is_safe_path_component",
+]
