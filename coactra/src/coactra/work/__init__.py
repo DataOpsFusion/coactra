@@ -1,11 +1,18 @@
-"""Compatibility alias for :mod:`coactra.jobs.work`.
-
-Install ``coactra-jobs`` and prefer ``coactra.jobs`` or ``coactra.jobs.work`` for new code.
-"""
+"""Deprecated shim — import from ``coactra.jobs`` or ``coactra.jobs.work`` instead."""
 from __future__ import annotations
 
+import warnings
 from importlib import import_module
 import sys
+
+_WARNED = False
+if not _WARNED:
+    warnings.warn(
+        "coactra.work is deprecated; import from coactra.jobs / coactra.directory instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _WARNED = True
 
 _impl = import_module("coactra.jobs.work")
 for _suffix in (

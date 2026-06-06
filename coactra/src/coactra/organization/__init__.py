@@ -1,11 +1,18 @@
-"""Compatibility alias for :mod:`coactra.directory`.
-
-Install ``coactra-directory`` and prefer ``coactra.directory`` for new code.
-"""
+"""Deprecated shim — import from ``coactra.directory`` instead."""
 from __future__ import annotations
 
+import warnings
 from importlib import import_module
 import sys
+
+_WARNED = False
+if not _WARNED:
+    warnings.warn(
+        "coactra.organization is deprecated; import from coactra.jobs / coactra.directory instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _WARNED = True
 
 _impl = import_module("coactra.directory")
 for _suffix in (
