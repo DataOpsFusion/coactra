@@ -4,17 +4,23 @@ This module provides a lightweight ``TokenSource`` abstraction — fetch and
 cache a bearer token; nothing more. It is intentionally separate from the
 RFC 8693 token-*exchange* flow in ``coactra.agent.identity``.
 
-The ``[oauth]`` extra (``httpx``) is **not** required at import time.
-``httpx`` is imported lazily inside ``oidc()`` so plain ``import coactra``
-stays light.
+``httpx`` is **not** required at import time for plain ``import coactra``:
+this module is itself lazily loaded. ``BearerAuth`` subclasses ``httpx.Auth``
+and is available once the ``[agent]`` or ``[oauth]`` extra is installed.
+``oidc()`` also imports ``httpx`` lazily inside the token fetch method.
 """
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
-from typing import Any, Protocol, runtime_checkable
+from collections.abc import AsyncGenerator, Callable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-__all__ = ["TokenSource", "StaticToken", "oidc"]
+import httpx
+
+if TYPE_CHECKING:
+    pass  # kept for potential future annotations
+
+__all__ = ["TokenSource", "StaticToken", "BearerAuth", "oidc"]
 
 
 # ---------------------------------------------------------------------------
@@ -28,6 +34,30 @@ class TokenSource(Protocol):
     async def token(self) -> str:
         """Return a currently-valid bearer token."""
         ...
+
+
+# ---------------------------------------------------------------------------
+# BearerAuth — httpx.Auth subclass that injects a bearer token per request
+# ---------------------------------------------------------------------------
+
+class BearerAuth(httpx.Auth):
+    """An ``httpx.Auth`` subclass that injects a bearer token per request.
+
+    Calls ``source.token()`` on every async auth flow so tokens are
+    auto-refreshed without any additional caching layer here — caching is
+    the ``TokenSource``'s responsibility (e.g. ``_OidcTokenSource``).
+    """
+
+    def __init__(self, source: TokenSource) -> None:
+        self._source = source
+
+    async def async_auth_flow(
+        self, request: httpx.Request
+    ) -> AsyncGenerator[httpx.Request, httpx.Response]:
+        """Set Authorization header then yield the request."""
+        token = await self._source.token()
+        request.headers["Authorization"] = f"Bearer {token}"
+        yield request
 
 
 # ---------------------------------------------------------------------------
@@ -91,8 +121,6 @@ class _OidcTokenSource:
         http = self._http
         if http is None:
             # Lazy default: build a one-shot httpx.AsyncClient call
-            import httpx  # noqa: PLC0415
-
             async def _default_http(token_url: str, frm: dict) -> dict:
                 async with httpx.AsyncClient() as client:
                     resp = await client.post(token_url, data=frm)

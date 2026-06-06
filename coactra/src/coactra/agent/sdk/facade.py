@@ -53,13 +53,17 @@ class Agent:
                      runtime: AgentRuntimePort | None = None,
                      api_base: str | None = None,
                      api_key: str | None = None,
+                     gateway: str | None = None,
+                     auth: Any = None,
                      **defaults: Any) -> "Agent":
         if runtime is not None:
             rt = runtime
         else:
             rt = PydanticAIRuntime(
                 model=model, instructions=instructions, tools=tools,
-                api_base=api_base, api_key=api_key, **defaults,
+                api_base=api_base, api_key=api_key,
+                gateway=gateway, auth=auth,
+                **defaults,
             )
         return cls(rt)
 
@@ -79,8 +83,9 @@ class Agent:
         return result.output if resolved is not None else result.text
 
     async def aclose(self) -> None:
-        # Slice 1 has no network resources to close; later slices close MCP/A2A clients here.
-        return None
+        """Close any open runtime resources (e.g. gateway httpx client)."""
+        if hasattr(self._runtime, "aclose"):
+            await self._runtime.aclose()
 
     async def __aenter__(self) -> "Agent":
         return self
