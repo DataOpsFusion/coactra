@@ -8,12 +8,13 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-__all__ = ["Agent", "Run", "Skill", "StaticToken", "oidc"]
+__all__ = ["Agent", "Run", "Skill", "StaticToken", "Team", "oidc"]
 
 _SDK_EXPORTS = frozenset({"Agent", "Run"})
 _AUTH_EXPORTS = frozenset({"StaticToken", "oidc"})
 _SKILLS_EXPORTS = frozenset({"Skill"})
-_LAZY_EXPORTS = _SDK_EXPORTS | _AUTH_EXPORTS | _SKILLS_EXPORTS
+_TEAM_EXPORTS = frozenset({"Team"})
+_LAZY_EXPORTS = _SDK_EXPORTS | _AUTH_EXPORTS | _SKILLS_EXPORTS | _TEAM_EXPORTS
 
 
 def __getattr__(name: str) -> Any:
@@ -25,5 +26,8 @@ def __getattr__(name: str) -> Any:
     if name in _SKILLS_EXPORTS:
         skills = import_module("coactra.agent.sdk.skills")
         return getattr(skills, name)
+    if name in _TEAM_EXPORTS:
+        team = import_module("coactra.agent.sdk.team")
+        return getattr(team, name)
     sdk = import_module("coactra.agent.sdk")
     return getattr(sdk, name)
