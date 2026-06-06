@@ -28,6 +28,8 @@ def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
 async def test_bearer_auth_injects_static_token() -> None:
     """BearerAuth with StaticToken sets Authorization header on first yield."""
     auth = BearerAuth(StaticToken("t1"))
+    # Must be a true httpx.Auth subclass — httpx._build_auth does isinstance(auth, Auth)
+    assert isinstance(auth, httpx.Auth)
     request = httpx.Request("GET", "http://x")
     gen = auth.async_auth_flow(request)
     yielded = await gen.__anext__()

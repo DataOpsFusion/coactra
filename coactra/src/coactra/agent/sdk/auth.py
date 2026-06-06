@@ -13,12 +13,9 @@ from __future__ import annotations
 
 import time
 from collections.abc import AsyncGenerator, Callable
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import httpx
-
-if TYPE_CHECKING:
-    pass  # kept for potential future annotations
 
 __all__ = ["TokenSource", "StaticToken", "BearerAuth", "oidc"]
 
