@@ -43,6 +43,13 @@ except ImportError:  # pragma: no cover - only when litellm/instructor missing
     Client = _MissingProviderSDK
     LiteLLMCompleter = _MissingProviderSDK
 
+from coactra.ai.lifelong import (
+    CurriculumTask,
+    ExecutableSkill,
+    LearningResult,
+    LifelongLearner,
+    SkillLibrary,
+)
 from coactra.ai.replay.engine import ReasoningEngine
 from coactra.ai.replay.gate import AdaptiveGate
 from coactra.ai.replay.models import Decision, ReasoningTrace, RecallResult
@@ -64,6 +71,11 @@ __all__ = [
     "LiteLLMEmbedding",
     "cosine",
     "ReasoningEngine",
+    "CurriculumTask",
+    "ExecutableSkill",
+    "LearningResult",
+    "LifelongLearner",
+    "SkillLibrary",
     "AdaptiveGate",
     "InMemoryStore",
     "ReasoningTrace",
