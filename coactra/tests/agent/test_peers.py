@@ -10,6 +10,7 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
 from coactra.agent import Agent
 from coactra.agent.team import Team
+from coactra.agent.domain import AgentRef
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,3 +185,60 @@ async def test_peer_tools_multiple_peers():
     for tool in tools:
         result = await tool("hello")
         assert isinstance(result, str)
+
+
+# ---------------------------------------------------------------------------
+# Test 6 — remote A2A delegation uses the provided transport
+# ---------------------------------------------------------------------------
+
+class RecordingTransport:
+    def __init__(self) -> None:
+        self.calls = []
+
+    async def send(self, dst, question, scope):
+        self.calls.append((dst, question, scope))
+        return f"remote:{dst.qualified_name}:{question}"
+
+
+async def test_peer_tools_remote_delegation_uses_transport_when_unresolved():
+    """Unresolved peers can be delegated to remotely through an A2A transport."""
+    from coactra.agent.peers import peer_tools
+
+    transport = RecordingTransport()
+    tools = peer_tools(
+        [AgentRef(tenant_id="acme", agent_id="security-agent")],
+        resolve=lambda name: None,
+        transport=transport,
+        me="sre-1",
+        tenant="acme",
+    )
+
+    assert tools[0].__name__ == "ask_security_agent"
+
+    result = await tools[0]("status?")
+
+    assert result == "remote:acme/security-agent:status?"
+    assert len(transport.calls) == 1
+    dst, question, scope = transport.calls[0]
+    assert dst == AgentRef(tenant_id="acme", agent_id="security-agent")
+    assert question == "status?"
+    assert scope.tenant_id == "acme"
+
+
+async def test_peer_tools_remote_cross_tenant_is_denied_before_transport():
+    """Remote A2A delegation is still same-tenant gated before the wire."""
+    from coactra.agent.peers import peer_tools
+
+    transport = RecordingTransport()
+    tools = peer_tools(
+        [AgentRef(tenant_id="globex", agent_id="external-agent")],
+        resolve=lambda name: None,
+        transport=transport,
+        me="sre-1",
+        tenant="acme",
+    )
+
+    result = await tools[0]("secret")
+
+    assert "not permitted" in result.lower() or "denied" in result.lower()
+    assert transport.calls == []
