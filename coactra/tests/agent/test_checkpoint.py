@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from coactra.agent.workflow import Approval, StepResult, WorkflowRun
 from coactra.agent.checkpoint import (
     InMemoryCheckpointStore,
+    LangGraphCheckpointStore,
     run_from_state,
     run_to_state,
 )
@@ -242,3 +245,56 @@ class TestSimulateRestart:
         assert reconstructed.results == []
         assert reconstructed.pending_index == 0
         assert reconstructed.status == "interrupted"
+
+
+# ---------------------------------------------------------------------------
+# 5. Durable LangGraph store — persists across store/process recreation
+# ---------------------------------------------------------------------------
+
+class _FakeAgent:
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    async def run(self, instruction: str) -> str:
+        return f"{self._name}: {instruction}"
+
+
+class _PinnedTeam:
+    def __init__(self) -> None:
+        self._members = {
+            "alpha": _FakeAgent("alpha"),
+            "beta": _FakeAgent("beta"),
+        }
+
+    def member(self, name: str):
+        return self._members.get(name)
+
+    def match(self, needs: str):
+        return None
+
+
+@pytest.mark.asyncio
+async def test_langgraph_checkpoint_store_resumes_workflow_across_restart(tmp_path):
+    pytest.importorskip("langgraph.checkpoint.sqlite")
+    from coactra.agent.workflow import Workflow, step
+
+    db = tmp_path / "checkpoints.sqlite"
+    run_id = "restartable-run"
+    team = _PinnedTeam()
+    wf = Workflow("restartable", steps=[
+        step("collect evidence", agent="alpha"),
+        step("apply change", agent="beta", approve=True),
+    ])
+
+    first_store = LangGraphCheckpointStore(db)
+    interrupted = await wf.run(team, checkpoint=first_store, run_id=run_id)
+
+    assert interrupted.status == "interrupted"
+    assert interrupted.pending_index == 1
+
+    restarted_store = LangGraphCheckpointStore(db)
+    final = await wf.resume_from(restarted_store, run_id, team, decision=True)
+
+    assert final.status == "completed"
+    assert [r.agent for r in final.results] == ["alpha", "beta"]
+    assert [r.status for r in final.results] == ["done", "done"]
