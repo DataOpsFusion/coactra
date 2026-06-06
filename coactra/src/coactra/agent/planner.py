@@ -85,6 +85,22 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
 # plan_playbook
 # ---------------------------------------------------------------------------
 
+def _planner_client_from_team(team: Any) -> Any:
+    """Build the default planner client from the first team agent model config."""
+    from coactra.ai import Client  # lazy import — keeps top-level coactra import light
+
+    for member in getattr(team, "_members", []):
+        runtime = getattr(member, "_runtime", None)
+        model = getattr(runtime, "_model", None)
+        model_id = getattr(model, "_model_id", None)
+        if not isinstance(model_id, str) or not model_id:
+            continue
+        kwargs = dict(getattr(model, "_call_kwargs", {}) or {})
+        return Client(model=model_id, **kwargs)
+
+    return Client(model="gpt-4o-mini")
+
+
 def plan_playbook(
     goal: str,
     team: Any,
@@ -112,8 +128,7 @@ def plan_playbook(
         (``needs`` set) ready for :class:`~coactra.agent.workflow.Workflow` execution.
     """
     if client is None:
-        from coactra.ai import Client  # lazy import — not triggered when fake injected
-        client = Client(model="gpt-4o-mini")
+        client = _planner_client_from_team(team)
 
     cards = team.roster()
     prompt = _build_prompt(goal, cards)

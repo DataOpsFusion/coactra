@@ -180,6 +180,54 @@ async def test_run_goal_miss_no_store_still_runs(team):
     assert len(run.results) == 1
 
 
+async def test_run_goal_without_client_derives_planner_client_from_team_model_config(monkeypatch):
+    """run_goal derives the planner Client from team agents when client is omitted."""
+    cert = await Agent.create(
+        model="openai/qwen3.6-plus",
+        api_base="https://opencode.ai/zen/go/v1",
+        api_key="oc-test-key",
+        name="cert-agent",
+        skills=[Skill("cert.rotate", description="rotate TLS certs")],
+    )
+    deploy = await Agent.create(
+        model="openai/qwen3.6-plus",
+        api_base="https://opencode.ai/zen/go/v1",
+        api_key="oc-test-key",
+        name="deploy-agent",
+        skills=[Skill("infra.deploy", description="deploy services")],
+    )
+
+    async def _fake_run(message: str, **kwargs) -> str:
+        return f"ran: {message}"
+
+    cert.run = _fake_run
+    deploy.run = _fake_run
+    team = Team([cert, deploy])
+
+    captured: list[dict] = []
+
+    class CapturingClient:
+        def __init__(self, **kwargs) -> None:
+            captured.append(kwargs)
+
+        def structured(self, schema, prompt, **kwargs):
+            return PlannedPlan(steps=[
+                PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
+                PlannedStep(instruction="Redeploy the service", needs="infra.deploy"),
+            ])
+
+    monkeypatch.setattr("coactra.ai.Client", CapturingClient)
+
+    run = await Workflow.run_goal("rotate cert and redeploy", team)
+
+    assert run.status == "completed"
+    assert captured == [{
+        "model": "openai/qwen3.6-plus",
+        "api_base": "https://opencode.ai/zen/go/v1",
+        "api_key": "oc-test-key",
+    }]
+
+
 async def test_run_goal_failed_run_does_not_save_candidate(team):
     """If the planned run fails, save_candidate must NOT be called."""
     store = InMemoryPlaybookStore()
