@@ -114,7 +114,7 @@ reinvent mem0/langgraph by accident.
 > Headline: wrap the solved layers (model calls, memory engines, sandboxes, MCP/A2A
 > protocols); build thin connector, composition, and policy layers on top. Nothing here
 > re-implements a backend; the value is the small contracts between them. See
-> [interfaces.md](interfaces.md) for the application-facing API map.
+> [API Index](../API_INDEX.md) for the application-facing API map.
 
 ## The capabilities
 
