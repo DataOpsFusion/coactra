@@ -35,6 +35,10 @@ class Team:
     policy:
         Callable ``(src_agent, dst_agent) -> bool`` determining whether *src*
         may call *dst*.  Defaults to same-tenant policy.
+    embedder:
+        Optional callable used by semantic matching.  Pass a configured
+        ``LiteLLMEmbedding`` or compatible function for provider-specific
+        embedding endpoints.
     """
 
     def __init__(
@@ -43,10 +47,12 @@ class Team:
         *,
         match: str = "keyword",
         policy: Callable[[Any, Any], bool] | None = None,
+        embedder: Any = None,
     ) -> None:
         self._members: list[Any] = list(members)
         self._mode: str = match
         self._policy: Callable[[Any, Any], bool] = policy if policy is not None else _default_policy
+        self._embedder: Any = embedder
 
     # ------------------------------------------------------------------
     # Capability matching
@@ -57,7 +63,7 @@ class Team:
 
         Delegates to :func:`match_agent` with the configured mode.
         """
-        return match_agent(needs, self._members, mode=self._mode)
+        return match_agent(needs, self._members, mode=self._mode, embedder=self._embedder)
 
     # ------------------------------------------------------------------
     # Exact-name lookup
