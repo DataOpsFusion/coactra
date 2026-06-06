@@ -39,7 +39,7 @@ def _require_sqlalchemy():
         from sqlalchemy.exc import IntegrityError
     except ImportError as exc:  # pragma: no cover - environment dependent
         raise ImportError(
-            "SqlWorkStore requires SQLAlchemy; install with coactra-jobs[sql]"
+            "SqlWorkStore requires SQLAlchemy; install with coactra[sql]"
         ) from exc
     return {
         "DateTime": DateTime,

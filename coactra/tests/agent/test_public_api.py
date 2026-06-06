@@ -1,12 +1,14 @@
 import asyncio
-import warnings
+import importlib.metadata
+
+import pytest
 
 import coactra.agent as a
 from coactra.agent.ports import FakeAI, FakeMemory, FakeOrganization
 
 
-def test_version_is_v2():
-    assert a.__version__ == "0.2.0"
+def test_version_matches_distribution_metadata():
+    assert a.__version__ == importlib.metadata.version("coactra")
 
 
 def test_public_surface_is_stable_root_api():
@@ -68,11 +70,17 @@ def test_public_surface_is_stable_root_api():
     assert "build_a2a_app" not in a.__all__
 
 
-def test_deprecated_root_internal_access_still_warns_for_migration():
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        assert a.FakeAI is FakeAI
-    assert any("deprecated at the package root" in str(item.message) for item in caught)
+def test_deprecated_agent_root_compat_imports_warn():
+    with pytest.warns(DeprecationWarning, match="coactra.agent.FakeAI is deprecated"):
+        fake_ai = a.FakeAI
+    with pytest.warns(DeprecationWarning, match="coactra.agent.ToolTrie is deprecated"):
+        tool_trie = a.ToolTrie
+    with pytest.warns(DeprecationWarning, match="coactra.agent.build_a2a_app is deprecated"):
+        build_a2a_app = a.build_a2a_app
+
+    assert fake_ai is FakeAI
+    assert tool_trie.__name__ == "ToolTrie"
+    assert build_a2a_app.__name__ == "build_a2a_app"
 
 
 def test_removed_v01_names_are_gone():

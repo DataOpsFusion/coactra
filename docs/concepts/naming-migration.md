@@ -52,7 +52,7 @@ docs/                         # MkDocs site
 ## Examples and Docs
 
 - Work scripts: `examples/work/`
-- Runnable projects: `examples/projects/` (e.g. `support_desk` for agent + work + memory)
+- Runnable projects: `examples/projects/` (e.g. `ticket_triage` for agent + work + memory)
 - Operations guide: [Work Orders](../operations/work-orders.md)
 
 Shims will be removed only after a published deprecation window. homelab-mcp and

@@ -5,9 +5,9 @@ from __future__ import annotations
 from importlib import import_module
 from types import ModuleType
 
+from coactra.errors import MissingExtraError
 
-class MissingExtraError(ImportError):
-    """Raised when an integration is used without its optional dependency."""
+__all__ = ["MissingExtraError"]
 
 
 def optional_module(module: str, *, extra: str, package: str | None = None) -> ModuleType:
@@ -17,5 +17,5 @@ def optional_module(module: str, *, extra: str, package: str | None = None) -> M
         install = package or extra
         raise MissingExtraError(
             f"{module!r} requires the optional {extra!r} integration; "
-            f"install with: pip install coactra-jobs[{install}]"
+            f"install with: pip install coactra[{install}]"
         ) from exc

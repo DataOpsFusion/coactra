@@ -1,7 +1,8 @@
 import pytest
 
-from coactra.jobs import AuditContext, Scope, WorkManager, WorkOrder
-from coactra.jobs.adapters import MCPTaskNotTerminalError, MCPTasksAdapter, to_mcp_task
+from coactra.jobs import Scope, WorkManager, WorkOrder
+from coactra.jobs.work import AuditContext
+from coactra.jobs.work.adapters import MCPTaskNotTerminalError, MCPTasksAdapter, to_mcp_task
 
 
 def test_plan_execute_inspect_returns_stable_receipt_and_audit_context():

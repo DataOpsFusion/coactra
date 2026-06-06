@@ -4,13 +4,13 @@ This policy exists so Coactra can stay a long-lived thin library suite instead o
 
 ## Versioning Model
 
-Until v1, package APIs may still change, but public changes should be intentional and documented. After v1, stable public APIs follow semantic versioning:
+Coactra publishes **one distribution** (`coactra` on PyPI). Until v1, APIs may still change, but public changes should be intentional and documented. After v1, stable public APIs follow semantic versioning:
 
 - patch: compatible fixes only
 - minor: compatible additions and deprecations
 - major: removals or breaking changes to stable APIs
 
-Packages may keep independent versions, but the repo should publish a compatibility table when a release expects specific sibling package ranges.
+Optional extras (`coactra[sql]`, `coactra[langgraph]`, …) version with the main package. Document extra requirements in release notes when a release adds or changes backend dependencies.
 
 ## Stability Tiers
 
@@ -22,25 +22,24 @@ Packages may keep independent versions, but the repo should publish a compatibil
 | compatibility | old import path or alias | no new features; remove only after migration window |
 | internal | implementation detail | can change without notice |
 
+Symbol-level tiers and import paths are listed in [../API_INDEX.md](../API_INDEX.md).
+
 ## Stable Import Roots
 
-Application docs and examples should prefer:
+Application docs and examples should prefer the V1 surface documented in [../API_INDEX.md](../API_INDEX.md):
 
-- `coactra.scope`
-- `coactra.kernel`
-- `coactra.plugins`
-- `coactra.errors`
-- `coactra.ai`
-- `coactra.memory`
-- `coactra.workspace`
-- `coactra.jobs`
-- `coactra.jobs`
-- `coactra.jobs.workflow`
-- `coactra.directory`
-- `coactra.agent`
-- `coactra.agent.integrations`
+- `coactra.scope` — `CoactraScope`
+- `coactra.memory` — `Memory`, `make_backend`
+- `coactra.jobs` — `WorkManager`, `WorkOrder`, `WorkScope`, `Orchestrator`, `Procedure`
+- `coactra.workspace` — `open_workspace`, `Workspace`
+- `coactra.agent` — `make_agent`, `Agent`, `Scope`, ports and collaboration policy
+- `coactra.errors` — `CoactraError`, `ErrorCode`, `MissingExtraError`
+- `coactra.ai` — `ask`, `structured`, `ReasoningEngine` (requires `coactra[ai]`)
+- `coactra.directory` — `Organization`, `OrgStore`, `Authorizer` (requires `coactra[organization]`)
 
-Compatibility imports such as `coactra.jobs` and `coactra.jobs.workflow` should remain documented as aliases, not preferred roots.
+Beta roots (`coactra.kernel`, `coactra.plugins`) and experimental workflow symbols (`DurableLangGraphEngine`, `build_graph`, …) are public but not stable-tier. See the API index for the full list.
+
+Compatibility shims (`coactra.orchestration`, `coactra.work`, `coactra.workflow`, `coactra.organization`) remain documented in [../concepts/naming-migration.md](../concepts/naming-migration.md); do not use them in new code.
 
 ## Deprecation Rules
 
@@ -76,6 +75,21 @@ Every workflow runtime adapter should declare one of:
 | host-owned | Coactra passes the request through; host workflow code owns real resume behavior |
 
 This matters because LangGraph, Temporal, and Prefect do not expose identical durability shapes.
+
+## Publishing
+
+PyPI releases use **tag-based Trusted Publishing** via `.github/workflows/release.yml`:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The pushed tag is the package version source of truth; `hatch-vcs` turns `v0.2.0` into `coactra==0.2.0`. Do not edit `coactra/pyproject.toml` for each release version.
+
+Configure the PyPI Trusted Publisher for workflow `release.yml`, environment `pypi`, project `coactra`.
+
+Do **not** publish on every merge to `main`. The legacy `workflow.yml` push trigger is disabled; it remains as a manual build-only workflow for smoke checks. See [../operations/publishing.md](../operations/publishing.md).
 
 ## Changelog Categories
 

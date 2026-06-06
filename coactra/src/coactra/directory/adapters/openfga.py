@@ -19,7 +19,8 @@ def _sdk_request(request: AuthorizationRequest) -> Any:
         from openfga_sdk.client.models import ClientCheckRequest
     except ImportError as exc:  # pragma: no cover - depends on optional installation
         raise MissingExtraError(
-            "OpenFGAAuthorizer requires coactra-directory[openfga]"
+            "OpenFGAAuthorizer requires coactra[openfga]; "
+            "install with: pip install coactra[openfga]"
         ) from exc
     return ClientCheckRequest(
         user=request.subject,

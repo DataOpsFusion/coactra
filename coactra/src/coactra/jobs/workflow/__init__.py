@@ -7,6 +7,8 @@ workflow owns when/what; organization routes who; agent carries the talk. Induct
 trace-faithful and deterministic; update() is manual — we do NOT overclaim self-learning.
 """
 
+from coactra._version import distribution_version
+
 from coactra.jobs.workflow.runtime import (
     ApprovalStatus,
     ApprovalStore,
@@ -100,7 +102,7 @@ from coactra.jobs.workflow.routing import (
     TenantWorkflowEngineRouter,
 )
 
-__version__ = "0.1.0"
+__version__ = distribution_version()
 
 __all__ = [
     "__version__",

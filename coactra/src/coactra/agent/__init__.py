@@ -2,8 +2,7 @@
 
 The stable root API exposes the agent facade, local domain types, policy/identity
 Protocols, and composition helpers. Test fakes, A2A server helpers, and internal data
-structures remain importable from their concrete modules and are available at the root only
-through deprecated compatibility lookups.
+structures live in their concrete submodules.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ import warnings
 from importlib import import_module
 from typing import Any
 
+from coactra._version import distribution_version
 from coactra.agent.agent import Agent
 from coactra.agent.collaboration import (
     A2ATransportPort,
@@ -60,7 +60,6 @@ from coactra.agent.ports import (
     WorkPort,
 )
 from coactra.agent.routing import TenantAgentRouter
-from coactra.agent.sdk import Agent as SdkAgent  # noqa: F401  -- elegant-facade re-export, deliberately kept out of __all__ (public-surface test pins __all__)
 
 __all__ = [
     "__version__",
@@ -112,37 +111,31 @@ __all__ = [
     "TenantAgentRouter",
 ]
 
-_DEPRECATED_ROOT_EXPORTS: dict[str, tuple[str, str]] = {
-    "ToolTrie": ("coactra.agent.mounting", "ToolTrie"),
+__version__ = distribution_version()
+
+_COMPAT_EXPORTS: dict[str, tuple[str, str]] = {
     "FakeAI": ("coactra.agent.ports", "FakeAI"),
     "FakeMemory": ("coactra.agent.ports", "FakeMemory"),
     "FakeWorkspace": ("coactra.agent.ports", "FakeWorkspace"),
     "FakeWorkflow": ("coactra.agent.ports", "FakeWorkflow"),
     "FakeOrganization": ("coactra.agent.ports", "FakeOrganization"),
     "FakeWork": ("coactra.agent.ports", "FakeWork"),
-    "FakeOrgNode": ("coactra.agent.ports", "FakeOrgNode"),
-    "FakeMember": ("coactra.agent.ports", "FakeMember"),
-    "A2AInboundRequest": ("coactra.agent.adapters.a2a_server", "A2AInboundRequest"),
-    "A2ARequestVerifier": ("coactra.agent.adapters.a2a_server", "A2ARequestVerifier"),
+    "ToolTrie": ("coactra.agent.mounting", "ToolTrie"),
     "build_a2a_app": ("coactra.agent.adapters.a2a_server", "build_a2a_app"),
     "make_a2a_executor": ("coactra.agent.adapters.a2a_server", "make_a2a_executor"),
-    "parse_a2a_envelope": ("coactra.agent.adapters.a2a_server", "parse_a2a_envelope"),
-    "render_task_text": ("coactra.agent.adapters.a2a_server", "render_task_text"),
+    "A2AInboundRequest": ("coactra.agent.adapters.a2a_server", "A2AInboundRequest"),
+    "A2ARequestVerifier": ("coactra.agent.adapters.a2a_server", "A2ARequestVerifier"),
 }
 
 
 def __getattr__(name: str) -> Any:
-    target = _DEPRECATED_ROOT_EXPORTS.get(name)
+    target = _COMPAT_EXPORTS.get(name)
     if target is None:
-        raise AttributeError(name)
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     module_name, attr_name = target
     warnings.warn(
-        f"coactra.agent.{name} is deprecated at the package root; "
-        f"import {attr_name} from {module_name} instead.",
+        f"coactra.agent.{name} is deprecated; import {attr_name} from {module_name} instead",
         DeprecationWarning,
         stacklevel=2,
     )
     return getattr(import_module(module_name), attr_name)
-
-
-__version__ = "0.2.0"

@@ -24,7 +24,8 @@ Use `SqlWorkStore` for backend services, long-running workers, serverless resume
 SQLite is useful for local development:
 
 ```python
-from coactra.jobs import Scope, SqlWorkStore, WorkManager, WorkOrder
+from coactra.jobs import Scope, WorkManager, WorkOrder
+from coactra.jobs.work import SqlWorkStore
 
 store = SqlWorkStore.from_url("sqlite:///./coactra-jobs.db")
 manager = WorkManager(store)
@@ -34,7 +35,7 @@ scope = Scope(tenant_id="tenant-a", namespace="prod")
 Postgres-compatible deployments should use a SQLAlchemy URL and run the same store API:
 
 ```python
-from coactra.jobs import SqlWorkStore
+from coactra.jobs.work import SqlWorkStore
 
 store = SqlWorkStore.from_url(
     "postgresql+psycopg://coactra:${COACTRA_DB_PASSWORD}@db.internal:5432/coactra"

@@ -9,6 +9,8 @@ capability-manifest REFERENCE. It does NOT mount MCP capabilities (the agent run
 and does NOT own hierarchy/policy (organization does).
 """
 
+from coactra._version import distribution_version
+
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.backends.local import (
     LocalFilesystemBackend,
@@ -38,4 +40,4 @@ __all__ = [
     "open_workspace",
 ]
 
-__version__ = "0.1.0"
+__version__ = distribution_version()

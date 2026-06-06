@@ -1,5 +1,6 @@
 from coactra.directory import CrossTenantError
 from coactra.directory.errors import MissingExtraError
+from coactra.errors import ConfigError
 
 
 def test_cross_tenant_error_is_value_error():
@@ -7,5 +8,5 @@ def test_cross_tenant_error_is_value_error():
     assert issubclass(CrossTenantError, ValueError)
 
 
-def test_missing_extra_error_is_runtime_error():
-    assert issubclass(MissingExtraError, RuntimeError)
+def test_missing_extra_error_is_config_error():
+    assert issubclass(MissingExtraError, ConfigError)

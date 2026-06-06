@@ -2,7 +2,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from coactra.jobs import (
+from coactra.jobs import Scope, WorkManager, WorkOrder
+from coactra.jobs.work import (
     Artifact,
     ArtifactPart,
     Budget,
@@ -16,10 +17,7 @@ from coactra.jobs import (
     InvalidTransitionError,
     LeaseError,
     RetryPolicy,
-    Scope,
-    WorkManager,
     WorkNotFoundError,
-    WorkOrder,
     WorkStatus,
 )
 

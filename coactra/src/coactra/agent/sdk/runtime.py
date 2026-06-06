@@ -1,7 +1,7 @@
 """AgentRuntimePort + the default pydantic-ai runtime (Slice 1: run + stream)."""
 from __future__ import annotations
 
-from typing import Any, AsyncIterator, Protocol, runtime_checkable
+from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
 
 from pydantic_ai import Agent as PydAgent
 
@@ -15,7 +15,6 @@ from coactra.agent.sdk.events import (
     ToolResult,
     Usage,
 )
-from coactra.agent.sdk.models import normalize_model_id
 
 
 @runtime_checkable
@@ -24,7 +23,8 @@ class AgentRuntimePort(Protocol):
                   message_history: list[Any] | None = None) -> RunResult: ...
 
     def stream(self, prompt: str, *, run_id: str, output_type: type | None = None,
-               message_history: list[Any] | None = None) -> AsyncIterator[Event]: ...
+               message_history: list[Any] | None = None,
+               on_result: Callable[[RunResult], None] | None = None) -> AsyncIterator[Event]: ...
 
 
 class PydanticAIRuntime:
@@ -33,7 +33,13 @@ class PydanticAIRuntime:
 
     def __init__(self, *, model: Any, instructions: str | None = None,
                  tools: list[Any] | None = None) -> None:
-        self._model = normalize_model_id(model) if isinstance(model, str) else model
+        if isinstance(model, str):
+            # Route string ids through litellm + coactra.ai's thinking-model handling.
+            # Lazy import so model-instance usage stays free of the litellm dependency.
+            from coactra.agent.sdk.litellm_model import LiteLLMModel
+            self._model: Any = LiteLLMModel(model)
+        else:
+            self._model = model
         self._instructions = instructions
         self._tools = tools or []
 
@@ -43,11 +49,15 @@ class PydanticAIRuntime:
             kwargs["output_type"] = output_type
         return PydAgent(self._model, **kwargs)
 
-    def _usage(self, result: Any, run_id: str) -> Usage | None:
-        # pydantic-ai 1.105: `result.usage` is a property (calling it is deprecated).
+    def _usage(self, result: Any, run_id: str, *, seq: int = 0) -> Usage | None:
+        # pydantic-ai 1.105: `result.usage` is a property (the callable form is deprecated).
+        # RunUsage has no `total_tokens` field, so fall back to input + output.
         try:
             u = result.usage
-            return Usage(run_id=run_id, seq=0, tokens=getattr(u, "total_tokens", 0) or 0)
+            tokens = getattr(u, "total_tokens", 0) or (
+                (getattr(u, "input_tokens", 0) or 0) + (getattr(u, "output_tokens", 0) or 0)
+            )
+            return Usage(run_id=run_id, seq=seq, tokens=tokens)
         except Exception:
             return None
 
@@ -65,7 +75,8 @@ class PydanticAIRuntime:
         )
 
     async def stream(self, prompt: str, *, run_id: str, output_type: type | None = None,
-                     message_history: list[Any] | None = None) -> AsyncIterator[Event]:
+                     message_history: list[Any] | None = None,
+                     on_result: Callable[[RunResult], None] | None = None) -> AsyncIterator[Event]:
         """Drive the pydantic-ai agent graph and yield coactra event DTOs.
 
         Maps pydantic-ai 1.105 graph nodes/events to the coactra event contract:
@@ -73,12 +84,17 @@ class PydanticAIRuntime:
         - a completed model thinking part  → ``Thinking``
         - a function tool-call request     → ``ToolCall``  (from CallToolsNode.stream)
         - a function tool return           → ``ToolResult``(from CallToolsNode.stream)
+        - the run's token usage             → ``Usage``
         and a single terminal ``Status`` ("finished" on success, "error" on failure).
 
         Tool call/result events come only from ``CallToolsNode.stream`` so they are not
         double-emitted alongside the response parts. Model parts are read from the
         already-resolved ``model_response`` (not streamed) so this works with offline
         ``FunctionModel``s that have no ``stream_function``.
+
+        ``on_result`` (when given) receives the full ``RunResult`` derived from the same
+        iteration — output, usage, tool calls, and message history — so a caller that
+        streams and then awaits the result gets the rich result, not a text-only digest.
         """
         from pydantic_ai.messages import (
             FunctionToolCallEvent,
@@ -91,6 +107,7 @@ class PydanticAIRuntime:
 
         agent = self._build(output_type)
         seq = 0
+        tool_calls: list[ToolCall] = []
         try:
             async with agent.iter(
                 prompt, output_type=output_type, message_history=message_history,
@@ -114,12 +131,14 @@ class PydanticAIRuntime:
                             async for ev in tool_stream:
                                 if isinstance(ev, FunctionToolCallEvent):
                                     call = ev.part
-                                    yield ToolCall(
+                                    tc = ToolCall(
                                         run_id=run_id, seq=seq,
                                         id=getattr(call, "tool_call_id", "") or "",
                                         name=getattr(call, "tool_name", "") or "",
                                         args=call.args_as_dict() if isinstance(call, ToolCallPart) else {},
                                     )
+                                    tool_calls.append(tc)
+                                    yield tc
                                     seq += 1
                                 elif isinstance(ev, FunctionToolResultEvent):
                                     part = ev.part
@@ -132,7 +151,25 @@ class PydanticAIRuntime:
                                         error=None if is_return else str(getattr(part, "content", "")),
                                     )
                                     seq += 1
+                # All nodes consumed: the rich result is now available.
+                result = run.result
+                usage = self._usage(result, run_id, seq=seq) if result is not None else None
+                if usage is not None:
+                    yield usage
+                    seq += 1
+                if on_result is not None and result is not None:
+                    output = result.output
+                    text = output if isinstance(output, str) else ""
+                    on_result(RunResult.finished(
+                        text=text,
+                        output=None if isinstance(output, str) else output,
+                        usage=usage,
+                        tool_calls=tuple(tool_calls),
+                        messages=tuple(result.all_messages()),
+                    ))
         except Exception:  # noqa: BLE001 - terminal error event is the contract
             yield Status(run_id=run_id, seq=seq, state="error")
+            if on_result is not None:
+                on_result(RunResult.failed("stream error"))
             return
         yield Status(run_id=run_id, seq=seq, state="finished")

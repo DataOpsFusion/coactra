@@ -67,7 +67,7 @@ class TemporalEngine:
             from temporalio.client import Client
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise MissingExtraError(
-                "TemporalEngine.connect requires coactra-jobs[temporal]"
+                "TemporalEngine.connect requires coactra[temporal]"
             ) from exc
         client = await Client.connect(target_host, namespace=namespace, **connect_options)
         return cls(client=client, workflow=workflow, task_queue=task_queue)

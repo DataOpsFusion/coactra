@@ -1,11 +1,16 @@
 # Target Architecture
 
+> **Current shape (2025+):** Coactra ships as one PyPI distribution (`coactra`).
+> Hyphenated names such as `coactra-agent` in this document refer to capability
+> **modules** (`coactra.agent`, `coactra.memory`, …) selected via extras — not separate
+> packages. See [../API_INDEX.md](../API_INDEX.md) and [../concepts/library-map.md](../concepts/library-map.md).
+
 This target architecture preserves the current project direction: a modular Python library suite for real-work agent systems. It does not propose turning Coactra into a monolithic service or replacing mature protocols like A2A, MCP, LiteLLM, Instructor, LangGraph, Graphiti, SQLAlchemy, Keycloak, or OpenFGA.
 
 ## 1. Architecture Goals
 
-1. Keep packages independently usable.
-2. Keep `coactra-agent` as the composition and policy layer.
+1. Keep capability modules independently usable via extras and ports.
+2. Keep `coactra.agent` as the composition and policy layer.
 3. Keep durable state behind explicit stores.
 4. Keep tenant isolation visible in every boundary.
 5. Keep production adapter maturity clear.
@@ -20,7 +25,7 @@ Decision:
 
 - Keep Coactra's unique surface: scope, tenant isolation, organization policy, workspace desk semantics, work-order ledger, approval/audit vocabulary, adapter maturity metadata, and cross-capability composition.
 - Delegate commodity runtime behavior: model/provider normalization, structured output retries, graph checkpointing, workflow replay/recovery, scheduling, and plugin dispatch should come from focused libraries wherever possible.
-- Do not introduce a new monolithic framework layer. If a `Kernel` concept is added later, it should be a small composition root over existing packages, not a replacement for `coactra-agent`.
+- Do not introduce a new monolithic framework layer. If a `Kernel` concept is added later, it should be a small composition root over existing modules, not a replacement for `coactra.agent`.
 
 Recommended adopt-first stack:
 
@@ -30,7 +35,7 @@ Recommended adopt-first stack:
 | Hard durable execution | Temporal adapter | Best fit for crash/retry/replay guarantees that should not be reimplemented in Coactra. |
 | Pythonic workflow deployment | Prefect adapter | Useful for deployment-triggered Python flows, but weaker than Temporal for same-thread signal/resume semantics. |
 | Typed agent/application API | Evaluate PydanticAI patterns | Good reference for typed dependencies, tools, structured output, and durable execution integrations without forcing a rewrite. |
-| Provider normalization | Keep LiteLLM/Instructor behind `coactra-ai` | Coactra should normalize provider and structured-output behavior at the adapter boundary, not reimplement model client diversity. |
+| Provider normalization | Keep LiteLLM/Instructor behind `coactra.ai` | Coactra should normalize provider and structured-output behavior at the adapter boundary, not reimplement model client diversity. |
 | Plugin system | Add only when needed; consider pluggy | Official hooks should be small and stable. Avoid ad hoc callbacks becoming hidden public APIs. |
 
 This means the next architecture work should narrow, not widen, the public API. First freeze the stable shell and port contracts; then add or mature adapters behind those ports.
@@ -41,12 +46,12 @@ This means the next architecture work should narrow, not widen, the public API. 
 
 The current package split is coherent and should stay:
 
-- `coactra-ai`: model calls, structured output, embeddings, reasoning replay.
-- `coactra-memory`: backend-neutral long-term memory.
-- `coactra-workspace`: persistent agent desk and execution policy.
-- `coactra-jobs`: durable work orders plus reusable workflow procedures.
-- `coactra-directory`: tenant/org/permission/authorization directory.
-- `coactra-agent`: composition, MCP mounting, delegated identity, collaboration policy.
+- `coactra.ai`: model calls, structured output, embeddings, reasoning replay (`coactra[ai]`).
+- `coactra.memory`: backend-neutral long-term memory.
+- `coactra.workspace`: persistent agent desk and execution policy.
+- `coactra.jobs`: durable work orders plus reusable workflow procedures.
+- `coactra.directory`: tenant/org/permission/authorization directory (`coactra[organization]`).
+- `coactra.agent`: composition, MCP mounting, delegated identity, collaboration policy (`coactra[agent]`).
 
 Evidence: `docs/concepts/library-map.md` defines these packages and their dependency shape (`docs/concepts/library-map.md:116-139`). The agent design locks ports and dependency injection (`docs/agent/DESIGN.md:11-23`).
 
@@ -54,7 +59,7 @@ Evidence: `docs/concepts/library-map.md` defines these packages and their depend
 
 Application behavior should remain plain functions over injected facades/ports. Classes should own durable state, backend boundaries, or long-lived facades.
 
-Evidence: `docs/getting-started/quickstart.md:19-28`, `docs/getting-started/quickstart.md:130-145`, `examples/function_first_agent.py:1-8`.
+Evidence: `docs/getting-started/quickstart.md`, `examples/support_ticket_agent.py`, and the scenario catalog under `docs/examples/`.
 
 ### Keep Protocols as the integration surface
 

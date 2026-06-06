@@ -3,8 +3,8 @@
 These hit external services and need credentials, so they SKIP cleanly when the env
 isn't configured (never fail). Run them by installing the extra and setting the env:
 
-    pip install coactra-memory[mem0]      # + OPENAI_API_KEY
-    pip install coactra-memory[graphiti]  # + NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD
+    pip install coactra[mem0]      # + OPENAI_API_KEY
+    pip install coactra[graphiti]  # + NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD
 """
 
 import importlib.util

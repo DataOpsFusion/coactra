@@ -21,7 +21,7 @@ def make_default_workflow_engine(**kwargs: Any) -> WorkflowEngine:
     """Build the default durable workflow engine.
 
     The default is the checkpointed LangGraph adapter because Coactra workflows
-    are agent/tool/human-interrupt shaped. Install ``coactra-jobs[langgraph]``
+    are agent/tool/human-interrupt shaped. Install ``coactra[langgraph]``
     for this path, or inject another ``WorkflowEngine`` explicitly.
     """
 
@@ -50,7 +50,7 @@ def make_workflow_engine(
             )
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise ImportError(
-                "the default workflow runtime requires coactra-jobs[langgraph]; "
+                "the default workflow runtime requires coactra[langgraph]; "
                 "install that extra or inject a WorkflowEngine explicitly"
             ) from exc
         return DurableLangGraphEngine(**kwargs)

@@ -1,4 +1,4 @@
-"""Public domain vocabulary for coactra-jobs work orders."""
+"""Public domain vocabulary for coactra work orders."""
 
 from coactra.jobs.work.domain.artifacts import Artifact, ArtifactPart, ArtifactRef, Provenance
 from coactra.jobs.work.domain.capabilities import (

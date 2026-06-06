@@ -1,6 +1,6 @@
 # coactra
 
-Convenience installer and dependency-light shell for the modular Coactra libraries. It contains shared scope, error, plugin, and Kernel/Session DTOs, but no backend business logic.
+Single-distribution package for Coactra: tenant-scoped work orders, memory, workspace, directory, AI, and agent composition with optional backend extras.
 
 Install only the capability you need:
 
@@ -16,22 +16,15 @@ The former split-package roots are compatibility paths; new installs should use
 the single `coactra` distribution plus extras.
 
 
-## Dependency-Light Shell
+## Dependency-Light Work Order
 
 ```python
-from coactra.kernel import Kernel, Task
-from coactra.scope import CoactraScope
+from coactra.jobs import WorkManager, WorkOrder, WorkScope
 
-
-def handler(context, task):
-    return {"tenant": context.scope.tenant_id, "input": dict(task.input)}
-
-
-session = (
-    Kernel.builder()
-    .with_handler("echo", handler)
-    .build()
-    .session(CoactraScope(tenant_id="acme", namespace="support"))
-)
-result = await session.run(Task("echo", {"x": 1}))
+work = WorkManager()
+scope = WorkScope(tenant_id="acme", namespace="support")
+order = work.submit(WorkOrder(scope=scope, title="Triage checkout latency"))
+print(order.id, order.status.value)
 ```
+
+`coactra.kernel` and `coactra.plugins` are experimental shells. Start with the stable facades documented in `docs/API_INDEX.md`.
