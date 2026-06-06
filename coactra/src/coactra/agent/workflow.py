@@ -188,6 +188,7 @@ class WorkflowRun:
     pending_index: int | None = None
     approvals: list[Approval] = field(default_factory=list)
     _steps: list[Step] = field(default_factory=list, repr=False)
+    thread_id: str | None = None
 
     @property
     def pending_step(self) -> Step | None:
@@ -203,6 +204,19 @@ class WorkflowRun:
         """Return the output string from every 'done' step in order."""
         return [r.output for r in self.results if r.status == "done"]
 
+
+
+class _TeamCollaborator:
+    """Adapter from old workflow ask steps to the public Team roster."""
+
+    def __init__(self, team: Any) -> None:
+        self._team = team
+
+    async def ask(self, agent: str, question: str, state: dict[str, Any]) -> str:
+        member = self._team.member(agent)
+        if member is None:
+            return ""
+        return str(await member.run(question))
 
 # ---------------------------------------------------------------------------
 # Workflow — the runner
@@ -250,6 +264,170 @@ class Workflow:
         return None
 
     # ------------------------------------------------------------------
+    # durable engine bridge — delegate to coactra.jobs.workflow engines
+    # ------------------------------------------------------------------
+
+    def _tenant_for_team(self, team: Any) -> str:
+        members = getattr(team, "_members", [])
+        if isinstance(members, dict):
+            members = list(members.values())
+        for member in members:
+            tenant = getattr(member, "_tenant", None)
+            if tenant:
+                return str(tenant)
+        return "default"
+
+    def _resolve_steps_for_engine(self, team: Any) -> list[tuple[int, Step, Any]] | WorkflowRun:
+        resolved: list[tuple[int, Step, Any]] = []
+        for i, s in enumerate(self._playbook.steps):
+            agent = self._resolve_agent(s, team)
+            if agent is None:
+                return WorkflowRun(
+                    name=self._playbook.name,
+                    status="failed",
+                    results=[StepResult(s.instruction, "", "", "failed")],
+                    _steps=self._playbook.steps,
+                )
+            resolved.append((i, s, agent))
+        return resolved
+
+    def _to_procedure(self, resolved: list[tuple[int, Step, Any]]) -> Any:
+        from coactra.jobs.workflow import Procedure, Step as ProcedureStep  # noqa: PLC0415
+
+        def node_id(i: int) -> str:
+            return f"step_{i}"
+
+        def entry_id(i: int, s: Step) -> str:
+            return f"approve_{i}" if s.approve else node_id(i)
+
+        proc_steps: list[Any] = []
+        for pos, (i, s, agent) in enumerate(resolved):
+            next_id = (
+                entry_id(resolved[pos + 1][0], resolved[pos + 1][1])
+                if pos + 1 < len(resolved)
+                else None
+            )
+            ask_id = node_id(i)
+            if s.approve:
+                proc_steps.append(
+                    ProcedureStep(id=f"approve_{i}", kind="approve", next=ask_id)
+                )
+            proc_steps.append(
+                ProcedureStep(
+                    id=ask_id,
+                    kind="ask",
+                    agent=getattr(agent, "_name", ""),
+                    question=s.instruction,
+                    next=next_id,
+                )
+            )
+        return Procedure(name=self._playbook.name, steps=proc_steps)
+
+    def _run_from_engine_snapshot(
+        self, snapshot: Any, resolved: list[tuple[int, Step, Any]]
+    ) -> WorkflowRun:
+        from coactra.jobs.workflow import WorkflowRunStatus  # noqa: PLC0415
+
+        state = getattr(snapshot, "state", {}) or {}
+        results: list[StepResult] = []
+        for i, s, agent in resolved:
+            key = f"step_{i}_result"
+            if key not in state:
+                continue
+            results.append(
+                StepResult(
+                    instruction=s.instruction,
+                    agent=getattr(agent, "_name", ""),
+                    output=str(state.get(key, "")),
+                    status="done",
+                )
+            )
+
+        status = getattr(snapshot, "status", None)
+        if (
+            status is WorkflowRunStatus.interrupted
+            or str(status) == "WorkflowRunStatus.interrupted"
+        ):
+            pending_index = None
+            interrupt = getattr(snapshot, "interrupt", None)
+            step_id = getattr(interrupt, "step_id", "") if interrupt is not None else ""
+            if step_id.startswith("approve_"):
+                try:
+                    pending_index = int(step_id.split("_", 1)[1])
+                except ValueError:
+                    pending_index = None
+            return WorkflowRun(
+                name=self._playbook.name,
+                status="interrupted",
+                results=results,
+                pending_index=pending_index,
+                _steps=self._playbook.steps,
+                thread_id=getattr(snapshot, "thread_id", None),
+            )
+
+        if status is WorkflowRunStatus.failed or str(status) == "WorkflowRunStatus.failed":
+            public_status = "failed"
+        else:
+            public_status = "completed"
+        return WorkflowRun(
+            name=self._playbook.name,
+            status=public_status,
+            results=results,
+            _steps=self._playbook.steps,
+            thread_id=getattr(snapshot, "thread_id", None),
+        )
+
+    async def _run_with_engine(
+        self, team: Any, engine: Any, *, run_id: str | None
+    ) -> WorkflowRun:
+        from coactra.jobs.workflow import RunContext, Scope  # noqa: PLC0415
+
+        resolved = self._resolve_steps_for_engine(team)
+        if isinstance(resolved, WorkflowRun):
+            return resolved
+        procedure = self._to_procedure(resolved)
+        ctx = RunContext(
+            scope=Scope(tenant_id=self._tenant_for_team(team)),
+            collaborator=_TeamCollaborator(team),
+        )
+        snapshot = await engine.start(procedure, {}, ctx, thread_id=run_id)
+        return self._run_from_engine_snapshot(snapshot, resolved)
+
+    async def resume_engine(
+        self,
+        engine: Any,
+        thread_id: str,
+        team: Any,
+        *,
+        decision: bool | dict[str, Any] | None = None,
+        state: dict[str, Any] | None = None,
+    ) -> WorkflowRun:
+        """Resume a run delegated to an old ``coactra.jobs.workflow`` engine."""
+        from coactra.jobs.workflow import RunContext, Scope  # noqa: PLC0415
+
+        resolved = self._resolve_steps_for_engine(team)
+        if isinstance(resolved, WorkflowRun):
+            return resolved
+        procedure = self._to_procedure(resolved)
+        tenant = thread_id.split(":", 1)[0] if ":" in thread_id else self._tenant_for_team(team)
+        ctx = RunContext(
+            scope=Scope(tenant_id=tenant),
+            collaborator=_TeamCollaborator(team),
+        )
+        if isinstance(decision, bool):
+            resume_decision = {"approved": decision}
+        else:
+            resume_decision = decision
+        snapshot = await engine.resume(
+            thread_id,
+            ctx,
+            procedure=procedure,
+            decision=resume_decision,
+            state=state,
+        )
+        return self._run_from_engine_snapshot(snapshot, resolved)
+
+    # ------------------------------------------------------------------
     # run
     # ------------------------------------------------------------------
 
@@ -262,6 +440,7 @@ class Workflow:
         approvals: list[Approval] | None = None,
         checkpoint: CheckpointStore | None = None,
         run_id: str | None = None,
+        engine: Any | None = None,
     ) -> WorkflowRun:
         """Run the playbook from *start* over *team*.
 
@@ -290,6 +469,13 @@ class Workflow:
         -------
         :class:`WorkflowRun`
         """
+        if engine is not None:
+            if start != 0 or ledger is not None or approvals is not None:
+                raise ValueError(
+                    "engine= runs must start from a fresh Workflow; use resume_engine()"
+                )
+            return await self._run_with_engine(team, engine, run_id=run_id)
+
         results: list[StepResult] = list(ledger) if ledger else []
         approval_log: list[Approval] = list(approvals) if approvals else []
         steps = self._playbook.steps
