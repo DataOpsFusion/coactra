@@ -1,15 +1,4 @@
-"""make_agent — the composition root.
-
-The ONE place anything is instantiated. It wires the six ports (defaulting to faithful
-in-process fakes), the token exchanger, the mount registry, and the policy-gated
-collaborator, then hands the fully-built collaborators to the `Agent` (which constructs
-nothing itself). Swap any port/transport/exchanger/policy for a real adapter to go live;
-the default path needs only pydantic and zero siblings.
-
-`me` (the agent's self-identity for collaboration) is NOT in the spec's signature, so it
-is DERIVED from `scope.namespace` by default (matching the v0.1 convention where
-namespace == agent id, e.g. `agent:platform`). Pass `me=` to override.
-"""
+"""make_agent — composition root that wires ports, mounts, and collaboration."""
 
 from __future__ import annotations
 
@@ -56,19 +45,7 @@ def make_agent(
     policy: CollaborationPolicy | None = None,
     conflict_policy: ConflictPolicy | None = None,
 ) -> Agent:
-    """Wire a fully-formed `Agent`. Every dependency defaults to an in-process fake.
-
-    Args:
-      scope: the mandatory tenant/namespace key threaded through every subsystem.
-      me: self-identity for collaboration; defaults to `scope.namespace`.
-      ai/memory/workspace/workflow/organization/work: the six capability PORTS (fakes by default).
-      mcp: optional initial mounts (`{mount_id: server}`) staged at construction — they
-           remain INVISIBLE until the first `begin_turn()`, like any mid-session mount.
-      transport: the A2A wire behind the collaboration gate (NullTransport by default).
-      exchanger: the RFC-8693 token exchanger (InProcessExchanger by default).
-      policy: the CollaborationPolicy (AllowSameTenant by default).
-      conflict_policy: tool-name conflict resolution (NamespaceByMountId by default).
-    """
+    """Wire a fully-formed ``Agent``; every dependency defaults to an in-process fake."""
     me = me if me is not None else scope.namespace
 
     ai = ai or FakeAI()
@@ -86,7 +63,6 @@ def make_agent(
         for mount_id, server in mcp.items():
             mounts.stage(mount_id, server)
 
-    # ONE policy instance, shared by Agent.can_talk() and the gated collaborator (no drift).
     collaborator = PolicyGatedCollaborator(
         transport=transport, policy=policy, scope=scope, me=me
     )

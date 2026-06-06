@@ -3,8 +3,8 @@
 Coactra is an alpha-quality Python package. Its capability modules (`coactra.ai`,
 `coactra.memory`, `coactra.workspace`, `coactra.jobs`, `coactra.directory`,
 `coactra.agent`) are designed to stay **thin orchestration layers over
-best-of-breed libraries** — see [docs/LIBRARIES.md](docs/LIBRARIES.md) for the design
-philosophy and [docs/internal/IMPROVEMENT_BACKLOG.md](docs/internal/IMPROVEMENT_BACKLOG.md)
+best-of-breed libraries** — see [docs/concepts/library-map.md](docs/concepts/library-map.md) for the design
+philosophy and [docs/maintainers/improvement-backlog.md](docs/maintainers/improvement-backlog.md)
 for the current work list.
 
 ## Layout
@@ -84,7 +84,7 @@ against `dev` and `main`. Only pushes to `main` deploy GitHub Pages.
 ## Public API and release discipline
 
 Before exposing a new public symbol, walk the checklist in
-[docs/internal/RELEASE_POLICY.md](docs/internal/RELEASE_POLICY.md) (preferred import
+[docs/maintainers/release-policy.md](docs/maintainers/release-policy.md) (preferred import
 root, stability tier, API test, contract test for Protocols/adapters, no third-party
 type leaks into the stable shell). Group changelog entries by the categories in that
 policy and add them to [CHANGELOG.md](CHANGELOG.md).

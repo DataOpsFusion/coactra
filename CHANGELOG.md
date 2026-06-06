@@ -2,7 +2,7 @@
 
 All notable changes to the Coactra library are documented here. The format
 follows the change categories defined in
-[docs/internal/RELEASE_POLICY.md](docs/internal/RELEASE_POLICY.md)
+[docs/maintainers/release-policy.md](docs/maintainers/release-policy.md)
 (Added / Changed / Deprecated / Removed / Fixed / Security / Migration notes).
 
 Coactra ships as a single `coactra` distribution; capabilities are selected via
@@ -26,6 +26,7 @@ per release.
 - Install docs now point users at the PyPI `coactra` distribution and keep editable
   source installs for contributor workflows.
 - MkDocs-based documentation site with GitHub Pages deployment from `main`.
+- Dedicated MkDocs example pages for runnable scripts and sample projects.
 - README / Quickstart now signpost that the default `make_agent(...)` uses an
   in-process `FakeAI` echo model, and show how to wire a real model.
 

@@ -10,7 +10,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: the research proposes useful `Kernel` / `Session` / `Task` vocabulary, but the repo already has partial equivalents through `CoactraScope`, `make_agent`, `make_coactra_agent`, `WorkManager`, `Procedure`, `DurableOrchestrator`, and `WorkflowEngine`. Adding new nouns too early would widen the public API before the current shell is classified.
 - Evidence from files:
   - Current preferred imports are listed in `docs/API_INDEX.md`.
-  - Interface map prefers package roots and function-first app code in `docs/INTERFACES.md:1-42`.
+  - Interface map prefers package roots and function-first app code in `docs/concepts/interfaces.md:1-42`.
   - Agent composition roots exist in `agent/src/coactra/agent/factory.py` and `agent/src/coactra/agent/integrations/factory.py`.
 - Why it matters: a thin orchestration library lives or dies by compatibility discipline. A broad public shell creates more breaking-change debt than value.
 - Recommended fix: assign stability tiers to exported symbols, add a compatibility alias manifest, and keep `Kernel` as a future concept until examples prove it removes real wiring complexity.
@@ -60,7 +60,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: PydanticAI's typed dependencies, tools, outputs, and durable execution integrations are relevant, but replacing Coactra's domain model with another framework would erase the project-specific value.
 - Evidence from files:
-  - Coactra's project-specific boundaries are documented in `docs/LIBRARIES.md:27-91`.
+  - Coactra's project-specific boundaries are documented in `docs/concepts/library-map.md:27-91`.
   - Agent ports and dependency injection are defined in `docs/agent/DESIGN.md:11-23`.
 - Why it matters: the best path is selective adoption of typed patterns where they simplify Coactra's API, not a framework migration that narrows the product scope by accident.
 - Recommended fix: create one spike comparing a simple Coactra agent flow to a PydanticAI-style typed-deps flow, then adopt only the parts that reduce API noise.
@@ -123,9 +123,9 @@ This backlog is based on static source inspection and later architecture-alignme
 
 ### 5. Add a machine-readable adapter maturity registry
 
-- Problem: adapter maturity is spread across `docs/LIBRARIES.md`, package READMEs, docstrings, and stub tests.
+- Problem: adapter maturity is spread across `docs/concepts/library-map.md`, package READMEs, docstrings, and stub tests.
 - Evidence from files:
-  - Adapter maturity matrix in `docs/LIBRARIES.md:187-195`.
+  - Adapter maturity matrix in `docs/concepts/library-map.md:187-195`.
   - Workspace adapter maturity mapping in `workspace/src/coactra/workspace/adapters/__init__.py:1-17`.
   - Agent FastMCP stub in `agent/src/coactra/agent/adapters/fastmcp.py:1-12`.
   - Organization Neo4j stub in `directory/src/coactra/directory/repository/neo4j_store.py:1-14`.
@@ -162,7 +162,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: as integrations grow, memory/workspace/workflow/org can accidentally start importing each other or owning behavior outside their boundaries.
 - Evidence from files:
-  - `docs/LIBRARIES.md:70-91` defines boundaries: workflow owns when/what, organization owns who, agent carries talk, memory and reasoning stores are separate.
+  - `docs/concepts/library-map.md:70-91` defines boundaries: workflow owns when/what, organization owns who, agent carries talk, memory and reasoning stores are separate.
   - `docs/agent/DESIGN.md:11-23` locks ports and DI.
   - Workspace README says agent owns MCP mounting and organization owns hierarchy/policy (`workspace/README.md:33-40`).
 - Why it matters: preserving clean package boundaries is the main architectural strength of the project.
@@ -217,7 +217,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: public API roots exist, but there is no single API inventory for humans or chatbots.
 - Evidence from files:
-  - `docs/INTERFACES.md:20-31` lists stable roots.
+  - `docs/concepts/interfaces.md:20-31` lists stable roots.
   - Package `__init__.py` files export many names, such as `agent/src/coactra/agent/__init__.py:64-112` and `jobs/src/coactra/jobs/__init__.py:36-64`.
 - Why it matters: retrieval and onboarding improve when public names have one canonical source.
 - Recommended fix: generate `docs/API_INDEX.md` grouped by package, class/function, source file, public/compat/internal status, and one-line purpose.
@@ -257,7 +257,7 @@ This backlog is based on static source inspection and later architecture-alignme
 - Problem: examples use in-process/local defaults by design, but users may copy them into production.
 - Evidence from files:
   - Examples README says examples use in-process/local defaults and replace backend boundary for production (`examples/projects/README.md:12`).
-  - `docs/QUICKSTART.md:101-112` shows replacing `WorkManager` storage with SQL.
+  - `docs/getting-started/quickstart.md:101-112` shows replacing `WorkManager` storage with SQL.
 - Why it matters: examples should be safe to copy without hidden production assumptions.
 - Recommended fix: add a short "production replacements" block to each example README: memory backend, workspace backend, work store, org store, A2A verifier, token exchanger.
 - Difficulty: Low
@@ -314,7 +314,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: production docs warn about secrets, but there is no complete guide for tokens, workspace manifests, memory, and logs.
 - Evidence from files:
-  - Secret warning in `docs/PRODUCTION.md:82-90`.
+  - Secret warning in `docs/operations/production.md:82-90`.
   - Keycloak token exchange code in `agent/src/coactra/agent/adapters/keycloak.py:102-262`.
   - Workspace manifest and handoff behavior in `workspace/src/coactra/workspace/desk.py:32-174`.
   - Memory persistence backends in `memory/src/coactra/memory/backends/`.
@@ -375,7 +375,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: docs are readable but not machine-labeled by package, maturity, statefulness, or public API status.
 - Evidence from files:
-  - Current docs are plain Markdown: `README.md`, `docs/LIBRARIES.md`, `docs/*.md`, package READMEs/DESIGNs.
+  - Current docs are plain Markdown: `README.md`, `docs/concepts/library-map.md`, `docs/*.md`, package READMEs/DESIGNs.
 - Why it matters: retrieval quality improves when chunks can be filtered.
 - Recommended fix: add YAML front matter with `package`, `role`, `maturity`, `statefulness`, `extras`, `public_api`, and `tenant_isolation` fields.
 - Difficulty: Low
@@ -383,9 +383,9 @@ This backlog is based on static source inspection and later architecture-alignme
 
 ### 26. Split long design documents into stable knowledge chunks
 
-- Problem: `docs/LIBRARIES.md` and package design files contain dense cross-cutting decisions that could retrieve too broadly.
+- Problem: `docs/concepts/library-map.md` and package design files contain dense cross-cutting decisions that could retrieve too broadly.
 - Evidence from files:
-  - `docs/LIBRARIES.md` covers philosophy, tenancy, package boundaries, dependency shape, adapter maturity, and compatibility aliases.
+  - `docs/concepts/library-map.md` covers philosophy, tenancy, package boundaries, dependency shape, adapter maturity, and compatibility aliases.
   - `docs/agent/DESIGN.md`, `docs/directory/DESIGN.md`, and package READMEs contain multiple concepts per file.
 - Why it matters: smaller chunks reduce hallucinated cross-package ownership.
 - Recommended fix: generate or maintain `docs/kb/*.md` chunk files from the knowledge base in this report.
@@ -429,7 +429,7 @@ This backlog is based on static source inspection and later architecture-alignme
 
 - Problem: architecture is currently prose-heavy.
 - Evidence from files:
-  - `docs/LIBRARIES.md`, `docs/INTERFACES.md`, and package READMEs explain relationships but have limited diagrams.
+  - `docs/concepts/library-map.md`, `docs/concepts/interfaces.md`, and package READMEs explain relationships but have limited diagrams.
 - Why it matters: package boundaries and data flows are easier for humans and chatbots with diagrams.
 - Recommended fix: add Mermaid or ASCII diagrams for package dependency graph, work lifecycle, memory flow, workspace flow, agent policy flow, and org permission resolution.
 - Difficulty: Low
