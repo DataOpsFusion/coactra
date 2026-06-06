@@ -15,6 +15,7 @@ No pydantic-ai imports at module level.  Duck-types team and agent.
 """
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -441,6 +442,7 @@ class Workflow:
         checkpoint: CheckpointStore | None = None,
         run_id: str | None = None,
         engine: Any | None = None,
+        tracer: Any | None = None,
     ) -> WorkflowRun:
         """Run the playbook from *start* over *team*.
 
@@ -476,6 +478,39 @@ class Workflow:
                 )
             return await self._run_with_engine(team, engine, run_id=run_id)
 
+        span_cm = (
+            tracer.start_as_current_span(
+                "coactra.workflow.run",
+                attributes={
+                    "coactra.workflow.name": self._playbook.name,
+                    "coactra.run_id": run_id or "",
+                },
+            )
+            if tracer is not None
+            else nullcontext(None)
+        )
+        with span_cm as span:
+            return await self._run_local(
+                team,
+                start=start,
+                ledger=ledger,
+                approvals=approvals,
+                checkpoint=checkpoint,
+                run_id=run_id,
+                span=span,
+            )
+
+    async def _run_local(
+        self,
+        team: Any,
+        *,
+        start: int,
+        ledger: list[StepResult] | None,
+        approvals: list[Approval] | None,
+        checkpoint: CheckpointStore | None,
+        run_id: str | None,
+        span: Any | None,
+    ) -> WorkflowRun:
         results: list[StepResult] = list(ledger) if ledger else []
         approval_log: list[Approval] = list(approvals) if approvals else []
         steps = self._playbook.steps
@@ -488,6 +523,15 @@ class Workflow:
 
         for i in range(start, len(steps)):
             s = steps[i]
+
+            if span is not None:
+                span.add_event(
+                    "coactra.workflow.step.start",
+                    attributes={
+                        "coactra.workflow.step.index": i,
+                        "coactra.workflow.step.instruction": s.instruction,
+                    },
+                )
 
             # Resolve agent first (before checking approve flag)
             agent = self._resolve_agent(s, team)
@@ -506,6 +550,11 @@ class Workflow:
                     approvals=approval_log,
                     _steps=steps,
                 )
+                if span is not None:
+                    span.add_event(
+                        "coactra.workflow.step.fail",
+                        attributes={"coactra.workflow.step.index": i},
+                    )
                 _save(final)
                 return final
 
@@ -519,6 +568,11 @@ class Workflow:
                     approvals=approval_log,
                     _steps=steps,
                 )
+                if span is not None:
+                    span.add_event(
+                        "coactra.workflow.interrupt",
+                        attributes={"coactra.workflow.step.index": i},
+                    )
                 _save(interrupted)
                 return interrupted
 
@@ -530,6 +584,14 @@ class Workflow:
                 output=str(output),
                 status="done",
             ))
+            if span is not None:
+                span.add_event(
+                    "coactra.workflow.step.complete",
+                    attributes={
+                        "coactra.workflow.step.index": i,
+                        "coactra.agent.name": agent._name,
+                    },
+                )
 
             # Save an intermediate snapshot after each completed step
             _save(WorkflowRun(
@@ -549,6 +611,8 @@ class Workflow:
             approvals=approval_log,
             _steps=steps,
         )
+        if span is not None:
+            span.add_event("coactra.workflow.complete")
         _save(completed)
         return completed
 
