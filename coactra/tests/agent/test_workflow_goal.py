@@ -405,3 +405,56 @@ async def test_resume_from_missing_checkpoint_raises(team):
 
     with pytest.raises((ValueError, KeyError)):
         await wf.resume_from(cp_store, "nonexistent-run-id", team)
+
+
+# ---------------------------------------------------------------------------
+# 5. Durable engine bridge — public Workflow delegates to old WorkflowEngine
+# ---------------------------------------------------------------------------
+
+class _BridgeAgent:
+    def __init__(self, name: str, tenant: str = "acme") -> None:
+        self._name = name
+        self._tenant = tenant
+
+    async def run(self, instruction: str) -> str:
+        return f"{self._name}: {instruction}"
+
+
+class _BridgeTeam:
+    def __init__(self) -> None:
+        self._members = {
+            "alpha-agent": _BridgeAgent("alpha-agent"),
+            "beta-agent": _BridgeAgent("beta-agent"),
+        }
+
+    def member(self, name: str):
+        return self._members.get(name)
+
+    def match(self, needs: str):
+        return self._members.get("alpha-agent")
+
+
+async def test_public_workflow_runs_and_resumes_with_durable_langgraph_engine():
+    pytest.importorskip("langgraph")
+    from langgraph.checkpoint.memory import MemorySaver
+    from coactra.jobs.workflow import DurableLangGraphEngine
+
+    engine = DurableLangGraphEngine(checkpointer=MemorySaver())
+    team = _BridgeTeam()
+    wf = Workflow("public-durable", steps=[
+        step("collect evidence", agent="alpha-agent"),
+        step("apply change", agent="beta-agent", approve=True),
+    ])
+
+    paused = await wf.run(team, engine=engine, run_id="durable-bridge")
+
+    assert paused.status == "interrupted"
+    assert paused.pending_index == 1
+    assert paused.thread_id == "acme:durable-bridge"
+    assert [r.agent for r in paused.results] == ["alpha-agent"]
+
+    final = await wf.resume_engine(engine, paused.thread_id, team, decision=True)
+
+    assert final.status == "completed"
+    assert [r.agent for r in final.results] == ["alpha-agent", "beta-agent"]
+    assert [r.status for r in final.results] == ["done", "done"]
