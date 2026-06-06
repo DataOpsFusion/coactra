@@ -37,7 +37,6 @@ nav:
           - Multi-Agent Policy: examples/multi-agent-policy.md
   - Concepts:
       - Architecture: concepts/architecture.md
-      - Interfaces: concepts/interfaces.md
       - Library Map: concepts/library-map.md
       - Naming Migration: concepts/naming-migration.md
       - State and Storage: concepts/state-and-storage.md

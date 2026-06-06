@@ -24,7 +24,7 @@ pip install "coactra[langgraph]"
 
 - [Quickstart](getting-started/quickstart.md): build a small function-first incident triage app.
 - [Examples](examples/index.md): runnable scripts and sample projects.
-- [Interfaces](concepts/interfaces.md): package roots and public API surfaces.
+- [API Index](API_INDEX.md): the public API surface.
 - [Production](operations/production.md): SQL work store, scope consistency, auth, and deployment posture.
 - [Architecture](concepts/architecture.md): package boundaries and adoption rules.
 
