@@ -50,8 +50,17 @@ class Agent:
     @classmethod
     async def create(cls, *, model: Any, instructions: str | None = None,
                      tools: list[Any] | None = None,
-                     runtime: AgentRuntimePort | None = None) -> "Agent":
-        rt = runtime or PydanticAIRuntime(model=model, instructions=instructions, tools=tools)
+                     runtime: AgentRuntimePort | None = None,
+                     api_base: str | None = None,
+                     api_key: str | None = None,
+                     **defaults: Any) -> "Agent":
+        if runtime is not None:
+            rt = runtime
+        else:
+            rt = PydanticAIRuntime(
+                model=model, instructions=instructions, tools=tools,
+                api_base=api_base, api_key=api_key, **defaults,
+            )
         return cls(rt)
 
     async def send(self, message: str, *, output: type | None = None,

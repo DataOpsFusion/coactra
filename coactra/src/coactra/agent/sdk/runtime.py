@@ -32,13 +32,17 @@ class PydanticAIRuntime:
     (e.g. FunctionModel/TestModel in tests)."""
 
     def __init__(self, *, model: Any, instructions: str | None = None,
-                 tools: list[Any] | None = None) -> None:
+                 tools: list[Any] | None = None,
+                 api_base: str | None = None,
+                 api_key: str | None = None,
+                 **defaults: Any) -> None:
         if isinstance(model, str):
             # Route string ids through litellm + coactra.ai's thinking-model handling.
             # Lazy import so model-instance usage stays free of the litellm dependency.
             from coactra.agent.sdk.litellm_model import LiteLLMModel
-            self._model: Any = LiteLLMModel(model)
+            self._model: Any = LiteLLMModel(model, api_base=api_base, api_key=api_key, **defaults)
         else:
+            # Model instance passed directly — provider config does not apply.
             self._model = model
         self._instructions = instructions
         self._tools = tools or []
