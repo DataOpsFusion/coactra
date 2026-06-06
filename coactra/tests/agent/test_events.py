@@ -1,4 +1,4 @@
-from coactra.agent.sdk.events import (
+from coactra.agent.events import (
     Assistant, Thinking, ToolCall, ToolResult, Usage, Status, RunResult, Event,
 )
 

@@ -9,8 +9,8 @@ import httpx
 from pydantic_ai.models.function import FunctionModel, AgentInfo
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
-from coactra.agent.sdk.auth import BearerAuth, StaticToken
-from coactra.agent.sdk.runtime import PydanticAIRuntime
+from coactra.agent.auth import BearerAuth, StaticToken
+from coactra.agent.runtime import PydanticAIRuntime
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ async def test_offline_agent_runs_without_gateway() -> None:
 
 async def test_agent_create_accepts_gateway_params() -> None:
     """Agent.create(gateway=, auth=) must not raise TypeError."""
-    from coactra.agent.sdk import Agent
+    from coactra.agent import Agent
 
     # This should not raise — gateway param must be accepted
     agent = await Agent.create(
@@ -150,7 +150,7 @@ async def test_agent_create_accepts_gateway_params() -> None:
 
 async def test_agent_aclose_without_gateway_is_harmless() -> None:
     """aclose() with no gateway must complete without error."""
-    from coactra.agent.sdk import Agent
+    from coactra.agent import Agent
 
     agent = await Agent.create(model=FunctionModel(_final))
     await agent.aclose()  # should not raise

@@ -22,16 +22,16 @@ def __getattr__(name: str) -> Any:
     if name not in _LAZY_EXPORTS:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     if name in _AUTH_EXPORTS:
-        auth = import_module("coactra.agent.sdk.auth")
+        auth = import_module("coactra.agent.auth")
         return getattr(auth, name)
     if name in _SKILLS_EXPORTS:
-        skills = import_module("coactra.agent.sdk.skills")
+        skills = import_module("coactra.agent.skills")
         return getattr(skills, name)
     if name in _TEAM_EXPORTS:
-        team = import_module("coactra.agent.sdk.team")
+        team = import_module("coactra.agent.team")
         return getattr(team, name)
     if name in _WORKFLOW_EXPORTS:
-        workflow = import_module("coactra.agent.sdk.workflow")
+        workflow = import_module("coactra.agent.workflow")
         return getattr(workflow, name)
-    sdk = import_module("coactra.agent.sdk")
+    sdk = import_module("coactra.agent")
     return getattr(sdk, name)

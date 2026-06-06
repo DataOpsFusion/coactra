@@ -10,7 +10,7 @@ import pytest
 
 from coactra.workspace import Scope, open_workspace
 from coactra.workspace.policy import PolicyError
-from coactra.agent.sdk.workspace_tools import workspace_tools
+from coactra.agent.workspace_tools import workspace_tools
 
 
 # ---------------------------------------------------------------------------

@@ -261,7 +261,7 @@ class Workflow:
         Parameters
         ----------
         team:
-            A :class:`~coactra.agent.sdk.team.Team` (duck-typed: needs
+            A :class:`~coactra.agent.team.Team` (duck-typed: needs
             ``.member(name)`` and ``.match(needs)``).
         start:
             Step index to begin from.  Used by :meth:`resume` to continue
@@ -349,7 +349,7 @@ class Workflow:
             The :class:`WorkflowRun` returned by a previous :meth:`run` call
             with ``status="interrupted"``.
         team:
-            The same :class:`~coactra.agent.sdk.team.Team` used for routing.
+            The same :class:`~coactra.agent.team.Team` used for routing.
         decision:
             ``True`` → approve and run the pending step, then continue.
             ``False`` → deny the pending step, record it as skipped, stop.

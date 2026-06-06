@@ -12,7 +12,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
 from coactra import Agent, Skill
-from coactra.agent.sdk.skills import Skill as SkillDirect
+from coactra.agent.skills import Skill as SkillDirect
 
 
 # ---------------------------------------------------------------------------
