@@ -27,6 +27,7 @@ def serve_agent(
     agent: Any,
     *,
     verifier: Any | None = None,
+    url: str | None = None,
 ) -> Any:
     """Expose *agent* as an inbound A2A Starlette app.
 
@@ -45,6 +46,9 @@ def serve_agent(
         Optional ``A2ARequestVerifier``.  When ``None``, the app runs in
         insecure/unauthenticated mode (suitable for local development only).
         Pass a verifier in production to enforce JWT / bearer-token checks.
+    url:
+        Public A2A endpoint URL to publish in the official Agent Card.  SDK
+        clients use this value as the JSON-RPC transport target.
 
     Returns
     -------
@@ -62,6 +66,8 @@ def serve_agent(
     from coactra.agent.adapters.a2a_server import A2AInboundRequest, build_a2a_app
 
     card = agent.card
+    if isinstance(card, dict) and url is not None:
+        card = {**card, "url": url}
     if card is None:
         raise ValueError(
             f"Agent '{getattr(agent, '_name', agent)!r}' has no A2A card. "
