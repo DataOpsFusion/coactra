@@ -9,6 +9,7 @@ Public API
 ----------
 - ``CheckpointStore``       — structural Protocol (save / load).
 - ``InMemoryCheckpointStore`` — dict-backed default implementation.
+- ``LangGraphCheckpointStore`` — SQLite-backed LangGraph checkpointer.
 - ``run_to_state``          — serialize a :class:`WorkflowRun` to a plain,
                               JSON-serializable dict.
 - ``run_from_state``        — reconstruct a :class:`WorkflowRun` from such a dict.
@@ -21,7 +22,10 @@ integration pass that imports these helpers.  This module has no dependency on
 """
 from __future__ import annotations
 
+from os import PathLike
 from typing import Protocol, runtime_checkable
+
+from typing_extensions import TypedDict
 
 from coactra.agent.workflow import Approval, StepResult, WorkflowRun
 
@@ -47,6 +51,10 @@ class CheckpointStore(Protocol):
 # In-memory implementation
 # ---------------------------------------------------------------------------
 
+class _LangGraphState(TypedDict):
+    state: dict
+
+
 class InMemoryCheckpointStore:
     """Simple dict-backed :class:`CheckpointStore`.
 
@@ -65,6 +73,60 @@ class InMemoryCheckpointStore:
     def load(self, run_id: str) -> dict | None:
         """Return the stored state for *run_id*, or ``None`` if not found."""
         return self._store.get(run_id)
+
+
+class LangGraphCheckpointStore:
+    """SQLite-backed LangGraph implementation of :class:`CheckpointStore`.
+
+    The store persists each Coactra ``WorkflowRun`` state by running a tiny
+    LangGraph graph against the official ``SqliteSaver`` checkpointer.  A fresh
+    ``LangGraphCheckpointStore`` pointed at the same SQLite file can load the
+    latest state and resume a run after process restart.
+    """
+
+    def __init__(self, path: str | PathLike[str]) -> None:
+        self._conn_string = str(path)
+
+    @classmethod
+    def from_conn_string(cls, conn_string: str) -> "LangGraphCheckpointStore":
+        """Build a store from a LangGraph sqlite connection string/path."""
+        return cls(conn_string)
+
+    @staticmethod
+    def _config(run_id: str) -> dict:
+        return {"configurable": {"thread_id": run_id}}
+
+    @staticmethod
+    def _compile_graph(checkpointer):
+        from langgraph.graph import END, START, StateGraph  # noqa: PLC0415
+
+        def _persist(state: _LangGraphState) -> dict:
+            return {"state": state["state"]}
+
+        builder = StateGraph(_LangGraphState)
+        builder.add_node("persist", _persist)
+        builder.add_edge(START, "persist")
+        builder.add_edge("persist", END)
+        return builder.compile(checkpointer=checkpointer)
+
+    def save(self, run_id: str, state: dict) -> None:
+        """Persist *state* under *run_id* using LangGraph's SQLite checkpointer."""
+        from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: PLC0415
+
+        with SqliteSaver.from_conn_string(self._conn_string) as checkpointer:
+            graph = self._compile_graph(checkpointer)
+            graph.invoke({"state": state}, self._config(run_id))
+
+    def load(self, run_id: str) -> dict | None:
+        """Return the latest state stored under *run_id*, or ``None`` if absent."""
+        from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: PLC0415
+
+        with SqliteSaver.from_conn_string(self._conn_string) as checkpointer:
+            checkpoint = checkpointer.get_tuple(self._config(run_id))
+            if checkpoint is None:
+                return None
+            state = checkpoint.checkpoint.get("channel_values", {}).get("state")
+            return dict(state) if isinstance(state, dict) else state
 
 
 # ---------------------------------------------------------------------------

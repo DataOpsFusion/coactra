@@ -47,6 +47,7 @@ a2a = ["a2a-sdk>=1.0,<2.0", "starlette>=0.37", "sse-starlette>=2.0"]
 langgraph = [
     "langgraph>=1.0",
     "langgraph-checkpoint>=2.0",
+    "langgraph-checkpoint-sqlite>=3.0",
     "Jinja2>=3.1",
     "cel-python>=0.5,<0.6",
 ]
@@ -69,6 +70,7 @@ integrations = [
     "cel-python>=0.5,<0.6",
     "Jinja2>=3.1",
     "langgraph-checkpoint>=2.0",
+    "langgraph-checkpoint-sqlite>=3.0",
     "langgraph>=1.0",
     "dbos>=2,<3",
     "dapr-ext-workflow",
