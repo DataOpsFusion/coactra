@@ -36,6 +36,7 @@ def test_public_surface_is_stable_root_api():
         "AsyncNullTransport",
         "AsyncPolicyGatedCollaborator",
         "CollaborationDenied",
+        "RemotePeer",
         # agent SDK (merged from coactra.agent.sdk after dropping the redundant segment)
         "Agent",
         "Run",

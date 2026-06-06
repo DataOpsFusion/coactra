@@ -12,7 +12,8 @@ Public API
 """
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from coactra.agent.collaboration import (
@@ -22,7 +23,49 @@ from coactra.agent.collaboration import (
 )
 from coactra.agent.domain import AgentRef, Scope
 
-__all__ = ["peer_tools"]
+__all__ = ["RemotePeer", "peer_tools"]
+
+
+@dataclass(frozen=True)
+class RemotePeer:
+    """Public config for a remote A2A peer exposed through Agent.create.
+
+    Agent.create(peers=[RemotePeer(...)]) turns this into an ask_<name>
+    tool backed by OfficialA2ATransport while keeping the official A2A SDK
+    import lazy.  Tests and hosts may pass a custom *client* that implements
+    call(**kwargs); production callers normally provide endpoint/audience
+    plus an optional token provider.
+    """
+
+    name: str
+    endpoint: str
+    audience: str | None = None
+    tenant: str | None = None
+    token_provider: Any | None = None
+    client: Any | None = None
+    timeout: float = 60.0
+    delegation_chain: Sequence[Mapping[str, Any]] | None = None
+    message_builder: Any | None = None
+
+    @property
+    def ref(self) -> AgentRef:
+        return AgentRef(
+            tenant_id=self.tenant or "default",
+            agent_id=self.name,
+        )
+
+    def transport(self) -> Any:
+        from coactra.agent.adapters.a2a import OfficialA2ATransport  # noqa: PLC0415
+
+        return OfficialA2ATransport(
+            endpoint_for=lambda _dst: self.endpoint,
+            audience_for=lambda _dst: self.audience or self.endpoint,
+            token_provider=self.token_provider,
+            client=self.client,
+            timeout=self.timeout,
+            delegation_chain=self.delegation_chain,
+            message_builder=self.message_builder,
+        )
 
 
 def peer_tools(

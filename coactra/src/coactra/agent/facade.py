@@ -5,7 +5,8 @@ import uuid
 from typing import Any, AsyncIterator
 
 from coactra.agent.events import Event, RunResult
-from coactra.agent.peers import peer_tools
+from coactra.agent.domain import AgentRef
+from coactra.agent.peers import RemotePeer, peer_tools
 from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
 from coactra.agent.serve import serve_agent
 from coactra.agent.skills import Skill, build_agent_card, normalize_skills
@@ -82,13 +83,26 @@ class Agent:
                      **defaults: Any) -> "Agent":
         combined_tools: list[Any] = list(tools) if tools is not None else []
         if peers:
-            _resolver = {p._name: p for p in peers}.get
-            combined_tools = combined_tools + peer_tools(
-                [p._name for p in peers],
-                resolve=_resolver,
-                me=name,
-                tenant=tenant,
-            )
+            local_peers = [p for p in peers if not isinstance(p, RemotePeer)]
+            if local_peers:
+                _resolver = {p._name: p for p in local_peers}.get
+                combined_tools = combined_tools + peer_tools(
+                    [p._name for p in local_peers],
+                    resolve=_resolver,
+                    me=name,
+                    tenant=tenant,
+                )
+            for remote in (p for p in peers if isinstance(p, RemotePeer)):
+                combined_tools = combined_tools + peer_tools(
+                    [AgentRef(
+                        tenant_id=remote.tenant or tenant or "default",
+                        agent_id=remote.name,
+                    )],
+                    resolve=lambda _name: None,
+                    transport=remote.transport(),
+                    me=name,
+                    tenant=tenant,
+                )
         if runtime is not None:
             rt = runtime
         else:

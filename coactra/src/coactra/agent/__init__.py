@@ -48,6 +48,7 @@ from coactra.agent.events import (
     Usage,
 )
 from coactra.agent.facade import Agent, Run
+from coactra.agent.peers import RemotePeer
 from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
 
 __all__ = [
@@ -76,6 +77,7 @@ __all__ = [
     "AsyncNullTransport",
     "AsyncPolicyGatedCollaborator",
     "CollaborationDenied",
+    "RemotePeer",
     # agent SDK
     "Agent",
     "Run",
