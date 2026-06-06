@@ -4,11 +4,6 @@ This guide builds a small incident-triage agent. It is intentionally function-fi
 
 ## 1. Install
 
-> **Pre-release:** `coactra` is not on PyPI yet — install it editable from the repo
-> today (`pip install -e './coactra[dev]'`). See
-> [../CONTRIBUTING.md](../CONTRIBUTING.md). The `pip install "coactra[...]"` commands
-> below are the intended public interface once published.
-
 For a local prototype (jobs/`WorkManager` are in the base package):
 
 ```bash
@@ -19,6 +14,12 @@ For durable work in a real service:
 
 ```bash
 pip install "coactra[sql]"
+```
+
+For source development, install the local checkout in editable mode:
+
+```bash
+python -m pip install -e "./coactra[all,dev]"
 ```
 
 ## 2. Start With A Task Function
@@ -101,7 +102,7 @@ def triage_incident(incident: str) -> dict[str, str]:
     return {"work_id": order.id, "status": order.status.value, "draft": draft}
 ```
 
-A runnable version lives at [../examples/basic_incident_triage.py](../examples/basic_incident_triage.py). More complete sample projects are listed in [EXAMPLES.md](EXAMPLES.md).
+A runnable version lives at [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py). More complete sample projects are listed in the [example catalog](examples.md).
 
 ## 6. Move From Prototype To Production
 
