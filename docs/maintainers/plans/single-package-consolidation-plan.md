@@ -252,7 +252,7 @@ cd /home/developer/mcp/library && rm -rf dist-all && (cd coactra && uv build --o
 ```
 Expected: one sdist + one wheel, both PASS.
 
-- [ ] **Step 4: Update docs** — `docs/LIBRARIES.md` (one package + extras, not 7), `docs/PUBLISHING.md` + `.github/workflows/release.yml` (build/publish ONE distribution), `README.md`/`docs/QUICKSTART.md` install lines (`pip install "coactra[...]"`), `CHANGELOG.md` (Added: single-package layout; Changed: install via extras). Reconcile the moved-doc cross-links from the earlier cleanup (CHANGELOG/CONTRIBUTING → `docs/internal/RELEASE_POLICY.md`).
+- [ ] **Step 4: Update docs** — `docs/concepts/library-map.md` (one package + extras, not 7), `docs/PUBLISHING.md` + `.github/workflows/release.yml` (build/publish ONE distribution), `README.md`/`docs/getting-started/quickstart.md` install lines (`pip install "coactra[...]"`), `CHANGELOG.md` (Added: single-package layout; Changed: install via extras). Reconcile the moved-doc cross-links from the earlier cleanup (CHANGELOG/CONTRIBUTING → `docs/maintainers/release-policy.md`).
 
 - [ ] **Step 5: Commit**
 

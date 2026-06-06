@@ -1,25 +1,10 @@
 # Release Runner
 
-Use this when your app needs durable work state instead of a one-shot function call.
-
-What it demonstrates:
-
-- `WorkManager`
-- idempotent `WorkOrder` submission
-- leases and checkpoints
-- completion artifacts
-- audit event history
-
-Run from the repo root:
+Durable release lifecycle using `WorkManager`: idempotent submit, claim, checkpoint,
+complete, and audit events.
 
 ```bash
-PYTHONPATH=jobs/src python3 examples/projects/release_runner/app.py
+python3 examples/projects/release_runner/app.py
 ```
 
-Production swap:
-
-```python
-from coactra.jobs import SqlWorkStore, WorkManager
-
-work = WorkManager(store=SqlWorkStore.from_url("postgresql+psycopg://..."))
-```
+See also the [work examples](../work/) for approval gates and procedure-backed orders.

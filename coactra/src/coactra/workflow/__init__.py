@@ -1,11 +1,18 @@
-"""Compatibility alias for :mod:`coactra.jobs.workflow`.
-
-Install ``coactra-jobs`` and prefer the canonical namespace for new code.
-"""
+"""Deprecated shim — import from ``coactra.jobs.workflow`` instead."""
 from __future__ import annotations
 
+import warnings
 from importlib import import_module
 import sys
+
+_WARNED = False
+if not _WARNED:
+    warnings.warn(
+        "coactra.workflow is deprecated; import from coactra.jobs / coactra.directory instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _WARNED = True
 
 _impl = import_module("coactra.jobs.workflow")
 for _suffix in (

@@ -3,8 +3,8 @@
 Coactra is a Python library for agent applications that need durable work,
 memory, workspace state, organization policy, and agent-to-agent collaboration.
 
-Start with the [Quickstart](QUICKSTART.md), then use the interface and production
-guides when you are ready to wire real backends.
+Start with the [Quickstart](getting-started/quickstart.md), then use the example
+and production guides when you are ready to wire real backends.
 
 ## Install
 
@@ -22,13 +22,13 @@ pip install "coactra[langgraph]"
 
 ## Main Guides
 
-- [Quickstart](QUICKSTART.md): build a small function-first incident triage app.
-- [Examples](EXAMPLES.md): runnable sample projects for memory, durable work, workspace, and multi-agent policy.
-- [Interface Map](INTERFACES.md): package roots and stable API surfaces.
-- [Production](PRODUCTION.md): SQL work store, scope consistency, auth, and deployment posture.
-- [Architecture](ARCHITECTURE.md): package boundaries and adoption rules.
+- [Quickstart](getting-started/quickstart.md): build a small function-first incident triage app.
+- [Examples](examples/index.md): runnable scripts and sample projects.
+- [Interfaces](concepts/interfaces.md): package roots and public API surfaces.
+- [Production](operations/production.md): SQL work store, scope consistency, auth, and deployment posture.
+- [Architecture](concepts/architecture.md): package boundaries and adoption rules.
 
-## Release Flow
+## Documentation Flow
 
 Documentation follows the same branch flow as code:
 

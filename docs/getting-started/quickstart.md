@@ -102,7 +102,7 @@ def triage_incident(incident: str) -> dict[str, str]:
     return {"work_id": order.id, "status": order.status.value, "draft": draft}
 ```
 
-A runnable version lives at [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py). More complete sample projects are listed in [EXAMPLES.md](EXAMPLES.md).
+A runnable version lives at [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py). More complete sample projects are listed in the [example catalog](examples.md).
 
 ## 6. Move From Prototype To Production
 
