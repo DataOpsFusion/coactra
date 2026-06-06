@@ -54,16 +54,20 @@ class Agent:
         rt = runtime or PydanticAIRuntime(model=model, instructions=instructions, tools=tools)
         return cls(rt)
 
-    async def send(self, message: str, *, output_type: type | None = None,
+    async def send(self, message: str, *, output: type | None = None,
+                   output_type: type | None = None,
                    message_history: list[Any] | None = None) -> Run:
+        resolved = output if output is not None else output_type
         return Run(self._runtime, message, run_id=f"run-{uuid.uuid4().hex[:12]}",
-                   output_type=output_type, message_history=message_history)
+                   output_type=resolved, message_history=message_history)
 
-    async def run(self, message: str, *, output_type: type | None = None,
+    async def run(self, message: str, *, output: type | None = None,
+                  output_type: type | None = None,
                   message_history: list[Any] | None = None) -> Any:
-        result = await (await self.send(message, output_type=output_type,
+        resolved = output if output is not None else output_type
+        result = await (await self.send(message, output_type=resolved,
                                         message_history=message_history)).wait()
-        return result.output if output_type is not None else result.text
+        return result.output if resolved is not None else result.text
 
     async def aclose(self) -> None:
         # Slice 1 has no network resources to close; later slices close MCP/A2A clients here.
