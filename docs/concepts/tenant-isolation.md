@@ -1,18 +1,18 @@
 # Tenant Isolation
 
-Tenant isolation is a design constraint across the library. Every capability module should receive an explicit scope or tenant-qualified reference rather than inferring tenancy from global state.
+Tenant isolation is a design constraint across the library. Every package should receive an explicit scope or tenant-qualified reference rather than inferring tenancy from global state.
 
 ## Scope Shapes
 
-| Module | Scope shape | Purpose |
+| Package | Scope shape | Purpose |
 |---|---|---|
-| `coactra.scope` | `CoactraScope(tenant_id, namespace, agent_id, session_id)` | Canonical DTO and conversion helper. |
-| `coactra.agent` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
-| `coactra.memory` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
-| `coactra.workspace` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
-| `coactra.jobs` | `Scope` / `WorkScope(tenant_id, namespace)` | Work-order ledger partition. |
-| `coactra.jobs.workflow` | `WorkflowScope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
-| `coactra.directory` | tenant on root/org/store operations | Tenant is the org directory isolation boundary. |
+| `coactra` | `CoactraScope(tenant_id, namespace, agent_id, session_id)` | Canonical DTO and conversion helper. |
+| `coactra-agent` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
+| `coactra-memory` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
+| `coactra-workspace` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
+| `coactra-jobs` | `Scope(tenant_id, namespace)` | Work-order ledger partition. |
+| `coactra-jobs` | `Scope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
+| `coactra-directory` | tenant on root/org/store operations | Tenant is the org directory isolation boundary. |
 
 ## Isolation Mechanisms
 

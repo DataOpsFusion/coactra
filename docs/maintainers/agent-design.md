@@ -1,61 +1,29 @@
-# coactra.agent — v0.2 (clean composition root, ports, DSA)
+# Agent Design
 
-> `agent` is the runtime that WIRES the other libs into a working agent. Verdict stands:
-> WRAP the mature protocols (A2A, MCP, OpenAI Agents SDK, MCP OAuth) + BUILD a thin
-> composition/policy layer — do NOT fork the protocols. v0.2 goal: a **clean, wrappable
-> interface** (so a2a/openai-sdk wrap it trivially), proper **DI + factory + composition
-> root**, and the right **DSA** for the two real mechanisms (mount namespacing, identity
-> chain). Keep what v0.1 got right (tenant-qualified deniable collaboration, RFC-8693
-> no-passthrough); clean up the structure.
+Coactra's public surface is a single `Agent` door — `from coactra import Agent`.
+An agent is created by naming things (model id, capability names), never by
+constructing ports or injecting dependencies. The old ports-based `make_agent`
+composition root has been removed in the alpha redesign.
 
-## Locked principles
-- **Ports + DI.** Six capability ports backed by five sibling distributions are consumed through narrow `Protocol` PORTS
-  (`AIPort`, `MemoryPort`, `WorkspacePort`, `WorkflowPort`, `OrganizationPort`, `WorkPort`) — the
-  agent NEVER imports sibling code. Ports are **injected** via a composition root.
-- **Ports mirror the real sibling facades** so wiring is a 3-line adapter, not glue:
-  - `MemoryPort.remember(events, scope) / recall(query, scope, k) -> list[...]` ← matches `coactra.memory`
-  - `OrganizationPort.can(member, action) / members(node) / manager(node)` ← matches `coactra.directory`
-  - `AIPort.ask(...) / structured(...)`, `WorkflowPort.run(procedure, state)`, `WorkspacePort.read/write/run`, `WorkPort.submit/get/cancel`.
-  Real wiring lives in the optional `coactra.agent.integrations` package; the core ships
-  Protocol + in-process fakes so it's testable with zero siblings installed.
-- **Factory / composition root:** `make_agent(*, scope, ai=…, memory=…, workspace=…, workflow=…, organization=…, work=…, mcp=…, transport=…, exchanger=…, policy=…)` wires everything; sensible in-process defaults; nothing instantiated inline.
-- **Clean wrappable surface:** small, typed, async-first where the protocols are async; a
-  plain `Agent` facade an openai-sdk tool / a2a skill can wrap in a few lines.
+**Key principles:**
 
-## The two real mechanisms (DSA)
-1. **Mid-session MCP mounting** — `MountRegistry`:
-   - **prefix-trie / namespaced map** for tool-name conflict resolution (`<mount>.<tool>`),
-     O(prefix) lookup, deterministic conflict policy.
-   - a small **state machine** per mount: `pending → active`, promoted only at an
-     observable `begin_turn()` boundary (tools change between turns, never mid-turn), with
-     cache invalidation. `agent.mount_mcp(server, effective="next_turn")`.
-2. **Delegated identity** — RFC-8693 token exchange:
-   - an **actor chain** (immutable linked list of subject→actor hops); `act_on_behalf_of(grant)` / `delegate_further(...)`; a raw human/subject token is NEVER passed through downstream (enforced + tested).
+- `Agent.create(model=, tools=, memory=, workspace=, skills=, ...)` — one call, no DI
+- Tools are a unified list: local functions and `mcp()` server references are the same kind
+- `gateway=` + `auth=` is the primary MCP path; the token's scopes slice the tool list
+- Memory is automatic: recall fires before the model turn; remember fires after
+- `agent.card` is the curated A2A Agent Card — raw tool schemas are never advertised
+- Identity (`name=`, `tenant=`) flows through the token in production
 
-## Collaboration (keep v0.1, clean it)
-- Tenant-qualified `AgentRef(tenant_id, agent_id)` targets; `CollaborationPolicy` can DENY
-  cross-tenant talk (deny-before-allow). `PolicyGatedCollaborator` structurally satisfies
-  `coactra.jobs.workflow`'s `Collaborator`/`EscalationRouter` Protocols (so it drops into a
-  workflow run with no adapter) — verify signatures against the built workflow lib.
-- Async SDK hosts use `AsyncPolicyGatedCollaborator` + `AsyncA2ATransportPort`. It shares
-  the same tenant-qualified deny-before-wire policy without pulling an event-loop-specific
-  SDK or LangGraph into the reusable package.
+The authoritative spec — decisions, locked forks, built vs designed, security model,
+and the cut list — is the agent API design document:
 
-## Layers
-```
-domain/        # Scope, AgentRef, ToolSpec, DelegationGrant, ExchangedIdentity — plain types
-ports/         # AIPort/MemoryPort/WorkspacePort/WorkflowPort/OrganizationPort/WorkPort Protocols + in-process fakes
-mounting.py    # MountRegistry (trie namespacing + pending→active state machine + invalidation), MCPServerPort
-identity.py    # TokenExchanger Protocol + InProcessExchanger (actor chain, no passthrough)
-collaboration.py # AgentRef, CollaborationPolicy, AllowSameTenant, PolicyGatedCollaborator, A2ATransportPort
-agent.py       # Agent facade (begin_turn / mount_mcp / act_on_behalf_of / talk / recall …)
-factory.py     # make_agent(...) composition root
-integrations/  # optional sibling facade adapters + make_coactra_agent(...) helper
-```
+**[design/2026-06-06-agent-api-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-agent-api-design.md)**
 
-## Boundary / tests
-- No protocol forking; real SDKs (fastmcp/a2a/openai-agents/keycloak) stay raise-on-use
-  optional-extra stub adapters. Core is testable with only pydantic.
-- TDD. Keystone tests (mutation-worthy): mount invisible until `begin_turn`; raw subject
-  token never reaches downstream; cross-tenant talk denied (genuine two-tenant AgentRefs);
-  port wiring via fakes; factory DI. Keep the v0.1 suite green where the shape is preserved.
+See also the auth and identity spec for the OAuth 2.1 / OIDC / MCP gateway model:
+
+**[design/2026-06-06-auth-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-auth-design.md)**
+
+And the review refinements that tighten workspace security, memory guardrails,
+and the structured Skill roster:
+
+**[design/2026-06-06-review-refinements.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-review-refinements.md)**
