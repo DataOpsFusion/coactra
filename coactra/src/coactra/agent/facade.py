@@ -5,7 +5,9 @@ import uuid
 from typing import Any, AsyncIterator
 
 from coactra.agent.events import Event, RunResult
+from coactra.agent.peers import peer_tools
 from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
+from coactra.agent.serve import serve_agent
 from coactra.agent.skills import Skill, build_agent_card, normalize_skills
 
 
@@ -53,12 +55,14 @@ class Agent:
         tenant: str | None = None,
         skills: list[Skill] | None = None,
         expose: bool = False,
+        tools: list[Any] | None = None,
     ) -> None:
         self._runtime = runtime
         self._name = name or "agent"
         self._tenant = tenant or "default"
         self._skills: list[Skill] = skills if skills is not None else []
         self._expose = expose
+        self._tools: list[Any] = tools if tools is not None else []
 
     @classmethod
     async def create(cls, *, model: Any, instructions: str | None = None,
@@ -74,12 +78,22 @@ class Agent:
                      workspace: Any = None,
                      skills: Any = None,
                      expose: bool = False,
+                     peers: list | None = None,
                      **defaults: Any) -> "Agent":
+        combined_tools: list[Any] = list(tools) if tools is not None else []
+        if peers:
+            _resolver = {p._name: p for p in peers}.get
+            combined_tools = combined_tools + peer_tools(
+                [p._name for p in peers],
+                resolve=_resolver,
+                me=name,
+                tenant=tenant,
+            )
         if runtime is not None:
             rt = runtime
         else:
             rt = PydanticAIRuntime(
-                model=model, instructions=instructions, tools=tools,
+                model=model, instructions=instructions, tools=combined_tools,
                 api_base=api_base, api_key=api_key,
                 gateway=gateway, auth=auth,
                 name=name, tenant=tenant,
@@ -88,7 +102,8 @@ class Agent:
                 **defaults,
             )
         normalised_skills = normalize_skills(skills)
-        return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose)
+        return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose,
+                   tools=combined_tools)
 
     @property
     def card(self) -> dict | None:
@@ -111,6 +126,26 @@ class Agent:
         result = await (await self.send(message, output_type=resolved,
                                         message_history=message_history)).wait()
         return result.output if resolved is not None else result.text
+
+    def serve(self, *, verifier: Any = None) -> Any:
+        """Expose this agent as an inbound A2A Starlette app.
+
+        Delegates to :func:`coactra.agent.serve.serve_agent`.  The agent must
+        have a non-``None`` :attr:`card` (i.e. at least one skill or
+        ``expose=True``); otherwise a ``ValueError`` is raised.
+
+        Parameters
+        ----------
+        verifier:
+            Optional ``A2ARequestVerifier``.  When ``None``, the app runs in
+            insecure/unauthenticated mode (suitable for local development).
+
+        Returns
+        -------
+        starlette.applications.Starlette
+            A fully assembled Starlette application ready for any ASGI server.
+        """
+        return serve_agent(self, verifier=verifier)
 
     async def aclose(self) -> None:
         """Close any open runtime resources (e.g. gateway httpx client)."""
