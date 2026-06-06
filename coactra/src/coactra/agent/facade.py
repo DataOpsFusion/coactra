@@ -127,7 +127,7 @@ class Agent:
                                         message_history=message_history)).wait()
         return result.output if resolved is not None else result.text
 
-    def serve(self, *, verifier: Any = None) -> Any:
+    def serve(self, *, verifier: Any = None, url: str | None = None) -> Any:
         """Expose this agent as an inbound A2A Starlette app.
 
         Delegates to :func:`coactra.agent.serve.serve_agent`.  The agent must
@@ -139,13 +139,15 @@ class Agent:
         verifier:
             Optional ``A2ARequestVerifier``.  When ``None``, the app runs in
             insecure/unauthenticated mode (suitable for local development).
+        url:
+            Public A2A endpoint URL to publish in the official Agent Card.
 
         Returns
         -------
         starlette.applications.Starlette
             A fully assembled Starlette application ready for any ASGI server.
         """
-        return serve_agent(self, verifier=verifier)
+        return serve_agent(self, verifier=verifier, url=url)
 
     async def aclose(self) -> None:
         """Close any open runtime resources (e.g. gateway httpx client)."""

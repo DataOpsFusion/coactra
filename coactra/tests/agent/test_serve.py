@@ -165,3 +165,39 @@ async def test_serve_agent_no_card_raises():
 
     with pytest.raises((ValueError, RuntimeError)):
         serve_agent(bare_agent)
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — current a2a-sdk expects protobuf AgentCard on HTTP routes
+# ---------------------------------------------------------------------------
+
+async def test_serve_agent_card_route_returns_json_with_current_sdk():
+    """The official card route must serialize the served card, not HTTP 500."""
+    from coactra.agent.serve import serve_agent
+    from starlette.testclient import TestClient
+
+    agent = await _make_agent_with_skills(name="security-agent")
+    app = serve_agent(agent)
+
+    with TestClient(app) as client:
+        response = client.get("/.well-known/agent-card.json")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "security-agent"
+    assert body["skills"][0]["id"] == "general"
+
+
+async def test_serve_agent_url_is_published_in_official_card():
+    """A served agent can publish the reachable A2A endpoint for SDK clients."""
+    from coactra.agent.serve import serve_agent
+    from starlette.testclient import TestClient
+
+    agent = await _make_agent_with_skills(name="security-agent")
+    app = serve_agent(agent, url="http://127.0.0.1:8123")
+
+    with TestClient(app) as client:
+        body = client.get("/.well-known/agent-card.json").json()
+
+    assert body["supportedInterfaces"][0]["url"] == "http://127.0.0.1:8123"
+    assert body["supportedInterfaces"][0]["protocolBinding"] == "JSONRPC"

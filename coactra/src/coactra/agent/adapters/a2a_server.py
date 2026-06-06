@@ -23,6 +23,75 @@ A2A_ERROR_INSECURE_MODE_REQUIRED = "insecure_mode_required"
 A2AHandler = Callable[["A2AInboundRequest"], Awaitable[str]]
 
 
+def coerce_agent_card(agent_card: Any) -> Any:
+    """Return an official a2a-sdk AgentCard for HTTP serving routes.
+
+    Coactra's public ``Agent.card`` is a curated dict used by Team/Workflow
+    discovery.  Recent a2a-sdk server routes expect protobuf messages, so the
+    adapter coerces the dict at the SDK boundary without changing the public
+    card shape.
+    """
+    if hasattr(agent_card, "DESCRIPTOR"):
+        return agent_card
+    if not isinstance(agent_card, Mapping):
+        return agent_card
+
+    sdk = _require_a2a_server_sdk()
+    types = sdk["types"]
+
+    card = types.AgentCard(
+        name=str(agent_card.get("name") or "agent"),
+        description=str(agent_card.get("description") or ""),
+        version=str(agent_card.get("version") or "0.0.0"),
+        capabilities=types.AgentCapabilities(streaming=False),
+    )
+    card.default_input_modes.append("text/plain")
+    card.default_output_modes.append("text/plain")
+
+    if tenant := agent_card.get("tenant"):
+        card.supported_interfaces.append(
+            types.AgentInterface(
+                url=str(agent_card.get("url") or ""),
+                protocol_binding="JSONRPC",
+                tenant=str(tenant)
+            )
+        )
+    elif agent_card.get("url"):
+        card.supported_interfaces.append(
+            types.AgentInterface(
+                url=str(agent_card["url"]),
+                protocol_binding="JSONRPC"
+            )
+        )
+
+    for skill in agent_card.get("skills", []) or []:
+        if not isinstance(skill, Mapping):
+            continue
+        skill_id = str(skill.get("id") or "skill")
+        entry = types.AgentSkill(
+            id=skill_id,
+            name=str(skill.get("name") or skill_id),
+            description=str(skill.get("description") or ""),
+        )
+        entry.tags.extend(str(tag) for tag in skill.get("tags", []) or [])
+        entry.input_modes.append("text/plain")
+        entry.output_modes.append("text/plain")
+        card.skills.append(entry)
+
+    for name, scheme in (agent_card.get("securitySchemes") or {}).items():
+        if not isinstance(scheme, Mapping):
+            continue
+        if scheme.get("type") == "http" and scheme.get("scheme") == "bearer":
+            card.security_schemes[str(name)].http_auth_security_scheme.CopyFrom(
+                types.HTTPAuthSecurityScheme(
+                    scheme="bearer",
+                    bearer_format=str(scheme.get("bearerFormat") or ""),
+                )
+            )
+
+    return card
+
+
 class A2ARequestVerifier(Protocol):
     def verify(
         self,
@@ -92,6 +161,7 @@ def _require_a2a_server_sdk() -> dict[str, Any]:
         from a2a.server.request_handlers import DefaultRequestHandler
         from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes
         from a2a.server.tasks import InMemoryTaskStore, TaskUpdater
+        from a2a import types
         from a2a.types import TaskState
         from a2a.utils.constants import DEFAULT_RPC_URL
         from starlette.applications import Starlette
@@ -107,6 +177,7 @@ def _require_a2a_server_sdk() -> dict[str, Any]:
         "InMemoryTaskStore": InMemoryTaskStore,
         "TaskUpdater": TaskUpdater,
         "TaskState": TaskState,
+        "types": types,
         "DEFAULT_RPC_URL": DEFAULT_RPC_URL,
         "Starlette": Starlette,
     }
@@ -216,6 +287,7 @@ def build_a2a_app(
 ) -> Any:
     """Assemble a Starlette A2A app around a host runtime handler."""
     sdk = _require_a2a_server_sdk()
+    official_card = coerce_agent_card(agent_card)
     request_handler = sdk["DefaultRequestHandler"](
         agent_executor=make_a2a_executor(
             handler,
@@ -225,9 +297,9 @@ def build_a2a_app(
             allowed_subject_prefixes=allowed_subject_prefixes,
         ),
         task_store=task_store or sdk["InMemoryTaskStore"](),
-        agent_card=agent_card,
+        agent_card=official_card,
     )
-    routes = list(sdk["create_agent_card_routes"](agent_card))
+    routes = list(sdk["create_agent_card_routes"](official_card))
     routes += list(sdk["create_jsonrpc_routes"](request_handler, sdk["DEFAULT_RPC_URL"]))
     routes += list(extra_routes)
     return sdk["Starlette"](routes=routes)
