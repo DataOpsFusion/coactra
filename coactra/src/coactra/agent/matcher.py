@@ -126,14 +126,14 @@ def _keyword_match(needs: str, members: list[Any]) -> Any | None:
 # Semantic matcher
 # ---------------------------------------------------------------------------
 
-def _semantic_match(needs: str, members: list[Any]) -> Any | None:
+def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> Any | None:
     """Return the member whose skills text is nearest to *needs* by cosine sim.
 
     Raises ``ImportError`` if coactra[ai]/numpy is unavailable.
     """
     from coactra.ai.completion.embedding import cosine  # always available if [ai] installed
 
-    embedder = _get_embedder()  # may raise ImportError → surfaces to caller
+    embedder = embedder or _get_embedder()  # may raise ImportError → surfaces to caller
     needs_vec = embedder(needs)
 
     best_member = None
@@ -156,7 +156,13 @@ def _semantic_match(needs: str, members: list[Any]) -> Any | None:
 # Public API
 # ---------------------------------------------------------------------------
 
-def match_agent(needs: str, members: list[Any], *, mode: str = "keyword") -> Any | None:
+def match_agent(
+    needs: str,
+    members: list[Any],
+    *,
+    mode: str = "keyword",
+    embedder: Any = None,
+) -> Any | None:
     """Return the member whose skills best match *needs*, or ``None``.
 
     Parameters
@@ -182,6 +188,6 @@ def match_agent(needs: str, members: list[Any], *, mode: str = "keyword") -> Any
     if mode == "keyword":
         return _keyword_match(needs, members)
     elif mode == "semantic":
-        return _semantic_match(needs, members)
+        return _semantic_match(needs, members, embedder=embedder)
     else:
         raise ValueError(f"Unknown match mode {mode!r}; expected 'keyword' or 'semantic'")

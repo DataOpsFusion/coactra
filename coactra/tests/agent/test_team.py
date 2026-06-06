@@ -242,7 +242,6 @@ async def test_semantic_raises_or_works_without_network(sre_agent, security_agen
     # Simulate embeddings being unavailable by patching LiteLLMEmbedding to raise
     import coactra.agent.matcher as matcher_mod
 
-    original_embed_fn = None
 
     def _fake_embed_fn(text: str) -> list[float]:
         # Return a fixed vector so no network call is needed
@@ -276,6 +275,31 @@ async def test_semantic_unavailable_raises_clear_error(sre_agent, security_agent
         team.match("cert rotation")
 
 
+
+
+async def test_semantic_match_uses_injected_embedder(sre_agent, security_agent):
+    """Semantic matching can use a deployment-configured embedder directly."""
+    from coactra.agent.team import Team
+
+    class RoutingEmbedder:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def __call__(self, text: str) -> list[float]:
+            self.calls.append(text)
+            t = text.lower()
+            if "security" in t or "auth" in t or "login" in t:
+                return [1.0, 0.0]
+            if "deploy" in t or "infra" in t or "service" in t:
+                return [0.0, 1.0]
+            return [0.5, 0.5]
+
+    embedder = RoutingEmbedder()
+    team = Team([sre_agent, security_agent], match="semantic", embedder=embedder)
+
+    assert team.match("login threat review") is security_agent
+    assert any("login threat review" == call for call in embedder.calls)
+
 # ---------------------------------------------------------------------------
 # 6. Top-level import — Team available from coactra
 # ---------------------------------------------------------------------------
@@ -289,15 +313,11 @@ def test_team_importable_from_coactra():
 
 def test_team_import_light():
     """Importing coactra.Team must NOT pull pydantic_ai into sys.modules."""
-    import sys
     # Remove coactra from modules to test fresh import path
     # (can't truly do that in-process, but we verify pydantic_ai isn't pulled by team.py alone)
     import coactra.agent.team as team_mod
     assert hasattr(team_mod, "Team")
     # The team module itself must not import pydantic_ai at top level
-    import importlib
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("_team_check", team_mod.__file__)
     # We just confirm the module file doesn't have a top-level pydantic_ai import
     with open(team_mod.__file__) as f:
         source = f.read()
