@@ -129,3 +129,47 @@ async def test_agent_serve_returns_app():
     app2 = top_level_serve_agent(agent)
     assert app2 is not None
     assert isinstance(app2, Starlette)
+
+
+# ---------------------------------------------------------------------------
+# Test 4 — Agent.create remote peers wire OfficialA2ATransport ergonomically
+# ---------------------------------------------------------------------------
+
+class RecordingA2AClient:
+    def __init__(self) -> None:
+        self.calls = []
+
+    async def call(self, **kwargs):
+        self.calls.append(kwargs)
+        return f"remote:{kwargs['agent_id']}:{kwargs['message']}"
+
+
+async def test_agent_create_remote_peer_wires_official_a2a_transport():
+    """peers= accepts a remote_peer config and exposes an A2A ask tool."""
+    from coactra.agent import RemotePeer
+
+    client = RecordingA2AClient()
+    remote = RemotePeer(
+        name="security-agent",
+        endpoint="http://127.0.0.1:9999/a2a",
+        audience="security-audience",
+        client=client,
+    )
+    main = await Agent.create(
+        model=_echo_model("sre-1"),
+        name="sre-1",
+        tenant="acme",
+        peers=[remote],
+    )
+
+    ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
+    result = await ask("triage incident")
+
+    assert result == "remote:security-agent:triage incident"
+    assert client.calls == [{
+        "agent_id": "security-agent",
+        "endpoint": "http://127.0.0.1:9999/a2a",
+        "audience": "security-audience",
+        "message": "triage incident",
+        "delegation_chain": [],
+    }]
