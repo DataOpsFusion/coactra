@@ -50,12 +50,11 @@ class PydanticAIRuntime:
         self._tools = tools or []
 
         # Gateway / MCP toolset wiring
-        self._gateway_server: Any = None
-        self._gateway_http_client: Any = None
+        self._gateway_toolset: Any = None
+        self._gateway_url: str | None = None
         if gateway is not None:
             # Lazy imports: only pulled in when gateway is used.
-            import httpx  # noqa: PLC0415
-            from pydantic_ai.mcp import MCPServerStreamableHTTP  # noqa: PLC0415
+            from pydantic_ai.mcp import MCPToolset  # noqa: PLC0415
             from coactra.agent.sdk.auth import BearerAuth, StaticToken  # noqa: PLC0415
 
             # Normalize auth → TokenSource
@@ -67,26 +66,22 @@ class PydanticAIRuntime:
                 token_source = None
 
             if token_source is not None:
-                http_client = httpx.AsyncClient(auth=BearerAuth(token_source))
+                self._gateway_toolset = MCPToolset(gateway, auth=BearerAuth(token_source))
             else:
-                http_client = httpx.AsyncClient()
+                self._gateway_toolset = MCPToolset(gateway)
 
-            self._gateway_http_client = http_client
-            self._gateway_server = MCPServerStreamableHTTP(gateway, http_client=http_client)
+            self._gateway_url = gateway
 
     def _build(self, output_type: type | None) -> PydAgent:
         kwargs: dict[str, Any] = {"instructions": self._instructions, "tools": self._tools}
         if output_type is not None:
             kwargs["output_type"] = output_type
-        if self._gateway_server is not None:
-            kwargs["toolsets"] = [self._gateway_server]
+        if self._gateway_toolset is not None:
+            kwargs["toolsets"] = [self._gateway_toolset]
         return PydAgent(self._model, **kwargs)
 
     async def aclose(self) -> None:
-        """Close the gateway httpx client if one was created."""
-        if self._gateway_http_client is not None:
-            await self._gateway_http_client.aclose()
-            self._gateway_http_client = None
+        """No-op: MCPToolset manages its own client lifecycle via the toolset protocol."""
 
     def _usage(self, result: Any, run_id: str, *, seq: int = 0) -> Usage | None:
         # pydantic-ai 1.105: `result.usage` is a property (the callable form is deprecated).
