@@ -8,14 +8,17 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-__all__ = ["Agent", "Run", "Skill", "StaticToken", "Team", "Workflow", "oidc", "step"]
+__all__ = ["Agent", "Run", "Skill", "StaticToken", "Team", "Workflow", "oidc", "serve_agent", "step"]
 
 _SDK_EXPORTS = frozenset({"Agent", "Run"})
 _AUTH_EXPORTS = frozenset({"StaticToken", "oidc"})
 _SKILLS_EXPORTS = frozenset({"Skill"})
 _TEAM_EXPORTS = frozenset({"Team"})
 _WORKFLOW_EXPORTS = frozenset({"Workflow", "step"})
-_LAZY_EXPORTS = _SDK_EXPORTS | _AUTH_EXPORTS | _SKILLS_EXPORTS | _TEAM_EXPORTS | _WORKFLOW_EXPORTS
+_SERVE_EXPORTS = frozenset({"serve_agent"})
+_LAZY_EXPORTS = (
+    _SDK_EXPORTS | _AUTH_EXPORTS | _SKILLS_EXPORTS | _TEAM_EXPORTS | _WORKFLOW_EXPORTS | _SERVE_EXPORTS
+)
 
 
 def __getattr__(name: str) -> Any:
@@ -33,5 +36,8 @@ def __getattr__(name: str) -> Any:
     if name in _WORKFLOW_EXPORTS:
         workflow = import_module("coactra.agent.workflow")
         return getattr(workflow, name)
+    if name in _SERVE_EXPORTS:
+        serve = import_module("coactra.agent.serve")
+        return getattr(serve, name)
     sdk = import_module("coactra.agent")
     return getattr(sdk, name)
