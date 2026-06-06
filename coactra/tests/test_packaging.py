@@ -1,6 +1,7 @@
 from pathlib import Path
 
 
-def test_umbrella_package_preserves_namespace_layout():
+def test_umbrella_package_has_lazy_init():
+    """coactra now has a top-level __init__.py with lazy PEP 562 exports."""
     root = Path(__file__).resolve().parent.parent
-    assert not (root / "src" / "coactra" / "__init__.py").exists()
+    assert (root / "src" / "coactra" / "__init__.py").exists()

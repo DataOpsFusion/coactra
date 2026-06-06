@@ -7,8 +7,9 @@ def test_work_imports():
     assert mod.__version__ == importlib.metadata.version("coactra")
 
 
-def test_coactra_is_namespace_package():
+def test_coactra_is_regular_package_with_lazy_init():
     import coactra
 
-    assert getattr(coactra, "__file__", None) is None
+    # coactra now has a top-level __init__.py with lazy PEP 562 exports.
+    assert coactra.__file__ is not None
     assert hasattr(coactra, "__path__")

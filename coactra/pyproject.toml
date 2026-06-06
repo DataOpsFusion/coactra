@@ -106,7 +106,7 @@ root = ".."
 fallback_version = "0.0.0"
 
 [tool.hatch.build.targets.wheel]
-# Preserve the PEP 420 coactra namespace: this package intentionally has no __init__.py.
+# coactra has a top-level __init__.py with lazy PEP 562 exports (Agent, Run).
 packages = ["src/coactra"]
 
 [tool.hatch.build.targets.sdist]
