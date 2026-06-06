@@ -5,6 +5,11 @@ import uuid
 from typing import Any, AsyncIterator
 
 from coactra.agent.events import Event, RunResult
+from coactra.agent.learned import (
+    learned_procedure_skills,
+    learned_procedure_tools,
+    normalize_learned_procedures,
+)
 from coactra.agent.domain import AgentRef
 from coactra.agent.peers import RemotePeer, peer_tools
 from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
@@ -80,8 +85,21 @@ class Agent:
                      skills: Any = None,
                      expose: bool = False,
                      peers: list | None = None,
+                     learned: Any = None,
+                     procedure_engine: Any | None = None,
+                     procedure_scope: Any | None = None,
                      **defaults: Any) -> "Agent":
+        learned_procedures = normalize_learned_procedures(learned)
+        learned_skills = learned_procedure_skills(learned_procedures)
+        normalised_skills = normalize_skills(skills) + learned_skills
         combined_tools: list[Any] = list(tools) if tools is not None else []
+        if learned_procedures:
+            combined_tools = combined_tools + learned_procedure_tools(
+                learned_procedures,
+                engine=procedure_engine,
+                tenant=tenant,
+                scope=procedure_scope,
+            )
         if peers:
             local_peers = [p for p in peers if not isinstance(p, RemotePeer)]
             if local_peers:
@@ -112,10 +130,9 @@ class Agent:
                 gateway=gateway, auth=auth,
                 name=name, tenant=tenant,
                 memory=memory, workspace=workspace,
-                skills=skills, expose=expose,
+                skills=normalised_skills, expose=expose,
                 **defaults,
             )
-        normalised_skills = normalize_skills(skills)
         return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose,
                    tools=combined_tools)
 
