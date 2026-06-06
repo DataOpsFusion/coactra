@@ -6,6 +6,7 @@ from typing import Any, AsyncIterator
 
 from coactra.agent.sdk.events import Event, RunResult
 from coactra.agent.sdk.runtime import AgentRuntimePort, PydanticAIRuntime
+from coactra.agent.sdk.skills import Skill, build_agent_card, normalize_skills
 
 
 class Run:
@@ -42,10 +43,22 @@ class Run:
 
 
 class Agent:
-    """Elegant async agent facade. Slice 1 wires the model + runtime only."""
+    """Elegant async agent facade. Wires model + runtime + memory/workspace/skills."""
 
-    def __init__(self, runtime: AgentRuntimePort) -> None:
+    def __init__(
+        self,
+        runtime: AgentRuntimePort,
+        *,
+        name: str | None = None,
+        tenant: str | None = None,
+        skills: list[Skill] | None = None,
+        expose: bool = False,
+    ) -> None:
         self._runtime = runtime
+        self._name = name or "agent"
+        self._tenant = tenant or "default"
+        self._skills: list[Skill] = skills if skills is not None else []
+        self._expose = expose
 
     @classmethod
     async def create(cls, *, model: Any, instructions: str | None = None,
@@ -55,6 +68,12 @@ class Agent:
                      api_key: str | None = None,
                      gateway: str | None = None,
                      auth: Any = None,
+                     name: str | None = None,
+                     tenant: str | None = None,
+                     memory: Any = None,
+                     workspace: Any = None,
+                     skills: Any = None,
+                     expose: bool = False,
                      **defaults: Any) -> "Agent":
         if runtime is not None:
             rt = runtime
@@ -63,9 +82,20 @@ class Agent:
                 model=model, instructions=instructions, tools=tools,
                 api_base=api_base, api_key=api_key,
                 gateway=gateway, auth=auth,
+                name=name, tenant=tenant,
+                memory=memory, workspace=workspace,
+                skills=skills, expose=expose,
                 **defaults,
             )
-        return cls(rt)
+        normalised_skills = normalize_skills(skills)
+        return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose)
+
+    @property
+    def card(self) -> dict | None:
+        """Return an A2A Agent Card dict when skills or expose are configured, else None."""
+        if not self._skills and not self._expose:
+            return None
+        return build_agent_card(self._name, self._skills, tenant=self._tenant)
 
     async def send(self, message: str, *, output: type | None = None,
                    output_type: type | None = None,

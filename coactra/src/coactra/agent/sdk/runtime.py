@@ -37,6 +37,12 @@ class PydanticAIRuntime:
                  api_key: str | None = None,
                  gateway: str | None = None,
                  auth: Any = None,
+                 name: str | None = None,
+                 tenant: str | None = None,
+                 memory: Any = None,
+                 workspace: Any = None,
+                 skills: Any = None,
+                 expose: bool = False,
                  **defaults: Any) -> None:
         if isinstance(model, str):
             # Route string ids through litellm + coactra.ai's thinking-model handling.
@@ -72,8 +78,32 @@ class PydanticAIRuntime:
 
             self._gateway_url = gateway
 
+        # Resolve effective agent/tenant names for scoping
+        _agent_name = name or "agent"
+        _tenant_name = tenant or "default"
+
+        # Memory binding
+        self._memory: Any = None
+        if memory is not None:
+            from coactra.agent.sdk.memory import bind_memory  # noqa: PLC0415
+            from coactra.memory.types import Scope as MemScope  # noqa: PLC0415
+            mem_scope = MemScope(tenant=_tenant_name, agent=_agent_name)
+            self._memory = bind_memory(memory, mem_scope)
+
+        # Workspace tools
+        self._workspace: Any = None
+        self._workspace_tools: list[Any] = []
+        if workspace is not None:
+            from coactra.workspace import open_workspace  # noqa: PLC0415
+            from coactra.workspace.scope import Scope as WsScope  # noqa: PLC0415
+            from coactra.agent.sdk.workspace_tools import workspace_tools as _ws_tools  # noqa: PLC0415
+            ws_scope = WsScope(tenant_id=_tenant_name, agent_id=_agent_name)
+            self._workspace = open_workspace(scope=ws_scope, base_dir=workspace)
+            self._workspace_tools = _ws_tools(self._workspace)
+
     def _build(self, output_type: type | None) -> PydAgent:
-        kwargs: dict[str, Any] = {"instructions": self._instructions, "tools": self._tools}
+        all_tools = self._tools + self._workspace_tools
+        kwargs: dict[str, Any] = {"instructions": self._instructions, "tools": all_tools}
         if output_type is not None:
             kwargs["output_type"] = output_type
         if self._gateway_toolset is not None:
@@ -81,7 +111,14 @@ class PydanticAIRuntime:
         return PydAgent(self._model, **kwargs)
 
     async def aclose(self) -> None:
-        """No-op: MCPToolset manages its own client lifecycle via the toolset protocol."""
+        """Close workspace if present; gateway toolset manages its own lifecycle."""
+        if self._workspace is not None:
+            close = getattr(self._workspace, "close", None)
+            if close is not None:
+                import inspect  # noqa: PLC0415
+                result = close()
+                if inspect.isawaitable(result):
+                    await result
 
     def _usage(self, result: Any, run_id: str, *, seq: int = 0) -> Usage | None:
         # pydantic-ai 1.105: `result.usage` is a property (the callable form is deprecated).
@@ -97,10 +134,17 @@ class PydanticAIRuntime:
 
     async def run(self, prompt: str, *, run_id: str, output_type: type | None = None,
                   message_history: list[Any] | None = None) -> RunResult:
+        original_prompt = prompt
+        if self._memory is not None:
+            recalled = await self._memory.recall(prompt)
+            if recalled:
+                prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
         agent = self._build(output_type)
         result = await agent.run(prompt, message_history=message_history)
         output = result.output
         text = output if isinstance(output, str) else ""
+        if self._memory is not None:
+            await self._memory.remember(f"user: {original_prompt}\nassistant: {text}")
         return RunResult.finished(
             text=text,
             output=None if isinstance(output, str) else output,
@@ -139,6 +183,11 @@ class PydanticAIRuntime:
             ToolReturnPart,
         )
 
+        original_prompt = prompt
+        if self._memory is not None:
+            recalled = await self._memory.recall(prompt)
+            if recalled:
+                prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
         agent = self._build(output_type)
         seq = 0
         tool_calls: list[ToolCall] = []
@@ -191,6 +240,12 @@ class PydanticAIRuntime:
                 if usage is not None:
                     yield usage
                     seq += 1
+                if result is not None and self._memory is not None:
+                    _stream_output = result.output
+                    _stream_text = _stream_output if isinstance(_stream_output, str) else ""
+                    await self._memory.remember(
+                        f"user: {original_prompt}\nassistant: {_stream_text}"
+                    )
                 if on_result is not None and result is not None:
                     output = result.output
                     text = output if isinstance(output, str) else ""
