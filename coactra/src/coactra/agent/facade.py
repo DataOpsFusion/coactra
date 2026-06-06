@@ -88,6 +88,7 @@ class Agent:
                      learned: Any = None,
                      procedure_engine: Any | None = None,
                      procedure_scope: Any | None = None,
+                     tracer: Any | None = None,
                      **defaults: Any) -> "Agent":
         learned_procedures = normalize_learned_procedures(learned)
         learned_skills = learned_procedure_skills(learned_procedures)
@@ -130,7 +131,7 @@ class Agent:
                 gateway=gateway, auth=auth,
                 name=name, tenant=tenant,
                 memory=memory, workspace=workspace,
-                skills=normalised_skills, expose=expose,
+                skills=normalised_skills, expose=expose, tracer=tracer,
                 **defaults,
             )
         return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose,

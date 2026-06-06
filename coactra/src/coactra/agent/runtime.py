@@ -1,6 +1,7 @@
 """AgentRuntimePort + the default pydantic-ai runtime (Slice 1: run + stream)."""
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
 
 from pydantic_ai import Agent as PydAgent
@@ -43,6 +44,7 @@ class PydanticAIRuntime:
                  workspace: Any = None,
                  skills: Any = None,
                  expose: bool = False,
+                 tracer: Any | None = None,
                  **defaults: Any) -> None:
         if isinstance(model, str):
             # Route string ids through litellm + coactra.ai's thinking-model handling.
@@ -54,6 +56,9 @@ class PydanticAIRuntime:
             self._model = model
         self._instructions = instructions
         self._tools = tools or []
+        self._agent_name = name or "agent"
+        self._tenant_name = tenant or "default"
+        self._tracer = tracer
 
         # Gateway / MCP toolset wiring
         self._gateway_toolset: Any = None
@@ -79,8 +84,8 @@ class PydanticAIRuntime:
             self._gateway_url = gateway
 
         # Resolve effective agent/tenant names for scoping
-        _agent_name = name or "agent"
-        _tenant_name = tenant or "default"
+        _agent_name = self._agent_name
+        _tenant_name = self._tenant_name
 
         # Memory binding
         self._memory: Any = None
@@ -134,23 +139,49 @@ class PydanticAIRuntime:
 
     async def run(self, prompt: str, *, run_id: str, output_type: type | None = None,
                   message_history: list[Any] | None = None) -> RunResult:
-        original_prompt = prompt
-        if self._memory is not None:
-            recalled = await self._memory.recall(prompt)
-            if recalled:
-                prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
-        agent = self._build(output_type)
-        result = await agent.run(prompt, message_history=message_history)
-        output = result.output
-        text = output if isinstance(output, str) else ""
-        if self._memory is not None:
-            await self._memory.remember(f"user: {original_prompt}\nassistant: {text}")
-        return RunResult.finished(
-            text=text,
-            output=None if isinstance(output, str) else output,
-            usage=self._usage(result, run_id),
-            messages=tuple(result.all_messages()),
+        span_cm = (
+            self._tracer.start_as_current_span(
+                "coactra.agent.run",
+                attributes={
+                    "coactra.run_id": run_id,
+                    "coactra.agent.name": self._agent_name,
+                    "coactra.tenant_id": self._tenant_name,
+                },
+            )
+            if self._tracer is not None
+            else nullcontext(None)
         )
+        with span_cm as span:
+            original_prompt = prompt
+            if self._memory is not None:
+                recalled = await self._memory.recall(prompt)
+                if recalled:
+                    prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
+            if span is not None:
+                span.add_event(
+                    "coactra.model.request",
+                    attributes={"coactra.prompt.length": len(prompt)},
+                )
+            agent = self._build(output_type)
+            result = await agent.run(prompt, message_history=message_history)
+            output = result.output
+            text = output if isinstance(output, str) else ""
+            if span is not None:
+                span.add_event(
+                    "coactra.model.response",
+                    attributes={
+                        "coactra.output.type": type(output).__name__,
+                        "coactra.output.length": len(text),
+                    },
+                )
+            if self._memory is not None:
+                await self._memory.remember(f"user: {original_prompt}\nassistant: {text}")
+            return RunResult.finished(
+                text=text,
+                output=None if isinstance(output, str) else output,
+                usage=self._usage(result, run_id),
+                messages=tuple(result.all_messages()),
+            )
 
     async def stream(self, prompt: str, *, run_id: str, output_type: type | None = None,
                      message_history: list[Any] | None = None,
