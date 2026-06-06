@@ -153,7 +153,7 @@ class PrefectEngine:
             from prefect.deployments import run_deployment
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise MissingExtraError(
-                "PrefectEngine requires coactra-jobs[prefect] or "
+                "PrefectEngine requires coactra[prefect] or "
                 "an injected run_deployment callable"
             ) from exc
         return run_deployment

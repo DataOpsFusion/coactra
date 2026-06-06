@@ -29,8 +29,8 @@ Do not rebuild commodity runtime features:
 | Stateful agent procedures | LangGraph remains the default `WorkflowEngine` target | Coactra owns `Procedure`, `RunContext`, scope, interrupts, and work-ledger mapping. LangGraph owns graph execution and checkpointing. |
 | Hard durable execution | Temporal is the first serious replacement for custom durable-engine behavior | Coactra owns payload shape, work-order audit, tenant policy, and adapter contract. Temporal owns workflow history, retries, signals, replay, and workers. |
 | Pythonic deployment workflows | Prefect is a secondary adapter target | Coactra can trigger deployment runs and pass state/decision payloads. Same-thread resume must be host-implemented or clearly marked unsupported. |
-| Typed agent API inspiration | Use PydanticAI as a reference, not an immediate rewrite | Borrow typed deps/tools/output patterns only where they simplify `coactra-agent` and `coactra-ai`. |
-| Provider normalization | Keep LiteLLM and Instructor behind `coactra-ai` | Coactra should expose a stable model/structured-output seam, not provider-specific details. |
+| Typed agent API inspiration | Use PydanticAI as a reference, not an immediate rewrite | Borrow typed deps/tools/output patterns only where they simplify `coactra.agent` and `coactra.ai`. |
+| Provider normalization | Keep LiteLLM and Instructor behind `coactra.ai` | Coactra should expose a stable model/structured-output seam, not provider-specific details. |
 | Plugin system | Defer broad plugins; consider pluggy if hooks become real public API | Start with a tiny hook list and contract tests before advertising ecosystem plugins. |
 
 ## Current Public Shell
@@ -134,7 +134,7 @@ Exit criteria:
 
 Deliverables:
 
-- documented provider-normalization policy for `coactra-ai`
+- documented provider-normalization policy for `coactra.ai`
 - typed structured-output contract inspired by PydanticAI/Instructor where useful
 - error model that maps provider/runtime/storage failures into Coactra domain errors
 

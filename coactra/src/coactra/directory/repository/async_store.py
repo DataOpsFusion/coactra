@@ -2,7 +2,7 @@
 
 SQLModel's repository remains the single tenant-checked implementation. Database calls
 run in worker threads so async fleet services do not block their event loop. PostgreSQL
-provides the shared multi-process persistence; install ``coactra-directory[postgres]``.
+provides the shared multi-process persistence; install ``coactra[postgres]``.
 """
 from __future__ import annotations
 

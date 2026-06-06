@@ -1,10 +1,11 @@
 import importlib
+import importlib.metadata
 
 
 def test_memory_imports():
     mod = importlib.import_module("coactra.memory")
     assert mod is not None
-    assert mod.__version__ == "0.2.0"
+    assert mod.__version__ == importlib.metadata.version("coactra")
 
 
 def test_coactra_is_namespace_package():

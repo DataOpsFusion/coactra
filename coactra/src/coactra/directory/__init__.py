@@ -13,6 +13,13 @@ in-memory tree is mutated, then flushed through an injected ``OrgStore`` (select
 reporting/escalation/ownership/policy-refs) is preserved alongside the new model.
 """
 
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+from coactra._version import distribution_version
+
 from coactra.directory.adapters import OpenFGAAuthorizer
 from coactra.directory.authorization import (
     AuthorizationDecision,
@@ -41,29 +48,7 @@ from coactra.directory.domain import (
     PolicyReference,
     PermissionSet,
 )
-from coactra.directory.engine import make_engine
 from coactra.directory.errors import CrossTenantError, MissingExtraError
-from coactra.directory.factory import make_async_org_store, make_org_store
-from coactra.directory.models import (
-    Department,
-    EscalationRoute,
-    Member,
-    MemberKind,
-    Membership,
-    PolicyRef,
-    ReportingEdge,
-    Seat,
-    Tenant,
-)
-from coactra.directory.repository import (
-    AsyncOrgStore,
-    AsyncPostgresOrgStore,
-    Directory,
-    OrgStore,
-    SqliteOrgStore,
-    TenantOrgStoreRouter,
-)
-from coactra.directory.service import load_org, save_org
 
 __all__ = [
     "__version__",
@@ -120,4 +105,39 @@ __all__ = [
     "seniority_rank",
 ]
 
-__version__ = "0.2.0"
+_LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    # SQLModel entities
+    "MemberKind": ("coactra.directory.models", "MemberKind"),
+    "Tenant": ("coactra.directory.models", "Tenant"),
+    "Department": ("coactra.directory.models", "Department"),
+    "Seat": ("coactra.directory.models", "Seat"),
+    "Member": ("coactra.directory.models", "Member"),
+    "Membership": ("coactra.directory.models", "Membership"),
+    "ReportingEdge": ("coactra.directory.models", "ReportingEdge"),
+    "EscalationRoute": ("coactra.directory.models", "EscalationRoute"),
+    "PolicyRef": ("coactra.directory.models", "PolicyRef"),
+    # persistence SPI + backends
+    "OrgStore": ("coactra.directory.repository", "OrgStore"),
+    "Directory": ("coactra.directory.repository", "Directory"),
+    "SqliteOrgStore": ("coactra.directory.repository", "SqliteOrgStore"),
+    "AsyncOrgStore": ("coactra.directory.repository", "AsyncOrgStore"),
+    "AsyncPostgresOrgStore": ("coactra.directory.repository", "AsyncPostgresOrgStore"),
+    "TenantOrgStoreRouter": ("coactra.directory.repository", "TenantOrgStoreRouter"),
+    "make_engine": ("coactra.directory.engine", "make_engine"),
+    # factory + service
+    "make_org_store": ("coactra.directory.factory", "make_org_store"),
+    "make_async_org_store": ("coactra.directory.factory", "make_async_org_store"),
+    "load_org": ("coactra.directory.service", "load_org"),
+    "save_org": ("coactra.directory.service", "save_org"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attr_name = target
+    return getattr(import_module(module_name), attr_name)
+
+
+__version__ = distribution_version()

@@ -2,6 +2,8 @@
 
 This page names the public surfaces application code should use. The rule is simple: import from package roots for core behavior, and from `.adapters` packages only when you are wiring an external system.
 
+For a symbol-level stability index, see [API_INDEX.md](../API_INDEX.md).
+
 Start with [Quickstart](../getting-started/quickstart.md) if you are building your first app, then use the [example catalog](../getting-started/examples.md) to choose a sample close to your use case.
 
 ## Package Roots
@@ -134,6 +136,6 @@ The official A2A SDK path is async. The default `make_agent(...)` path is sync b
 ## Examples
 
 - [Example catalog](../getting-started/examples.md): choose the right runnable sample.
-- [Basic incident triage](../examples/basic-incident-triage.md): smallest normal app using `make_agent` and `WorkManager`.
-- [Composed support agent](../examples/composed-support-agent.md): richer port injection without subclassing.
+- [Incident response handoff](../examples/incident-response-handoff.md): smallest normal app using `make_agent` and `WorkManager`.
+- [Support ticket agent](../examples/support-ticket-agent.md): richer port injection without subclassing.
 - [Sample projects](../examples/index.md): memory, durable work, workspace, and multi-agent policy.

@@ -1,5 +1,7 @@
 """coactra.jobs.work - durable work orders for agent systems."""
 
+from coactra._version import distribution_version
+
 from coactra.jobs.work.backends import InMemoryWorkStore, SqlWorkStore
 from coactra.jobs.work.conformance import WorkStoreReport, check_work_store_contract
 from coactra.jobs.work.domain import (
@@ -93,4 +95,4 @@ __all__ = [
     "TenantWorkStoreRouter",
 ]
 
-__version__ = "0.1.0"
+__version__ = distribution_version()

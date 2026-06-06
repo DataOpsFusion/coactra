@@ -2,17 +2,16 @@ from types import SimpleNamespace
 
 import pytest
 
-from coactra.jobs import (
+from coactra.jobs import Scope, WorkOrder
+from coactra.jobs.work import (
     AgentSpec,
     Artifact,
     ArtifactPart,
     ArtifactRef,
     EventEnvelope,
-    Scope,
     SkillSpec,
-    WorkOrder,
 )
-from coactra.jobs.adapters import (
+from coactra.jobs.work.adapters import (
     DaprDispatcher,
     DBOSDispatcher,
     FsspecArtifactStore,
@@ -204,7 +203,7 @@ class CloudEvent:
 
 
 def test_cloudevents_converter_uses_sdk_constructor(monkeypatch):
-    from coactra.jobs.adapters import cloudevents
+    from coactra.jobs.work.adapters import cloudevents
 
     monkeypatch.setattr(
         cloudevents,

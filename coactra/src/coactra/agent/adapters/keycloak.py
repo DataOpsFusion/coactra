@@ -71,7 +71,7 @@ async def _post_form_async(url: str, form: dict[str, str], headers: dict[str, st
     try:
         import httpx
     except ImportError as exc:  # pragma: no cover - optional extra path
-        raise TokenExchangeError("AsyncKeycloakExchanger requires coactra-agent[oauth]") from exc
+        raise TokenExchangeError("AsyncKeycloakExchanger requires coactra[oauth]") from exc
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(url, data=form, headers=headers)

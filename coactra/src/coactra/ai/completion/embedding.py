@@ -4,13 +4,24 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, TYPE_CHECKING
 
-import numpy as np
-
 if TYPE_CHECKING:  # annotation only — no runtime dep on replay.models (avoids a cycle)
     from coactra.ai.replay.models import ReasoningTrace
 
 
+def _require_numpy():
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - base install gate
+        from coactra.errors import MissingExtraError
+
+        raise MissingExtraError(
+            "embedding helpers require coactra[ai]; install with: pip install coactra[ai]"
+        ) from exc
+    return np
+
+
 def cosine(a: list[float], b: list[float]) -> float:
+    np = _require_numpy()
     va, vb = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
     na, nb = np.linalg.norm(va), np.linalg.norm(vb)
     if na == 0.0 or nb == 0.0:

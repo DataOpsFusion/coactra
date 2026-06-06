@@ -26,7 +26,7 @@ The project should use an adopt-first rule for generic infrastructure:
 - Temporal is the first-choice target for hard durable execution and same-thread signal/resume.
 - Prefect is useful for Python deployment-triggered workflows, but Coactra must document whether resume is same-thread, host-owned, or a new run carrying prior state.
 - PydanticAI is a useful API-design reference for typed dependencies, tools, and structured output, but adopting its vocabulary should not force a rewrite of Coactra's package model.
-- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra-ai`.
+- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra.ai` (`pip install "coactra[ai]"`).
 
 See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/release-policy.md](../maintainers/release-policy.md) for the concrete v1 plan.
 
@@ -34,7 +34,7 @@ See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/r
 
 ```text
 Application functions
-  -> coactra-agent composition root
+  -> coactra.agent composition root (make_agent)
   -> Coactra policy and state contracts
   -> runtime adapter where needed
        LangGraph as the default agentic stateful execution adapter
@@ -43,18 +43,20 @@ Application functions
        Keycloak, OpenFGA, SQL, Graphiti/mem0, sandbox provider
 ```
 
-## Package Responsibilities
+## Capability Responsibilities
 
-| Package | Keep owning | Avoid owning |
-|---|---|---|
-| `coactra` | shared `CoactraScope` and umbrella extras | runtime behavior |
-| `coactra-ai` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
-| `coactra-memory` | backend-neutral memory contract | a custom vector/graph memory engine |
-| `coactra-workspace` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
-| `coactra-jobs` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
-| `coactra-jobs` | procedure data model and engine adapters | custom durable engine beyond adapters/gates |
-| `coactra-directory` | tenant org tree, permissions, escalation | workflow execution or messaging |
-| `coactra-agent` | composition, tool mount policy, identity, collaboration | sibling package internals |
+One PyPI distribution (`coactra`); capabilities are modules plus optional extras.
+
+| Module | Extra (typical) | Keep owning | Avoid owning |
+|---|---|---|---|
+| `coactra.scope` | — | shared `CoactraScope` | runtime behavior |
+| `coactra.ai` | `[ai]` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
+| `coactra.memory` | `[memory]` + backend extras | backend-neutral memory contract | a custom vector/graph memory engine |
+| `coactra.workspace` | — | desk files, handoff, manifest, local policy | MCP mounting or org policy |
+| `coactra.jobs` | base + `[sql]`, `[langgraph]`, … | durable work ledger and procedure model | broker/scheduler/workflow engine replacement |
+| `coactra.jobs.workflow` | `[langgraph]`, `[temporal]`, … | procedure DSL and engine adapters | custom durable engine beyond adapters/gates |
+| `coactra.directory` | `[organization]` | tenant org tree, permissions, escalation | workflow execution or messaging |
+| `coactra.agent` | `[agent]` | composition, tool mount policy, identity, collaboration | capability module internals |
 
 ## Runtime Adoption Rule
 

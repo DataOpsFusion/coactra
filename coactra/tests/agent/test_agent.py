@@ -6,11 +6,10 @@ from coactra.agent import (
     AgentRef,
     CollaborationDenied,
     DelegationGrant,
-    FakeMemory,
-    FakeWorkspace,
     Scope,
     make_agent,
 )
+from coactra.agent.ports import FakeMemory, FakeWorkspace
 
 
 class FakeServer:

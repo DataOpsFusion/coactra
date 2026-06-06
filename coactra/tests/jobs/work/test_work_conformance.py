@@ -1,4 +1,4 @@
-from coactra.jobs import InMemoryWorkStore, check_work_store_contract
+from coactra.jobs.work import InMemoryWorkStore, check_work_store_contract
 
 
 def test_work_store_conformance_probe_accepts_inmemory_store():

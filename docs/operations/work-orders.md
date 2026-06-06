@@ -22,7 +22,8 @@ pip install 'coactra[integrations]'
 ## Quick Start
 
 ```python
-from coactra.jobs import Artifact, ArtifactPart, Scope, WorkManager, WorkOrder
+from coactra.jobs import Scope, WorkManager, WorkOrder
+from coactra.jobs.work import Artifact, ArtifactPart
 
 scope = Scope(tenant_id="acme", namespace="support")
 work = WorkManager()
@@ -106,7 +107,8 @@ For backend services, long-running workers, serverless resume/checkpoint flows, 
 multi-process execution, use `SqlWorkStore`:
 
 ```python
-from coactra.jobs import Scope, SqlWorkStore, WorkManager, WorkOrder
+from coactra.jobs import Scope, WorkManager, WorkOrder
+from coactra.jobs.work import SqlWorkStore
 
 store = SqlWorkStore.from_url("sqlite:///coactra-jobs.db")
 manager = WorkManager(store=store)

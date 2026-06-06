@@ -17,6 +17,8 @@ objects; no mem0/graphiti type ever leaks across the boundary.
     Memory(backend=make_backend("inprocess")).sync.recall("q", scope=scope)
 """
 
+from coactra._version import distribution_version
+
 from coactra.memory.authorization import (
     AllowListMemoryAuthorizer,
     AuthorizedMemory,
@@ -54,4 +56,4 @@ __all__ = [
     "TenantMemoryBackendRouter",
 ]
 
-__version__ = "0.2.0"
+__version__ = distribution_version()

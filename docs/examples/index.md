@@ -1,31 +1,29 @@
 # Examples
 
-The examples are small and runnable. They show the intended Coactra style:
-application behavior is written as plain functions, while classes stay at durable
-state and backend boundaries.
+The examples are scenario-first. Each one runs offline unless the page explicitly
+mentions an optional extra.
 
-## Start Here
-
-| Goal | Example |
-|---|---|
-| Smallest normal app | [Basic Incident Triage](basic-incident-triage.md) |
-| Explicit composition with plain functions | [Composed Support Agent](composed-support-agent.md) |
-| Higher-level SDK shape | [Offline Agent SDK](offline-agent-sdk.md) |
-| Scoped support memory | [Customer Support Memory](customer-support-memory.md) |
-| Agent + work + memory (project) | [Support Desk](support-desk.md) |
-| **Work orders (focused scripts)** | [Work Order Lifecycle](work-order-lifecycle.md) |
-| **Procedure-backed work** | [Procedure-Backed Work](procedure-backed-work.md) |
-| Durable work lifecycle (project) | [Release Runner](release-runner.md) |
-| Workspace files and handoff | [Workspace Research Desk](workspace-research-desk.md) |
-| Policy-gated collaboration | [Multi-Agent Policy](multi-agent-policy.md) |
-
-## Local Setup
-
-Install the package editable when running examples from a checkout:
+Install from a checkout before running them:
 
 ```bash
 python -m pip install -e "./coactra[all,dev]"
 ```
 
-Run examples from the repository root. Each page lists its exact command and the
-production boundary it is meant to demonstrate.
+| Scenario | Example |
+|---|---|
+| Smallest incident app | [Incident Response Handoff](incident-response-handoff.md) |
+| Agent composed from plain ports | [Support Ticket Agent](support-ticket-agent.md) |
+| Optional SDK loop with no network call | [Offline SRE Agent](offline-sre-agent.md) |
+| Durable release work | [Release Work Lifecycle](release-work-lifecycle.md) |
+| Human approval gate | [Release Work Lifecycle](release-work-lifecycle.md) |
+| Procedure-backed runbook | [Procedure Runbook](procedure-runbook.md) |
+| Repeat-issue memory | [Resolution Memory](resolution-memory.md) |
+| Agent + memory + work project | [Ticket Triage](ticket-triage.md) |
+| Release checkpoint project | [Release Checkpoint](release-checkpoint.md) |
+| Scoped workspace files | [Research Workspace](research-workspace.md) |
+| Policy-gated collaboration | [Approval Routing](approval-routing.md) |
+
+These are not production deployments. They use in-memory stores, local fake ports,
+and ephemeral workspaces so the behavior is visible without service setup. The
+production replacement point is always the backend or adapter boundary, not the
+application function.

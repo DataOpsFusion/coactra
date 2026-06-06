@@ -4,6 +4,14 @@ import inspect
 import coactra.agent.ports as ports_pkg
 from coactra.agent import (
     AIPort,
+    MemoryPort,
+    OrganizationPort,
+    Scope,
+    WorkflowPort,
+    WorkspacePort,
+    WorkPort,
+)
+from coactra.agent.ports import (
     FakeAI,
     FakeMember,
     FakeMemory,
@@ -12,12 +20,6 @@ from coactra.agent import (
     FakeWorkflow,
     FakeWorkspace,
     FakeWork,
-    MemoryPort,
-    OrganizationPort,
-    Scope,
-    WorkflowPort,
-    WorkspacePort,
-    WorkPort,
 )
 
 ACME = Scope(tenant_id="acme")

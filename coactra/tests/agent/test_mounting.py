@@ -8,8 +8,8 @@ from coactra.agent import (
     RejectOnConflict,
     Scope,
     ToolSpec,
-    ToolTrie,
 )
+from coactra.agent.mounting import ToolTrie
 
 
 class FakeServer:

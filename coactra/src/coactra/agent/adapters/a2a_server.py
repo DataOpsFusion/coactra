@@ -9,9 +9,16 @@ assembly.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+
+_log = logging.getLogger(__name__)
+
+A2A_ERROR_UNAUTHORIZED = "unauthorized"
+A2A_ERROR_INTERNAL = "internal"
+A2A_ERROR_INSECURE_MODE_REQUIRED = "insecure_mode_required"
 
 A2AHandler = Callable[["A2AInboundRequest"], Awaitable[str]]
 
@@ -74,6 +81,10 @@ def headers_from_context(context: Any) -> dict[str, str]:
     return {}
 
 
+def _a2a_error_message(code: str) -> str:
+    return f"error: {code}"
+
+
 def _require_a2a_server_sdk() -> dict[str, Any]:
     try:
         from a2a.helpers import get_message_text, new_text_message
@@ -85,7 +96,7 @@ def _require_a2a_server_sdk() -> dict[str, Any]:
         from a2a.utils.constants import DEFAULT_RPC_URL
         from starlette.applications import Starlette
     except ImportError as exc:  # pragma: no cover - optional extra guard
-        raise RuntimeError("coactra-agent[a2a] is required for inbound A2A server") from exc
+        raise RuntimeError("coactra[agent,a2a] is required for inbound A2A server") from exc
     return {
         "get_message_text": get_message_text,
         "new_text_message": new_text_message,
@@ -105,10 +116,22 @@ def make_a2a_executor(
     handler: A2AHandler,
     *,
     verifier: A2ARequestVerifier | None = None,
+    allow_unauthenticated: bool = False,
     default_capability: str = "execute",
     allowed_subject_prefixes: Sequence[str] = ("",),
 ) -> Any:
     """Build an official-SDK AgentExecutor around a host runtime handler."""
+    if verifier is None and not allow_unauthenticated:
+        raise ValueError(
+            "A2A inbound task execution requires a request verifier or "
+            "explicit allow_unauthenticated=True (insecure mode)"
+        )
+    if verifier is None and allow_unauthenticated:
+        _log.warning(
+            "A2A inbound task execution is running with allow_unauthenticated=True; "
+            "do not use this mode outside local development"
+        )
+
     sdk = _require_a2a_server_sdk()
     base = sdk["AgentExecutor"]
     get_message_text = sdk["get_message_text"]
@@ -131,10 +154,16 @@ def make_a2a_executor(
                         allowed_subject_prefixes=allowed_subject_prefixes,
                     )
                 except Exception as exc:  # noqa: BLE001 - verifier type is host supplied.
+                    _log.warning("A2A verifier rejected request", exc_info=exc)
                     await event_queue.enqueue_event(
-                        new_text_message(f"error: unauthorized: {exc}")
+                        new_text_message(_a2a_error_message(A2A_ERROR_UNAUTHORIZED))
                     )
                     return
+            elif not allow_unauthenticated:
+                await event_queue.enqueue_event(
+                    new_text_message(_a2a_error_message(A2A_ERROR_INSECURE_MODE_REQUIRED))
+                )
+                return
             request = A2AInboundRequest(
                 text=text,
                 capability=capability,
@@ -150,8 +179,11 @@ def make_a2a_executor(
             )
             try:
                 answer = await handler(request)
-            except Exception as exc:  # noqa: BLE001 - surface runtime failure to caller.
-                await event_queue.enqueue_event(new_text_message(f"error: {exc}"))
+            except Exception:  # noqa: BLE001 - surface runtime failure to caller.
+                _log.exception("A2A handler failed for task %s", request.task_id)
+                await event_queue.enqueue_event(
+                    new_text_message(_a2a_error_message(A2A_ERROR_INTERNAL))
+                )
                 return
             await event_queue.enqueue_event(new_text_message(answer))
 
@@ -176,6 +208,7 @@ def build_a2a_app(
     agent_card: Any,
     handler: A2AHandler,
     verifier: A2ARequestVerifier | None = None,
+    allow_unauthenticated: bool = False,
     extra_routes: Sequence[Any] = (),
     task_store: Any | None = None,
     default_capability: str = "execute",
@@ -187,6 +220,7 @@ def build_a2a_app(
         agent_executor=make_a2a_executor(
             handler,
             verifier=verifier,
+            allow_unauthenticated=allow_unauthenticated,
             default_capability=default_capability,
             allowed_subject_prefixes=allowed_subject_prefixes,
         ),

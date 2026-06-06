@@ -5,16 +5,18 @@ import pytest
 pytest.importorskip("sqlalchemy")
 
 from coactra.jobs import (
+    ExecutionPlan,
+    Scope,
+    WorkManager,
+    WorkOrder,
+)
+from coactra.jobs.work import (
     ConflictError,
     Decision,
     DecisionOutcome,
     EventEnvelope,
-    ExecutionPlan,
     LeaseError,
-    Scope,
     SqlWorkStore,
-    WorkManager,
-    WorkOrder,
     WorkStatus,
 )
 
