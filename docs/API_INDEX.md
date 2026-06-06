@@ -1,106 +1,197 @@
-# Public API Index
+# API Index
 
-This page lists the symbols application code should import from Coactra package roots.
-See [maintainers/release-policy.md](maintainers/release-policy.md) for stability tiers,
-deprecation rules, and the review checklist.
+Complete public surface for Coactra 0.0.x (alpha). Tags: **Available** = works today; **Designed / coming** = fully specified, not yet shipped.
 
-Coactra ships as **one PyPI distribution** (`pip install coactra`). Capabilities and
-backends are optional extras (`pip install "coactra[agent,sql]"`). There are no separate
-`coactra-*` distributions.
-
-## Stable V1 surface (preferred imports)
-
-These roots are the intended long-lived application API. Until v1 they may still change,
-but changes should be intentional, documented, and covered by tests.
+## Top-level exports
 
 ```python
-from coactra.scope import CoactraScope
-from coactra.memory import Memory, make_backend
-from coactra.jobs import WorkManager, WorkOrder
-from coactra.workspace import open_workspace, Workspace
-from coactra.agent import make_agent, Agent
-from coactra.errors import CoactraError, ErrorCode, MissingExtraError
+from coactra import Agent, Skill, oidc, StaticToken, mcp
 ```
 
-| Module | Stable symbols | Extra (if any) |
-|---|---|---|
-| `coactra.scope` | `CoactraScope`, `Scope` (alias), `is_safe_path_component` | — |
-| `coactra.memory` | `Memory`, `make_backend`, `Scope`, `Recollection`, `MemoryBackend`, `AuthorizedMemory` | backends: `mem0`, `graphiti` |
-| `coactra.jobs` | `WorkManager`, `WorkOrder`, `WorkScope`, `Scope` (alias), `Orchestrator`, `DurableOrchestrator`, `Procedure` | SQL: `sql`; workflow runtimes: `langgraph`, `temporal`, `prefect`, … |
-| `coactra.workspace` | `open_workspace`, `Workspace`, `WorkspaceBackend`, `LocalFilesystemBackend`, `CliPolicy` | — |
-| `coactra.agent` | `make_agent`, `Agent`, `Scope`, port Protocols (`AIPort`, `MemoryPort`, …), collaboration policy types | `agent`; integrations: `a2a`, `oauth` |
-| `coactra.errors` | `CoactraError`, `ErrorCode`, `ErrorInfo`, `MissingExtraError`, `coactra_error_from_exception` | — |
-| `coactra.ai` | `ask`, `structured`, `Client`, `ReasoningEngine`, `InMemoryStore` | `ai`; backends: `chroma`, `tiktoken` |
-| `coactra.directory` | `Organization`, `OrgStore`, `make_org_store`, `Authorizer`, `CompanySpec`, `bootstrap_company` | `organization`; backends: `postgres`, `openfga` |
+| Name | Type | Status | Description |
+|------|------|--------|-------------|
+| `Agent` | class | **Available** | The single entry point. See below. |
+| `Skill` | dataclass | **Available** | Structured skill entry for the Agent Card. |
+| `oidc` | function | **Available** | OAuth 2.1 client-credentials token source (fetch + refresh). |
+| `StaticToken` | class | **Available** | Pre-fetched JWT token source for dev / CI. |
+| `mcp` | function | **Available** | Tag an extra MCP server URL for `tools=`. |
+| `Team` | class | **Designed / coming** | Agent roster with capability routing and policy. |
+| `Workflow` | class | **Designed / coming** | Playbook runner with durable step execution. |
+| `step` | function | **Designed / coming** | Build a Workflow step. |
 
-Each capability module also exposes a local `Scope` type (`coactra.memory.Scope`,
-`coactra.workspace.Scope`, etc.). For apps composing multiple capabilities, prefer
-`CoactraScope` and the `to_*_kwargs()` helpers.
+## Agent.create(...)
 
-## Beta (public, still settling)
-
-These modules are documented and import-stable enough for early adopters, but their
-contracts may change with a migration note before v1.
-
-| Module | Symbols | Notes |
-|---|---|---|
-| `coactra.agent.integrations` | `make_coactra_agent`, wiring helpers | Composition helpers for production agent setup. |
-
-## Experimental
-
-Exploratory APIs and integration seams. May change or be removed without a deprecation
-window. Do not build production examples that require these without accepting churn.
-
-| Area | Import path | Examples |
-|---|---|---|
-| Workflow DSL and graph builders | `coactra.jobs.workflow` | `build_graph`, `run_workflow`, `Step`, `document_from_procedure` |
-| Durable LangGraph engine | `coactra.jobs` | `DurableLangGraphEngine` |
-| Alternate workflow adapters | `coactra.jobs.workflow.adapters` | Temporal, Prefect, DBOS engines |
-| Workflow capability registry | `coactra.jobs` | `CapabilityRegistry`, `InMemoryCapabilityRegistry`, `CapabilityValidationError` |
-| Agent SDK facade | `coactra.agent.sdk` | `Agent` (PydanticAI-oriented; deliberately omitted from `coactra.agent.__all__`) |
-| Memory / workspace / jobs adapters | `*.adapters`, `*.backends` | Provider-specific wiring; import only at backend boundaries. |
-| Function shell and task hooks | `coactra.kernel`, `coactra.plugins` | `Kernel`, `PluginManager`, and hook DTOs are not used by the main facades yet. |
-
-Install workflow extras explicitly, for example `pip install "coactra[langgraph]"`.
-
-## Compatibility (deprecated root lookups)
-
-These symbols remain reachable for migration but emit `DeprecationWarning` when accessed
-from `coactra.agent` root:
-
-- `FakeAI`, `FakeMemory`, `FakeWorkspace`, `FakeWorkflow`, `FakeOrganization`, `FakeWork`
-- `ToolTrie`, A2A server helpers (`build_a2a_app`, …)
-
-Prefer concrete submodule imports, for example `from coactra.agent.ports import FakeAI`.
-
-Legacy package shims (`coactra.orchestration`, `coactra.work`, `coactra.workflow`,
-`coactra.organization`) remain importable. See [concepts/naming-migration.md](concepts/naming-migration.md).
-
-## Internal (do not import in application code)
-
-Implementation modules, private adapters, conformance test helpers, and re-exported
-work submodules loaded by `coactra.jobs` for compatibility. These may change without notice:
-
-- `coactra.jobs.work.*` subpackages re-exported at `coactra.jobs.*` (store, service, routing, …)
-- `coactra.*._optional`, `coactra.*._stub`, `coactra.*._errors`
-- `coactra.agent.domain` internals beyond the public `Scope` / `ToolSpec` surface
-- Test-only fakes outside documented adapter boundaries
-
-## Install quick reference
-
-```bash
-pip install coactra                    # core + jobs/work (WorkManager)
-pip install "coactra[agent]"           # agent facade
-pip install "coactra[ai]"              # LiteLLM / Instructor shelf
-pip install "coactra[memory]"          # memory facade (backends optional)
-pip install "coactra[organization]"    # directory / org model
-pip install "coactra[sql]"             # SqlWorkStore
-pip install "coactra[langgraph]"       # default workflow runtime
-pip install "coactra[all,dev]"         # all capability extras + pytest (from source)
+```python
+agent = await Agent.create(
+    model="anthropic/claude-sonnet-4-5",  # required
+    name="sre-1",
+    tenant="acme",
+    gateway="https://gateway/mcp",
+    auth=oidc(issuer, client_id, client_secret),
+    tools=[my_func, mcp("http://extra/mcp")],
+    memory="graphiti",
+    workspace="./desk",
+    skills=[Skill(id="cert.rotate", description="...", tags=["sre"], scopes=["cert:write"])],
+    instructions="Be terse.",
+    output=MyPydanticModel,
+    # coming:
+    peers=["security-agent"],
+    expose=True,
+)
 ```
 
-## Related docs
+### Parameters
 
-- [Interface map](concepts/interfaces.md): how the stable roots fit together.
-- [Library map](concepts/library-map.md): capability boundaries and philosophy.
-- [Release policy](maintainers/release-policy.md): versioning, tiers, and publishing.
+| Parameter | Type | Status | Description |
+|-----------|------|--------|-------------|
+| `model` | `str` | **Available** | Model id in litellm format (`provider/model` or bare id). |
+| `name` | `str` | **Available** | This agent's identity. Peers reference agents by name. |
+| `tenant` | `str` | **Available** | Tenant namespace. Defaults to `"default"`. |
+| `gateway` | `str` | **Available** | Primary MCP endpoint. Token scopes slice the tool list. No manual enumeration. |
+| `auth` | `oidc(...)` | **Available** | Token source: OAuth 2.1 client-credentials fetch + refresh. |
+| `token` | `str` | **Available** | Pre-fetched JWT for development (`token="eyJh..."` instead of `auth=`). |
+| `tools` | `list` | **Available** | Local Python functions and/or `mcp(url)` tags. Additive to the gateway. |
+| `memory` | `str` | **Available** | Memory backend name (`"graphiti"`). Auto-recall + auto-remember per turn. |
+| `workspace` | `str` | **Available** | Path to file desk. Surfaces `read_file`, `write_file`, `list_files`, `run` as tools. |
+| `skills` | `list[Skill \| str]` | **Available** | Curated skill roster, published as the A2A Agent Card. |
+| `instructions` | `str` | **Available** | Optional system prompt. |
+| `output` | `type` | **Available** | Pydantic model type for structured output. `run()` returns an instance. |
+| `peers` | `list[str]` | **Designed / coming** | Outbound A2A delegation targets (agent names). Separate from `tools`. |
+| `expose` | `bool` | **Designed / coming** | Publish the Agent Card for inbound A2A. Defaults to `True`. |
+
+## run / send / stream
+
+### agent.run(message, ...)
+
+```python
+# Text answer
+answer: str = await agent.run("Restart nginx and confirm.")
+
+# Typed output
+report: MyModel = await agent.run("Triage the incident.", output=MyPydanticModel)
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `message` | `str` | The prompt. |
+| `output` | `type \| None` | Pydantic model for structured output. Returns model instance if set. |
+| `message_history` | `list` | Prior turn messages (pydantic-ai format). |
+
+Returns `str` when `output` is not set; returns a Pydantic model instance when `output` is set.
+
+### agent.send(message, ...) → Run
+
+Returns a `Run` handle. Call `.stream()` to iterate events or `.wait()` to await the final result.
+
+```python
+run = await agent.send("Investigate the latency spike.")
+
+# Iterate events:
+async for event in run.stream():
+    ...
+
+# Or await final result:
+result = await run.wait()
+```
+
+### Event types (from stream)
+
+All events are frozen dataclasses with `run_id: str` and `seq: int`.
+
+| Event | Fields | Description |
+|-------|--------|-------------|
+| `Assistant` | `text: str` | A chunk of the model's text response. |
+| `Thinking` | `text: str` | A chunk of the model's reasoning / thinking output. |
+| `ToolCall` | `id, name, args` | The model requested a tool call. |
+| `ToolResult` | `id, name, result, error` | The tool returned a result (or error). |
+| `Usage` | `tokens: int, cost: float` | Token/cost accounting for the run. |
+| `Status` | `state: Literal["running","finished","error","cancelled"]` | Terminal event. |
+
+## agent.card
+
+```python
+card = agent.card    # the agent's curated A2A Agent Card
+```
+
+Returns the Agent Card object containing `name`, `skills`, and `securitySchemes`. Raw tool
+names and argument schemas are never included. **Designed / coming**: full A2A publish and
+peer fetch.
+
+## Skill(...)
+
+```python
+from coactra import Skill
+
+Skill(
+    id="cert.rotate",
+    description="Rotate TLS certs for any acme.example domain.",
+    tags=["sre", "tls"],
+    scopes=["cert:write"],
+)
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `str` | Dot-namespaced skill identifier (`"cert.rotate"`). |
+| `description` | `str` | Human-readable blurb published in the Agent Card. |
+| `tags` | `list[str]` | Labels for Team capability matching. |
+| `scopes` | `list[str]` | OAuth scopes needed to call this skill. |
+
+A plain string is also accepted anywhere `Skill` is: `skills=["cert rotation, vault, secrets"]`.
+
+## oidc(...)
+
+```python
+from coactra import oidc
+
+auth = oidc(
+    issuer="https://auth.example.com/realms/prod",
+    client_id="sre-agent",
+    client_secret="...",
+)
+```
+
+OAuth 2.1 client-credentials flow. Fetches the token on first use and auto-refreshes before
+expiry. Pass the result to `auth=` on `Agent.create`.
+
+## mcp(url)
+
+```python
+from coactra import mcp
+
+tools=[mcp("http://localhost:8001/mcp")]
+```
+
+Tag an extra MCP server URL. The server is connected and its tools are expanded into the
+agent's tool list. Use for local or extra servers; the primary MCP path is `gateway=` + `auth=`.
+
+## Event module
+
+```python
+from coactra.agent.sdk import (
+    Agent, Run, RunResult,
+    Assistant, Thinking, ToolCall, ToolResult, Usage, Status,
+    Event,
+)
+```
+
+These are re-exported at the top level; import from `coactra` directly in application code.
+
+## Errors
+
+`coactra.errors` defines the error taxonomy. All coactra errors extend `CoactraError` and
+carry an `ErrorCode` and a `retryable` hint:
+
+| Code | Class | Retryable |
+|------|-------|-----------|
+| `CONFIG` | `ConfigurationError` | No |
+| `VALIDATION` | `ValidationError` | No |
+| `PROVIDER` / `ADAPTER` | `AdapterError` | Per type |
+| `EXECUTION` / `RUNTIME` | `ExecutionError` | Yes (bounded) |
+| `TIMEOUT` | `TimeoutError` | Yes |
+| `PERMISSION` | `PermissionDeniedError` | No |
+| `SECURITY` | `SecurityError` | No — fail-closed + audited |
+| `MISSING_EXTRA` | `MissingExtraError` | No — install the extra |
+
+Errors surface as a terminal `Status(state="error")` event in the stream and as
+`RunResult.failed(error=...)` from `run()`.

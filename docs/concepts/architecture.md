@@ -1,91 +1,143 @@
 # Architecture
 
-Coactra should remain a modular Python library suite, not a monolithic agent framework. The durable runtime should be delegated to mature engines where possible; Coactra should keep the policy, tenancy, workspace, memory facade, work ledger, and integration contracts that are specific to this project.
+Coactra is a **thin orchestration library**, not a monolithic agent framework. It owns the
+wiring, policy, and identity contracts; durable execution is delegated to mature engines.
 
-## Positioning
+## The three nouns
 
-Coactra owns the cross-capability shell:
+Everything in the public surface maps to three nouns:
 
-- tenant and scope conventions
-- agent composition and ports
-- MCP mount timing and tool naming policy
-- delegated identity and no-token-passthrough invariants
-- A2A collaboration policy gates
-- workspace desk and execution policy
-- memory backend neutrality
-- work-order vocabulary, audit state, approvals, artifacts, and budgets
-- organization hierarchy, permissions, escalation, and authorization seams
-
-Coactra should not grow into a general durable workflow engine. Runtime execution should be wrapped through adapters to LangGraph, Temporal, Prefect, DBOS, or similar backends.
-
-## Research-Backed Decision
-
-The project should use an adopt-first rule for generic infrastructure:
-
-- LangGraph is the default stateful agent procedure runtime.
-- Temporal is the first-choice target for hard durable execution and same-thread signal/resume.
-- Prefect is useful for Python deployment-triggered workflows, but Coactra must document whether resume is same-thread, host-owned, or a new run carrying prior state.
-- PydanticAI is a useful API-design reference for typed dependencies, tools, and structured output, but adopting its vocabulary should not force a rewrite of Coactra's package model.
-- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra.ai` (`pip install "coactra[ai]"`).
-
-See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/release-policy.md](../maintainers/release-policy.md) for the concrete v1 plan.
-
-## Target Stack
-
-```text
-Application functions
-  -> coactra.agent composition root (make_agent)
-  -> Coactra policy and state contracts
-  -> runtime adapter where needed
-       LangGraph as the default agentic stateful execution adapter
-       Temporal/Prefect/DBOS for durable execution and recovery
-  -> external policy/storage engines
-       Keycloak, OpenFGA, SQL, Graphiti/mem0, sandbox provider
+```
+Team      = the roster        — who exists, who-may-talk, who-can-do-what
+Agent     = a worker          — thinks, calls tools + MCP, remembers, is discoverable
+Workflow  = a playbook runner — plans steps, assigns to Agents, drives to done
 ```
 
-## Capability Responsibilities
+Think of it as a company model:
 
-One PyPI distribution (`coactra`); capabilities are modules plus optional extras.
+```
+Team      = the org chart     → who's here, hierarchy, who may talk, tenant
+Agent     = an employee       → thinks, tools + MCP, memory
+Workflow  = a manager + playbook
+            → assign each step to an Agent from the Team,
+              track to done, retry, pause for approval, delegate peer-to-peer (A2A)
+```
 
-| Module | Extra (typical) | Keep owning | Avoid owning |
-|---|---|---|---|
-| `coactra.scope` | — | shared `CoactraScope` | runtime behavior |
-| `coactra.ai` | `[ai]` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
-| `coactra.memory` | `[memory]` + backend extras | backend-neutral memory contract | a custom vector/graph memory engine |
-| `coactra.workspace` | — | desk files, handoff, manifest, local policy | MCP mounting or org policy |
-| `coactra.jobs` | base + `[sql]`, `[langgraph]`, … | durable work ledger and procedure model | broker/scheduler/workflow engine replacement |
-| `coactra.jobs.workflow` | `[langgraph]`, `[temporal]`, … | procedure DSL and engine adapters | custom durable engine beyond adapters/gates |
-| `coactra.directory` | `[organization]` | tenant org tree, permissions, escalation | workflow execution or messaging |
-| `coactra.agent` | `[agent]` | composition, tool mount policy, identity, collaboration | capability module internals |
+A goal arrives → **Workflow** picks or plans a playbook → assigns each step to an **Agent**
+chosen from the **Team** → drives every step to done (retry/approve) → an Agent step may
+delegate to a teammate via A2A within the same Team.
 
-## Runtime Adoption Rule
+!!! info "Alpha: Agent is available; Team and Workflow are designed and coming"
+    `Agent` is the shipped noun in 0.0.x. `Team` and `Workflow` are fully designed (see
+    `design/` directory) and are the next build items. Pages in this docs site that describe
+    `Team` and `Workflow` describe the design target, not current code.
+
+## How they compose
+
+### Agent (available now)
+
+An Agent is the unit of work. It:
+
+- accepts a model id (routed through litellm with thinking-model adaption)
+- has a unified tool list — local Python functions + gateway-sliced MCP tools
+- can hold memory (auto-recall/remember via a backend connector)
+- can work against a file desk (workspace tools: read/write/list/run)
+- publishes a curated skill roster as an A2A **Agent Card**
+- is identified by `name=` and `tenant=`
+
+The primary MCP path is `gateway=` + `auth=`: the token's OAuth scopes slice the
+available tools. No manual tool enumeration. A bare `mcp(url)` is additive for local
+or extra servers.
+
+### Team (designed — coming)
+
+A Team is a bag of Agents plus policy. It:
+
+- holds the capability roster (aggregated from each Agent's `skills=`)
+- evaluates who-may-talk (default: same tenant; pluggable to OpenFGA / AuthZEN)
+- supports keyword (default) or semantic matching to route a step's `needs=` to the right agent
+- optionally names a `manager` for hierarchy and escalation
+
+A Team is optional: a single Agent needs no Team.
+
+### Workflow (designed — coming)
+
+A Workflow is a playbook of steps plus the manager that runs it across the Team. It:
+
+- accepts an authored playbook (`Workflow(steps=[step(...), ...])`) or a goal string (`Workflow.run_goal("...")`)
+- triages: a known goal reruns the saved playbook; a new goal plans one via the internal AI engine
+- assigns each step to an Agent by name or by capability (matched against the Team roster)
+- drives durably — checkpointing, retries, and approval pauses survive restarts
+- saves planner-generated playbooks as **candidates** (not auto-promoted), preventing library poisoning
+
+## Supporting subsystems
+
+### ai (internal engine)
+
+`coactra.ai` is the internal model engine — litellm routing, thinking-model handling
+(`reasoning_content` fallback), structured output, and embeddings. Users never import it.
+`Agent` and the Workflow planner use it internally.
+
+### auth (cross-cutting)
+
+Auth is not buried in one noun — it is cross-cutting across Agent, Team, and Workflow:
+
+- **Token (JWT / OAuth 2.1):** carries identity (`sub` → name, tenant) and scopes.
+- **Gateway:** verifies the token and slices the tool list to the scopes' allowed set.
+- **Agent Card (A2A):** published when `expose=True`; contains the curated `skills=` roster,
+  which scopes each skill needs, and `securitySchemes`. No credentials. Credentials are never
+  in the card.
+- **Token source:** `oidc(issuer, client_id, client_secret)` for client-credentials fetch and
+  refresh; `token=jwt` for development; SPIFFE workload identity later.
+- **Fine-grained authz:** Team's same-tenant default, pluggable to OpenFGA / OpenID AuthZEN.
+
+Security invariant: **seeing ≠ calling**. Discovery exposes only the curated skills blurb;
+every A2A delegation is still auth-gated (token exchange + policy).
+
+### memory (agent capability)
+
+`memory="graphiti"` connects the agent to a memory backend. Auto-recall runs on the user's
+latest message; auto-remember runs after each turn. coactra is the connector — graphiti / mem0
+own ranking and consolidation. coactra never runs its own vector store.
+
+### workspace (agent capability)
+
+`workspace="./desk"` surfaces a directory as agent tools: `read_file`, `write_file`,
+`list_files`, `run`. `run` is allow-list gated. OWASP MCP risks (tool poisoning, secret
+leakage, command injection) are first-class design concerns.
+
+## Stack alignment
+
+Coactra delegates to mature libraries at every layer:
+
+| Layer | Delegates to |
+|-------|-------------|
+| Model calls | litellm + pydantic-ai |
+| Structured output | pydantic-ai output types |
+| Memory | graphiti / mem0 |
+| Durable workflow execution | LangGraph (default) · Temporal · Prefect |
+| MCP transport | MCP SDK (tools + gateway) |
+| A2A protocol | A2A SDK (v1.0.x) |
+| Auth | OAuth 2.1 / OIDC (client flow); Keycloak exchanger |
+| Fine-grained policy | OpenFGA / OpenID AuthZEN |
+| Observability | OpenTelemetry (GenAI semantic conventions) |
+
+## Build order
+
+The implementation follows this order:
+
+1. **Agent core** — top-level export, tool expansion, gateway+auth, memory connector *(Slice 1 shipped: model + run/stream/structured; remaining: gateway/auth/memory/workspace/skills)*
+2. **workspace** — surface file desk as agent tools
+3. **Team** — capability roster + who-may-talk policy, unlocks A2A peer discovery
+4. **Workflow** — playbook definition, triage, durable step execution across the Team
+
+## Runtime delegation rule
 
 Before adding orchestration code, classify it:
 
-1. Coactra-specific policy or boundary: keep it.
-2. Portable ledger/state vocabulary: keep it if it improves auditability across runtimes.
-3. Generic retries, recovery, scheduling, state replay, or worker orchestration: use a runtime adapter.
-4. Framework-specific API ergonomics: hide behind ports until the public API choice is proven.
-5. New public vocabulary such as `Kernel`, `Session`, or `Task`: add only when it simplifies current examples more than the existing factories and facades.
+1. Coactra-specific policy or boundary → keep it.
+2. Portable ledger/state vocabulary → keep it if it aids auditability across runtimes.
+3. Generic retries, recovery, scheduling, state replay, or worker orchestration → use a runtime adapter (LangGraph / Temporal / Prefect).
+4. Framework-specific API ergonomics → hide behind ports until the choice is proven.
 
-## Near-Term Migration Shape
-
-```text
-WorkOrder / Procedure / Approval / Artifact / Audit
-  -> LangGraph adapter for stateful agent graphs
-  -> Temporal/Prefect/DBOS adapters for durable workflows
-  -> Coactra organization/workspace/memory policy remains outside the runtime
-```
-
-## Source Anchors
-
-- `docs/concepts/library-map.md` defines the thin-wrapper philosophy and package boundaries.
-- `docs/maintainers/agent-design.md` defines ports and composition-root principles.
-- `docs/operations/work-orders.md` says work orders are a vocabulary and ledger, not a broker or scheduler.
-- `docs/concepts/library-map.md` keeps workspace, agent, and directory responsibilities separate.
-
-## Runtime Factory
-
-`make_workflow_engine()` is the public factory for runtime adapters. `default` and `langgraph` select the checkpointed LangGraph adapter. `local` wraps a synchronous `ProcedureRunner` for tests and prototypes and does not support resume. `temporal` builds `TemporalEngine` around a host Temporal client/workflow/task queue. `prefect` builds `PrefectEngine` around a Prefect deployment runner.
-
-`DurableOrchestrator()` now defaults to `make_default_workflow_engine()` when no engine is injected. Hosts that need hard workflow durability can still inject a Temporal/Prefect/custom `WorkflowEngine` without changing `WorkOrder`, `Procedure`, approval, org, workspace, or memory concepts. Temporal provides same-thread signal/resume semantics; Prefect resume is modeled as a new deployment run carrying prior state unless the host flow implements stricter behavior.
+See [Library Map](library-map.md) for the full module-by-module breakdown.
