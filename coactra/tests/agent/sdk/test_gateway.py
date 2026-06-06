@@ -71,49 +71,49 @@ async def test_bearer_auth_refreshes_token_per_flow() -> None:
 # ---------------------------------------------------------------------------
 
 def test_gateway_wiring_creates_mcp_server() -> None:
-    """When gateway= is provided, the runtime stores an MCPServerStreamableHTTP."""
-    from pydantic_ai.mcp import MCPServerStreamableHTTP
+    """When gateway= is provided, the runtime stores an MCPToolset and records the URL."""
+    from pydantic_ai.mcp import MCPToolset
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
         gateway="https://gw/mcp",
         auth=StaticToken("t"),
     )
-    assert rt._gateway_server is not None
-    assert isinstance(rt._gateway_server, MCPServerStreamableHTTP)
-    assert rt._gateway_server.url == "https://gw/mcp"
+    assert rt._gateway_toolset is not None
+    assert isinstance(rt._gateway_toolset, MCPToolset)
+    assert rt._gateway_url == "https://gw/mcp"
 
 
 def test_gateway_wiring_no_gateway_has_no_server() -> None:
-    """When gateway= is absent, no MCP server is created."""
+    """When gateway= is absent, no MCP toolset is created."""
     rt = PydanticAIRuntime(model=FunctionModel(_final))
-    assert rt._gateway_server is None
+    assert rt._gateway_toolset is None
 
 
 def test_gateway_wiring_str_auth_normalized_to_static_token() -> None:
-    """A str auth value is normalized to StaticToken — still creates MCP server."""
-    from pydantic_ai.mcp import MCPServerStreamableHTTP
+    """A str auth value is normalized to StaticToken — still creates MCPToolset."""
+    from pydantic_ai.mcp import MCPToolset
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
         gateway="https://gw/mcp",
         auth="my-static-token",
     )
-    assert rt._gateway_server is not None
-    assert isinstance(rt._gateway_server, MCPServerStreamableHTTP)
+    assert rt._gateway_toolset is not None
+    assert isinstance(rt._gateway_toolset, MCPToolset)
 
 
 def test_gateway_no_auth_uses_plain_client() -> None:
-    """gateway= without auth= still creates an MCP server (no BearerAuth)."""
-    from pydantic_ai.mcp import MCPServerStreamableHTTP
+    """gateway= without auth= still creates an MCPToolset (no BearerAuth)."""
+    from pydantic_ai.mcp import MCPToolset
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
         gateway="https://gw/mcp",
         auth=None,
     )
-    assert rt._gateway_server is not None
-    assert isinstance(rt._gateway_server, MCPServerStreamableHTTP)
+    assert rt._gateway_toolset is not None
+    assert isinstance(rt._gateway_toolset, MCPToolset)
 
 
 # ---------------------------------------------------------------------------
@@ -142,9 +142,9 @@ async def test_agent_create_accepts_gateway_params() -> None:
         gateway="https://gw/mcp",
         auth=StaticToken("t"),
     )
-    # The internal runtime must have wired the gateway server
-    from pydantic_ai.mcp import MCPServerStreamableHTTP
-    assert isinstance(agent._runtime._gateway_server, MCPServerStreamableHTTP)
+    # The internal runtime must have wired the gateway toolset
+    from pydantic_ai.mcp import MCPToolset
+    assert isinstance(agent._runtime._gateway_toolset, MCPToolset)
     await agent.aclose()
 
 
