@@ -1,29 +1,43 @@
 # Examples
 
-The examples are scenario-first. Each one runs offline unless the page explicitly
-mentions an optional extra.
+These examples show the Coactra **Agent · Team · Workflow** model. Runnable examples
+use only features that are built and ship today. Pages marked **Designed — coming**
+describe the Workflow layer that is designed but not yet shipped.
 
-Install from a checkout before running them:
+## Runnable Today
+
+| Goal | Example |
+|---|---|
+| Smallest agent app | [Basic Incident Triage](basic-incident-triage.md) |
+| Agent with tools + instructions | [Offline Agent SDK](offline-agent-sdk.md) |
+| Agent + automatic memory | [Customer Support Memory](customer-support-memory.md) |
+| Agent + workspace desk | [Workspace Research Desk](workspace-research-desk.md) |
+| Agent + memory + tools | [Support Desk](support-desk.md) |
+| Team routing + same-tenant policy | [Multi-Agent Policy](multi-agent-policy.md) |
+| Agent composition with skills | [Composed Support Agent](composed-support-agent.md) |
+
+## Designed — Coming
+
+These pages describe the **Workflow** layer (durable playbooks, approval pauses,
+triage/planner). The data model and decisions are finalized; implementation follows.
+
+| Goal | Example |
+|---|---|
+| Durable work with approval | [Work Order Lifecycle](work-order-lifecycle.md) |
+| Procedure-backed steps | [Procedure-Backed Work](procedure-backed-work.md) |
+| Release pipeline with checkpoints | [Release Runner](release-runner.md) |
+
+## Local Setup
 
 ```bash
-python -m pip install -e "./coactra[all,dev]"
+pip install coactra
 ```
 
-| Scenario | Example |
-|---|---|
-| Smallest incident app | [Incident Response Handoff](incident-response-handoff.md) |
-| Agent composed from plain ports | [Support Ticket Agent](support-ticket-agent.md) |
-| Optional SDK loop with no network call | [Offline SRE Agent](offline-sre-agent.md) |
-| Durable release work | [Release Work Lifecycle](release-work-lifecycle.md) |
-| Human approval gate | [Release Work Lifecycle](release-work-lifecycle.md) |
-| Procedure-backed runbook | [Procedure Runbook](procedure-runbook.md) |
-| Repeat-issue memory | [Resolution Memory](resolution-memory.md) |
-| Agent + memory + work project | [Ticket Triage](ticket-triage.md) |
-| Release checkpoint project | [Release Checkpoint](release-checkpoint.md) |
-| Scoped workspace files | [Research Workspace](research-workspace.md) |
-| Policy-gated collaboration | [Approval Routing](approval-routing.md) |
+For a development checkout:
 
-These are not production deployments. They use in-memory stores, local fake ports,
-and ephemeral workspaces so the behavior is visible without service setup. The
-production replacement point is always the backend or adapter boundary, not the
-application function.
+```bash
+pip install -e ".[all,dev]"
+```
+
+Pass `token="dev-token"` or `auth=oidc(...)` in every `Agent.create()` call. See
+[Getting Started](../getting-started/quickstart.md) for the full quickstart.

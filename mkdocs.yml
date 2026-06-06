@@ -1,5 +1,5 @@
 site_name: Coactra
-site_description: Python library for Agent applications. One door — Agent.create — with Team and Workflow coming.
+site_description: Composable Python libraries for agent applications, durable work, memory, workspace state, and collaboration.
 site_url: https://dataopsfusion.github.io/coactra/
 repo_url: https://github.com/DataOpsFusion/coactra
 repo_name: DataOpsFusion/coactra
@@ -23,19 +23,21 @@ nav:
   - API Index: API_INDEX.md
   - Examples:
       - Overview: examples/index.md
-      - Incident Response Handoff: examples/incident-response-handoff.md
-      - Support Ticket Agent: examples/support-ticket-agent.md
-      - Offline SRE Agent: examples/offline-sre-agent.md
-      - Ticket Triage: examples/ticket-triage.md
-      - Resolution Memory: examples/resolution-memory.md
-      - Research Workspace: examples/research-workspace.md
-      - Approval Routing: examples/approval-routing.md
-      - Workflow Examples:
-          - Release Work Lifecycle: examples/release-work-lifecycle.md
-          - Procedure Runbook: examples/procedure-runbook.md
-          - Release Checkpoint: examples/release-checkpoint.md
+      - Basic Incident Triage: examples/basic-incident-triage.md
+      - Composed Support Agent: examples/composed-support-agent.md
+      - Offline Agent SDK: examples/offline-agent-sdk.md
+      - Work Orders:
+          - Work Order Lifecycle: examples/work-order-lifecycle.md
+          - Procedure-Backed Work: examples/procedure-backed-work.md
+      - Sample Projects:
+          - Customer Support Memory: examples/customer-support-memory.md
+          - Support Desk: examples/support-desk.md
+          - Release Runner: examples/release-runner.md
+          - Workspace Research Desk: examples/workspace-research-desk.md
+          - Multi-Agent Policy: examples/multi-agent-policy.md
   - Concepts:
       - Architecture: concepts/architecture.md
+      - Interfaces: concepts/interfaces.md
       - Library Map: concepts/library-map.md
       - Naming Migration: concepts/naming-migration.md
       - State and Storage: concepts/state-and-storage.md
@@ -50,9 +52,9 @@ nav:
       - Roadmap: maintainers/roadmap.md
       - Release Policy: maintainers/release-policy.md
       - Improvement Backlog: maintainers/improvement-backlog.md
-      - Jobs Procedures: maintainers/jobs-procedures.md
+      - Workflow Design: maintainers/jobs-procedures.md
       - Agent Design: maintainers/agent-design.md
-      - Directory Design: maintainers/directory-design.md
+      - Team Design: maintainers/directory-design.md
       - Memory Design: maintainers/memory-design.md
       - AI Library Design: maintainers/ai-library-design.md
       - Planning:

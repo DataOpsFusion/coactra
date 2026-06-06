@@ -1,32 +1,58 @@
 # Example Catalog
 
-Run examples from the repository root after installing the package:
+Use this page to choose the sample closest to what you are building. Each example
+has a focused page in the Examples section, plus a source link for copying the
+actual runnable file.
+
+## Run From The Repo
+
+Install the local checkout once:
 
 ```bash
 python -m pip install -e "./coactra[all,dev]"
 ```
 
-Start here:
+Then run examples from the repository root:
 
 ```bash
-python3 examples/incident_response_handoff.py
-python3 examples/projects/ticket_triage/app.py
-python3 examples/work/change_approval_gate.py
+python3 examples/basic_incident_triage.py
+python3 examples/work/lifecycle_with_approval.py
 ```
 
-| If you want to see... | Read | Source |
-|---|---|---|
-| the smallest normal app | [Incident Response Handoff](../examples/incident-response-handoff.md) | `examples/incident_response_handoff.py` |
-| explicit port composition | [Support Ticket Agent](../examples/support-ticket-agent.md) | `examples/support_ticket_agent.py` |
-| the optional SDK loop | [Offline SRE Agent](../examples/offline-sre-agent.md) | `examples/offline_sre_agent.py` |
-| repeat-issue memory | [Resolution Memory](../examples/resolution-memory.md) | `examples/projects/resolution_memory/` |
-| agent + memory + work | [Ticket Triage](../examples/ticket-triage.md) | `examples/projects/ticket_triage/` |
-| durable release work | [Release Work Lifecycle](../examples/release-work-lifecycle.md) | `examples/work/` |
-| procedure-backed work | [Procedure Runbook](../examples/procedure-runbook.md) | `examples/work/procedure_runbook.py` |
-| release project layout | [Release Checkpoint](../examples/release-checkpoint.md) | `examples/projects/release_checkpoint/` |
-| scoped workspace files | [Research Workspace](../examples/research-workspace.md) | `examples/projects/research_workspace/` |
-| collaboration policy | [Approval Routing](../examples/approval-routing.md) | `examples/projects/approval_routing/` |
+## Recommended Starting Points
 
-Examples use local defaults. For production, replace the backend or adapter:
-`SqlWorkStore` for durable work, mem0/Graphiti for memory, a real AI port for
-model calls, and verified A2A adapters for service-to-service collaboration.
+| If you are building... | Start here | Source |
+|---|---|---|
+| a normal single-agent app | [Basic Incident Triage](../examples/basic-incident-triage.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py) |
+| explicit function-first composition | [Composed Support Agent](../examples/composed-support-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py) |
+| a higher-level SDK loop | [Offline Agent SDK](../examples/offline-agent-sdk.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/elegant_agent.py) |
+| support or helpdesk memory | [Customer Support Memory](../examples/customer-support-memory.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/customer_support_memory) |
+| combined helpdesk (agent + work + memory) | [Support Desk](../examples/support-desk.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/support_desk) |
+| durable jobs or releases | [Work Order Lifecycle](../examples/work-order-lifecycle.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/work) |
+| procedure-backed work orders | [Procedure-Backed Work](../examples/procedure-backed-work.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/work/procedure_backed_work.py) |
+| release project layout | [Release Runner](../examples/release-runner.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/release_runner) |
+| a file-backed agent desk | [Workspace Research Desk](../examples/workspace-research-desk.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/workspace_research_desk) |
+| multi-agent collaboration | [Multi-Agent Policy](../examples/multi-agent-policy.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/multi_agent_policy) |
+
+## Naming Style
+
+Docs examples use a small naming convention:
+
+| Prefix | Use for |
+|---|---|
+| `make_*` | local port factories and backend adapters |
+| `build_*` | composition roots that assemble ports and facades |
+| `submit_*` | durable work creation |
+| `draft_*` | model-generated first-pass output |
+| `triage_*`, `run_*`, `handle_*` | application behavior |
+
+Application behavior should stay function-first:
+
+```python
+def triage_incident(agent, work, incident: str):
+    ...
+```
+
+Use classes when they own durable state or an external boundary, such as
+`WorkManager`, `SqlWorkStore`, memory backends, workspace backends, A2A transports,
+or OAuth/Keycloak exchangers.
