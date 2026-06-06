@@ -1,4 +1,4 @@
-"""Tests for coactra.agent.sdk.memory — bind_memory / MemoryBinding.
+"""Tests for coactra.agent.memory — bind_memory / MemoryBinding.
 
 TDD: written RED (before the module exists), then GREEN once memory.py is implemented.
 """
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from coactra.memory import make_backend, Scope
 
-from coactra.agent.sdk.memory import bind_memory, MemoryBinding
+from coactra.agent.memory import bind_memory, MemoryBinding
 
 
 # ---------------------------------------------------------------------------

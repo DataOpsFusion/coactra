@@ -1,10 +1,10 @@
-"""Tests for coactra.agent.sdk.skills — Structured skills + A2A Agent Card builder.
+"""Tests for coactra.agent.skills — Structured skills + A2A Agent Card builder.
 
 TDD order: RED (import fails), then GREEN after skills.py is written.
 """
 from __future__ import annotations
 
-from coactra.agent.sdk.skills import Skill, build_agent_card, normalize_skills
+from coactra.agent.skills import Skill, build_agent_card, normalize_skills
 
 
 # ---------------------------------------------------------------------------

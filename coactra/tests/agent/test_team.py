@@ -7,8 +7,8 @@ from __future__ import annotations
 import pytest
 from pydantic_ai.models.test import TestModel
 
-from coactra.agent.sdk import Agent
-from coactra.agent.sdk.skills import Skill
+from coactra.agent import Agent
+from coactra.agent.skills import Skill
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +75,7 @@ async def external_agent():
 
 @pytest.fixture
 async def team(sre_agent, security_agent, network_agent):
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
     return Team([sre_agent, security_agent, network_agent])
 
 
@@ -109,7 +109,7 @@ async def test_match_tag_overlap(team, sre_agent):
 
 async def test_match_first_wins_on_tie(sre_agent, security_agent):
     """When both agents have overlapping keyword, first match wins."""
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
     # Both agents have their name as the most precise match
     # "audit" only matches security-agent
     team = Team([sre_agent, security_agent])
@@ -157,14 +157,14 @@ async def test_can_talk_unknown_dst(team):
 
 async def test_can_talk_cross_tenant(sre_agent, security_agent, external_agent):
     """Cross-tenant → denied by default."""
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
     team = Team([sre_agent, security_agent, external_agent])
     assert team.can_talk("sre-agent", "external-agent") is False
 
 
 async def test_can_talk_custom_policy(sre_agent, security_agent, external_agent):
     """Custom policy callable can override default same-tenant rule."""
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
     # Policy that allows everything
     allow_all = lambda src, dst: True
     team = Team([sre_agent, security_agent, external_agent], policy=allow_all)
@@ -173,7 +173,7 @@ async def test_can_talk_custom_policy(sre_agent, security_agent, external_agent)
 
 async def test_can_talk_custom_policy_deny(sre_agent, security_agent):
     """Custom policy can deny same-tenant too."""
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
     deny_all = lambda src, dst: False
     team = Team([sre_agent, security_agent], policy=deny_all)
     assert team.can_talk("sre-agent", "security-agent") is False
@@ -237,10 +237,10 @@ async def test_roster_agent_names_present(team):
 async def test_semantic_raises_or_works_without_network(sre_agent, security_agent, monkeypatch):
     """Semantic mode either raises a clean ImportError (if ai unavailable) or
     we monkeypatch the embedder so no real network call happens."""
-    from coactra.agent.sdk.team import Team
+    from coactra.agent.team import Team
 
     # Simulate embeddings being unavailable by patching LiteLLMEmbedding to raise
-    import coactra.agent.sdk.matcher as matcher_mod
+    import coactra.agent.matcher as matcher_mod
 
     original_embed_fn = None
 
@@ -263,8 +263,8 @@ async def test_semantic_raises_or_works_without_network(sre_agent, security_agen
 
 async def test_semantic_unavailable_raises_clear_error(sre_agent, security_agent, monkeypatch):
     """If the embedder raises ImportError, match_agent re-raises with a clear message."""
-    from coactra.agent.sdk.team import Team
-    import coactra.agent.sdk.matcher as matcher_mod
+    from coactra.agent.team import Team
+    import coactra.agent.matcher as matcher_mod
 
     def _raise_import(*args, **kwargs):
         raise ImportError("coactra[ai] required for semantic matching")
@@ -292,7 +292,7 @@ def test_team_import_light():
     import sys
     # Remove coactra from modules to test fresh import path
     # (can't truly do that in-process, but we verify pydantic_ai isn't pulled by team.py alone)
-    import coactra.agent.sdk.team as team_mod
+    import coactra.agent.team as team_mod
     assert hasattr(team_mod, "Team")
     # The team module itself must not import pydantic_ai at top level
     import importlib

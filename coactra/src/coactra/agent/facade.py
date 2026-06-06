@@ -4,9 +4,9 @@ from __future__ import annotations
 import uuid
 from typing import Any, AsyncIterator
 
-from coactra.agent.sdk.events import Event, RunResult
-from coactra.agent.sdk.runtime import AgentRuntimePort, PydanticAIRuntime
-from coactra.agent.sdk.skills import Skill, build_agent_card, normalize_skills
+from coactra.agent.events import Event, RunResult
+from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
+from coactra.agent.skills import Skill, build_agent_card, normalize_skills
 
 
 class Run:

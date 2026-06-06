@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
 
 from pydantic_ai import Agent as PydAgent
 
-from coactra.agent.sdk.events import (
+from coactra.agent.events import (
     Assistant,
     Event,
     RunResult,
@@ -47,7 +47,7 @@ class PydanticAIRuntime:
         if isinstance(model, str):
             # Route string ids through litellm + coactra.ai's thinking-model handling.
             # Lazy import so model-instance usage stays free of the litellm dependency.
-            from coactra.agent.sdk.litellm_model import LiteLLMModel
+            from coactra.agent.litellm_model import LiteLLMModel
             self._model: Any = LiteLLMModel(model, api_base=api_base, api_key=api_key, **defaults)
         else:
             # Model instance passed directly — provider config does not apply.
@@ -61,7 +61,7 @@ class PydanticAIRuntime:
         if gateway is not None:
             # Lazy imports: only pulled in when gateway is used.
             from pydantic_ai.mcp import MCPToolset  # noqa: PLC0415
-            from coactra.agent.sdk.auth import BearerAuth, StaticToken  # noqa: PLC0415
+            from coactra.agent.auth import BearerAuth, StaticToken  # noqa: PLC0415
 
             # Normalize auth → TokenSource
             if isinstance(auth, str):
@@ -85,7 +85,7 @@ class PydanticAIRuntime:
         # Memory binding
         self._memory: Any = None
         if memory is not None:
-            from coactra.agent.sdk.memory import bind_memory  # noqa: PLC0415
+            from coactra.agent.memory import bind_memory  # noqa: PLC0415
             from coactra.memory.types import Scope as MemScope  # noqa: PLC0415
             mem_scope = MemScope(tenant=_tenant_name, agent=_agent_name)
             self._memory = bind_memory(memory, mem_scope)
@@ -96,7 +96,7 @@ class PydanticAIRuntime:
         if workspace is not None:
             from coactra.workspace import open_workspace  # noqa: PLC0415
             from coactra.workspace.scope import Scope as WsScope  # noqa: PLC0415
-            from coactra.agent.sdk.workspace_tools import workspace_tools as _ws_tools  # noqa: PLC0415
+            from coactra.agent.workspace_tools import workspace_tools as _ws_tools  # noqa: PLC0415
             ws_scope = WsScope(tenant_id=_tenant_name, agent_id=_agent_name)
             self._workspace = open_workspace(scope=ws_scope, base_dir=workspace)
             self._workspace_tools = _ws_tools(self._workspace)

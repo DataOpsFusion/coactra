@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from coactra.agent.sdk.facade import Agent
+from coactra.agent.facade import Agent
 
 ZEN_BASE = "https://opencode.ai/zen/go/v1"
 _KEY_FILE = Path("/tmp/oc.key")

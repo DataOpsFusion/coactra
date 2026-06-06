@@ -9,7 +9,7 @@ from types import SimpleNamespace as NS
 from pydantic import BaseModel
 from pydantic_ai import Agent as PydAgent
 
-from coactra.agent.sdk.litellm_model import LiteLLMModel
+from coactra.agent.litellm_model import LiteLLMModel
 
 
 def _msg(*, content=None, reasoning=None, tool_calls=None):
@@ -100,7 +100,7 @@ async def test_passes_tool_schema_to_litellm():
 
 
 def test_runtime_wraps_string_model_in_litellm():
-    from coactra.agent.sdk.runtime import PydanticAIRuntime
+    from coactra.agent.runtime import PydanticAIRuntime
 
     rt = PydanticAIRuntime(model="anthropic/claude-sonnet-4-5")
 
@@ -111,7 +111,7 @@ def test_runtime_wraps_string_model_in_litellm():
 def test_runtime_passes_through_model_instance():
     from pydantic_ai.models.test import TestModel
 
-    from coactra.agent.sdk.runtime import PydanticAIRuntime
+    from coactra.agent.runtime import PydanticAIRuntime
 
     tm = TestModel()
     rt = PydanticAIRuntime(model=tm)

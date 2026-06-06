@@ -2,7 +2,7 @@ from pydantic_ai.models.function import FunctionModel, AgentInfo
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
 from pydantic import BaseModel
 from pydantic_ai.models.test import TestModel
-from coactra.agent.sdk import Agent
+from coactra.agent import Agent
 
 
 def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:

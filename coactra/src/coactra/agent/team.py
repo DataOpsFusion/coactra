@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from coactra.agent.sdk.matcher import match_agent
+from coactra.agent.matcher import match_agent
 
 __all__ = ["Team"]
 

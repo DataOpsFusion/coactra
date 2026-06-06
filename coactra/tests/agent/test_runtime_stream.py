@@ -1,6 +1,6 @@
 from pydantic_ai.models.function import FunctionModel, AgentInfo
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
-from coactra.agent.sdk.runtime import PydanticAIRuntime
+from coactra.agent.runtime import PydanticAIRuntime
 
 
 def _echo_tool(value: str) -> str:

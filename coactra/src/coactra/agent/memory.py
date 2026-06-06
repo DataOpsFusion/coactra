@@ -1,4 +1,4 @@
-"""coactra.agent.sdk.memory — automatic recall/remember connector.
+"""coactra.agent.memory — automatic recall/remember connector.
 
 A thin connector around a ``coactra.memory.MemoryBackend``.  coactra never ranks,
 embeds, or consolidates — all of that belongs to the backend (graphiti/mem0/inprocess).

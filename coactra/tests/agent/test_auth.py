@@ -1,4 +1,4 @@
-"""Tests for coactra.agent.sdk.auth — TokenSource, StaticToken, oidc().
+"""Tests for coactra.agent.auth — TokenSource, StaticToken, oidc().
 
 TDD: these tests are written RED before auth.py exists.
 All HTTP is faked — no network calls.
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from coactra.agent.sdk.auth import StaticToken, oidc
+from coactra.agent.auth import StaticToken, oidc
 
 
 # ---------------------------------------------------------------------------

@@ -36,12 +36,24 @@ def test_public_surface_is_stable_root_api():
         "AsyncNullTransport",
         "AsyncPolicyGatedCollaborator",
         "CollaborationDenied",
+        # agent SDK (merged from coactra.agent.sdk after dropping the redundant segment)
+        "Agent",
+        "Run",
+        "RunResult",
+        "Event",
+        "Assistant",
+        "Thinking",
+        "ToolCall",
+        "ToolResult",
+        "Usage",
+        "Status",
+        "AgentRuntimePort",
+        "PydanticAIRuntime",
     }
     assert set(a.__all__) == expected
     for name in expected:
         assert hasattr(a, name), name
     # cut names must not appear
-    assert "Agent" not in a.__all__
     assert "make_agent" not in a.__all__
     assert "TenantAgentRouter" not in a.__all__
     assert "ToolSpec" not in a.__all__
@@ -66,7 +78,5 @@ def test_removed_names_raise_attribute_error():
         _ = a.FakeAI
     with pytest.raises(AttributeError):
         _ = a.ToolTrie
-    with pytest.raises(AttributeError):
-        _ = a.Agent
     with pytest.raises(AttributeError):
         _ = a.make_agent

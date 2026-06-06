@@ -2,8 +2,8 @@ from pydantic import BaseModel
 from pydantic_ai.models.function import FunctionModel, AgentInfo
 from pydantic_ai.models.test import TestModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
-from coactra.agent.sdk.runtime import PydanticAIRuntime
-from coactra.agent.sdk.litellm_model import LiteLLMModel
+from coactra.agent.runtime import PydanticAIRuntime
+from coactra.agent.litellm_model import LiteLLMModel
 
 
 def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
