@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from coactra.jobs.workflow.domain.models import Procedure
-from coactra.jobs.workflow.domain.scope import Scope
+from coactra.workflow.domain.models import Procedure
+from coactra.workflow.domain.scope import Scope
 
 
 @runtime_checkable

@@ -2,17 +2,17 @@ from types import SimpleNamespace
 
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     Scope,
     WorkflowEngine,
     WorkflowRunStatus,
     make_workflow_engine,
 )
-from coactra.jobs.workflow.adapters.prefect import PrefectEngine
-from coactra.jobs.workflow.adapters.temporal import TemporalEngine
-from coactra.jobs.workflow.conformance import assert_workflow_engine_start_contract
-from coactra.jobs.workflow.runtime import RunContext
-from coactra.jobs.workflow.domain.models import Procedure, Step
+from coactra.workflow.adapters.prefect import PrefectEngine
+from coactra.workflow.adapters.temporal import TemporalEngine
+from coactra.workflow.conformance import assert_workflow_engine_start_contract
+from coactra.workflow.runtime import RunContext
+from coactra.workflow.domain.models import Procedure, Step
 
 
 def procedure():

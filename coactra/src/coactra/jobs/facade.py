@@ -16,7 +16,7 @@ from coactra.jobs.work import (
     WorkStatus,
 )
 from coactra.jobs.work.domain.scope import Scope as WorkScope
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     ApprovalStore,
     InMemoryApprovalStore,
     InMemoryProcedureStore,
@@ -31,7 +31,7 @@ from coactra.jobs.workflow import (
     WorkflowRunStatus,
     make_default_workflow_engine,
 )
-from coactra.jobs.workflow.domain.scope import Scope as WorkflowScope
+from coactra.workflow.domain.scope import Scope as WorkflowScope
 
 
 class ProcedureNotFoundError(LookupError):

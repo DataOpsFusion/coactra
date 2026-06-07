@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
-from coactra.jobs.work.domain.events import utc_now
-from coactra.jobs.workflow.domain.models import Procedure
-from coactra.jobs.workflow.domain.scope import Scope
-from coactra.jobs.workflow.induction import ReasoningTrace, induce
+from coactra.workflow.domain.models import Procedure
+from coactra.workflow.domain.scope import Scope
+from coactra.workflow.induction import ReasoningTrace, induce
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 class CandidateStatus(StrEnum):

@@ -2,8 +2,8 @@ import importlib
 
 
 def test_workflow_imports():
-    mod = importlib.import_module("coactra.jobs.workflow")
-    assert mod.__name__ == "coactra.jobs.workflow"
+    mod = importlib.import_module("coactra.workflow")
+    assert mod.__name__ == "coactra.workflow"
 
 
 def test_coactra_is_regular_package_with_lazy_init():

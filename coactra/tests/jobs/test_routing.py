@@ -2,7 +2,7 @@ import pytest
 
 from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
 from coactra.jobs.work import InMemoryWorkStore, TenantWorkStoreRouter, WorkStore
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     InMemoryProcedureStore,
     Procedure,

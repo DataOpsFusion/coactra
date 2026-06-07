@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from coactra.jobs.workflow import Procedure, RunResult, Step
+from coactra.workflow import Procedure, RunResult, Step
 
 
 def test_task_step_minimal():

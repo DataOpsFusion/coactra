@@ -7,7 +7,7 @@ from coactra.jobs import (
     WorkOrder,
     WorkScope,
 )
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     WorkflowInterrupt,
     WorkflowRun,
     WorkflowRunStatus,

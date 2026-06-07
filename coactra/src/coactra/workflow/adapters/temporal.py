@@ -8,16 +8,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from coactra.jobs.workflow.adapters._external import (
+from coactra.workflow.adapters._external import (
     ExternalPayloadFactory,
     default_external_payload,
     maybe_await,
     new_thread_id,
     normalize_external_run,
 )
-from coactra.jobs.workflow.adapters._stub import MissingExtraError
-from coactra.jobs.workflow.domain.models import Procedure
-from coactra.jobs.workflow.runtime import (
+from coactra.workflow.adapters._stub import MissingExtraError
+from coactra.workflow.domain.models import Procedure
+from coactra.workflow.runtime import (
     RunContext,
     WorkflowRun,
     WorkflowRunStatus,

@@ -34,7 +34,7 @@ def __getattr__(name: str) -> Any:
         team = import_module("coactra.agent.team")
         return getattr(team, name)
     if name in _WORKFLOW_EXPORTS:
-        workflow = import_module("coactra.agent.workflow")
+        workflow = import_module("coactra.workflow")
         return getattr(workflow, name)
     if name in _SERVE_EXPORTS:
         serve = import_module("coactra.agent.serve")

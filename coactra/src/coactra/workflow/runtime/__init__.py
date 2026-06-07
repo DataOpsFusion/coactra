@@ -1,12 +1,12 @@
 """Workflow runtime contracts."""
 
-from coactra.jobs.workflow.runtime.approval import (
+from coactra.workflow.runtime.approval import (
     ApprovalStatus,
     ApprovalStore,
     InMemoryApprovalStore,
     PendingApproval,
 )
-from coactra.jobs.workflow.runtime.durable import (
+from coactra.workflow.runtime.durable import (
     AsyncProcedureRunnerAdapter,
     WorkflowEngine,
     WorkflowInterrupt,
@@ -14,22 +14,22 @@ from coactra.jobs.workflow.runtime.durable import (
     WorkflowRun,
     WorkflowRunStatus,
 )
-from coactra.jobs.workflow.runtime.engine import ProcedureRunner, RunContext
-from coactra.jobs.workflow.runtime.defaults import (
+from coactra.workflow.runtime.engine import ProcedureRunner, RunContext
+from coactra.workflow.runtime.defaults import (
     WorkflowRuntime,
     make_default_workflow_engine,
     make_workflow_engine,
 )
-from coactra.jobs.workflow.runtime.capabilities import (
+from coactra.workflow.runtime.capabilities import (
     Capability,
     CapabilityRegistry,
     CapabilityValidationError,
     CapabilityValidationIssue,
     InMemoryCapabilityRegistry,
 )
-from coactra.jobs.workflow.runtime.tools import ToolInvoker
-from coactra.jobs.workflow.runtime.verification import VerificationResult
-from coactra.jobs.workflow.runtime.handlers import (
+from coactra.workflow.runtime.tools import ToolInvoker
+from coactra.workflow.runtime.verification import VerificationResult
+from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
     Collaborator,

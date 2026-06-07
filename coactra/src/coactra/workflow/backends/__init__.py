@@ -1,7 +1,7 @@
 """Workflow engine backends."""
 
 try:
-    from coactra.jobs.workflow.backends.langgraph import LangGraphEngine
+    from coactra.workflow.backends.langgraph import LangGraphEngine
 except ImportError as exc:  # pragma: no cover - only when langgraph is not installed
     _LANGGRAPH_IMPORT_ERROR = exc
 
@@ -13,7 +13,7 @@ except ImportError as exc:  # pragma: no cover - only when langgraph is not inst
 
 
 try:
-    from coactra.jobs.workflow.backends.durable_langgraph import (
+    from coactra.workflow.backends.durable_langgraph import (
         DurableLangGraphEngine,
     )
 except ImportError as exc:  # pragma: no cover - only when optional deps are missing

@@ -16,7 +16,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from coactra.jobs.workflow.domain.models import Procedure, Step
+from coactra.workflow.domain.models import Procedure, Step
 
 
 class ReasoningTrace(BaseModel):

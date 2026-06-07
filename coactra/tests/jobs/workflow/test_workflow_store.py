@@ -1,6 +1,6 @@
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     InMemoryProcedureStore,
     Procedure,
     ProcedureStore,
@@ -8,7 +8,7 @@ from coactra.jobs.workflow import (
     Step,
     induce,
 )
-from coactra.jobs.workflow import ReasoningTrace
+from coactra.workflow import ReasoningTrace
 
 ACME = Scope(tenant_id="acme", namespace="agent:1")
 GLOBEX = Scope(tenant_id="globex", namespace="agent:1")

@@ -1,4 +1,4 @@
-"""coactra.jobs.workflow — a thin, learnable workflow layer over a durable engine.
+"""coactra.workflow — public playbooks plus durable Procedure engines.
 
 A Procedure is a DATA STRUCTURE: an authored flow and an induced (learned) flow are the
 SAME type and run the SAME compile->run path on the default LangGraph engine. Steps may
@@ -8,8 +8,17 @@ trace-faithful and deterministic; update() is manual — we do NOT overclaim sel
 """
 
 from coactra._version import distribution_version
+from coactra.agent.workflow import (
+    Approval,
+    Playbook,
+    Step as PlaybookStep,
+    StepResult,
+    Workflow,
+    WorkflowRun as PlaybookRun,
+    step,
+)
 
-from coactra.jobs.workflow.runtime import (
+from coactra.workflow.runtime import (
     ApprovalStatus,
     ApprovalStore,
     AsyncProcedureRunnerAdapter,
@@ -33,7 +42,7 @@ from coactra.jobs.workflow.runtime import (
     ToolInvoker,
     VerificationResult,
 )
-from coactra.jobs.workflow.runtime.handlers import (
+from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -44,16 +53,16 @@ from coactra.jobs.workflow.runtime.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from coactra.jobs.workflow.promotion import (
+from coactra.workflow.promotion import (
     CandidateStatus,
     InMemoryProcedurePromotionStore,
     ProcedureCandidate,
     ProcedureVersion,
 )
-from coactra.jobs.workflow.induction import ReasoningTrace, induce, update
+from coactra.workflow.induction import ReasoningTrace, induce, update
 
 try:
-    from coactra.jobs.workflow.backends.langgraph import LangGraphEngine
+    from coactra.workflow.backends.langgraph import LangGraphEngine
 except ImportError as exc:  # pragma: no cover - only when langgraph is not installed
     _LANGGRAPH_IMPORT_ERROR = exc
 
@@ -65,7 +74,7 @@ except ImportError as exc:  # pragma: no cover - only when langgraph is not inst
 
 
 try:
-    from coactra.jobs.workflow.backends.durable_langgraph import (
+    from coactra.workflow.backends.durable_langgraph import (
         DurableLangGraphEngine,
         build_graph,
         check_done_criteria,
@@ -94,10 +103,10 @@ except ImportError as exc:  # pragma: no cover - only when optional deps are mis
     verify_done_criteria = _missing_durable_langgraph
 
 
-from coactra.jobs.workflow.domain.models import Procedure, RunResult, Step
-from coactra.jobs.workflow.domain.scope import Scope
-from coactra.jobs.workflow.store import InMemoryProcedureStore, ProcedureStore
-from coactra.jobs.workflow.routing import (
+from coactra.workflow.domain.models import Procedure, RunResult, Step
+from coactra.workflow.domain.scope import Scope
+from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
+from coactra.workflow.routing import (
     TenantProcedureStoreRouter,
     TenantWorkflowEngineRouter,
 )
@@ -106,6 +115,13 @@ __version__ = distribution_version()
 
 __all__ = [
     "__version__",
+    "Workflow",
+    "Playbook",
+    "PlaybookStep",
+    "step",
+    "StepResult",
+    "Approval",
+    "PlaybookRun",
     "Scope",
     "Step",
     "Procedure",

@@ -13,8 +13,8 @@ from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from coactra.jobs.workflow.domain.models import Procedure, RunResult
-from coactra.jobs.workflow.runtime.engine import ProcedureRunner, RunContext
+from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.runtime.engine import ProcedureRunner, RunContext
 
 
 class WorkflowRunStatus(str, Enum):

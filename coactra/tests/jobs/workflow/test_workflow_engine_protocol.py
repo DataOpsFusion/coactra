@@ -1,6 +1,6 @@
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     AutoApprove,
     NullCollaborator,
@@ -12,7 +12,7 @@ from coactra.jobs.workflow import (
     TerminalHumanRouter,
     WorkflowEngine,
 )
-from coactra.jobs.workflow.engine import RunContext
+from coactra.workflow.engine import RunContext
 
 
 def _ctx():

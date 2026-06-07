@@ -52,10 +52,10 @@ goal
 
 ## Today vs target
 
-**Today (`coactra.jobs.workflow`):** `Procedure`/`Step`, durable engines (LangGraph/Temporal/Prefect), approval interrupts (`WorkflowInterrupt`), trace→procedure induction, capability registry.
+**Today (`coactra.workflow`):** `Procedure`/`Step`, durable engines (LangGraph/Temporal/Prefect), approval interrupts (`WorkflowInterrupt`), trace→procedure induction, capability registry.
 
 **Target (to build):** `run_goal` triage (reuse/plan/save); capability routing via the Team roster; the data-core playbook + `step()` helper + YAML loader; a **Planner** (goal→playbook) over `ai`; a **playbook store + matcher** for triage; rename `coactra.jobs`/`work`/`orchestration` → `coactra.workflow`.
 
 ## Out of scope (this spec)
 
-Richer DSL beyond steps + capability-routing + approval (parallel/loop/branch land later); the Team spec (roster + who-may-talk policy — its own session); migrating homelab off `coactra.jobs.workflow`.
+Richer DSL beyond steps + capability-routing + approval (parallel/loop/branch land later); the Team spec (roster + who-may-talk policy — its own session); migrating homelab off `coactra.workflow`.

@@ -265,7 +265,7 @@ class Workflow:
         return None
 
     # ------------------------------------------------------------------
-    # durable engine bridge — delegate to coactra.jobs.workflow engines
+    # durable engine bridge — delegate to coactra.workflow engines
     # ------------------------------------------------------------------
 
     def _tenant_for_team(self, team: Any) -> str:
@@ -293,7 +293,7 @@ class Workflow:
         return resolved
 
     def _to_procedure(self, resolved: list[tuple[int, Step, Any]]) -> Any:
-        from coactra.jobs.workflow import Procedure, Step as ProcedureStep  # noqa: PLC0415
+        from coactra.workflow import Procedure, Step as ProcedureStep  # noqa: PLC0415
 
         def node_id(i: int) -> str:
             return f"step_{i}"
@@ -327,7 +327,7 @@ class Workflow:
     def _run_from_engine_snapshot(
         self, snapshot: Any, resolved: list[tuple[int, Step, Any]]
     ) -> WorkflowRun:
-        from coactra.jobs.workflow import WorkflowRunStatus  # noqa: PLC0415
+        from coactra.workflow import WorkflowRunStatus  # noqa: PLC0415
 
         state = getattr(snapshot, "state", {}) or {}
         results: list[StepResult] = []
@@ -381,7 +381,7 @@ class Workflow:
     async def _run_with_engine(
         self, team: Any, engine: Any, *, run_id: str | None
     ) -> WorkflowRun:
-        from coactra.jobs.workflow import RunContext, Scope  # noqa: PLC0415
+        from coactra.workflow import RunContext, Scope  # noqa: PLC0415
 
         resolved = self._resolve_steps_for_engine(team)
         if isinstance(resolved, WorkflowRun):
@@ -403,8 +403,8 @@ class Workflow:
         decision: bool | dict[str, Any] | None = None,
         state: dict[str, Any] | None = None,
     ) -> WorkflowRun:
-        """Resume a run delegated to an old ``coactra.jobs.workflow`` engine."""
-        from coactra.jobs.workflow import RunContext, Scope  # noqa: PLC0415
+        """Resume a run delegated to an old ``coactra.workflow`` engine."""
+        from coactra.workflow import RunContext, Scope  # noqa: PLC0415
 
         resolved = self._resolve_steps_for_engine(team)
         if isinstance(resolved, WorkflowRun):

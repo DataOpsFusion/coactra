@@ -4,7 +4,7 @@ pytest.importorskip("langgraph")
 
 from langgraph.checkpoint.memory import MemorySaver
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     DurableLangGraphEngine,
     Procedure,
     RunContext,

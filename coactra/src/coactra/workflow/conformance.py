@@ -1,9 +1,9 @@
 """Reusable conformance checks for ``WorkflowEngine`` implementations."""
 from __future__ import annotations
 
-from coactra.jobs.workflow.domain.models import Procedure, Step
-from coactra.jobs.workflow.domain.scope import Scope
-from coactra.jobs.workflow.runtime import RunContext, WorkflowEngine, WorkflowRun
+from coactra.workflow.domain.models import Procedure, Step
+from coactra.workflow.domain.scope import Scope
+from coactra.workflow.runtime import RunContext, WorkflowEngine, WorkflowRun
 
 
 def sample_procedure() -> Procedure:

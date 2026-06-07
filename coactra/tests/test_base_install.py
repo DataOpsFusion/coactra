@@ -14,7 +14,7 @@ CAPABILITY_ROOTS = [
     "coactra.workspace",
     "coactra.jobs",
     "coactra.jobs.work",
-    "coactra.jobs.workflow",
+    "coactra.workflow",
     "coactra.directory",
     "coactra.agent",
     "coactra.scope",
