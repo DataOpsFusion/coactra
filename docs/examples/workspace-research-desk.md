@@ -23,7 +23,7 @@ async def research_session(topic: str) -> str:
         model="claude-sonnet-4-5",
         name="research-agent",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         workspace="./desk",         # creates ./desk if not present
         instructions=(
             "You are a research assistant. Use the workspace to take notes, "
@@ -59,6 +59,6 @@ When `workspace=` is set, the agent automatically receives these tools:
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
 | Workspace backend | Local filesystem | Sandbox/remote backend |
 | `run` commands | Disabled | Explicit allow-list per tenant |

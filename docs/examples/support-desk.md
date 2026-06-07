@@ -32,7 +32,7 @@ async def handle_ticket(ticket_id: str, customer_id: str) -> str:
         model="claude-sonnet-4-5",
         name="support-desk",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         memory="inprocess",     # swap to "graphiti" or "mem0" in production
         tools=[fetch_ticket, mark_resolved],
         instructions=(
@@ -49,33 +49,25 @@ if __name__ == "__main__":
     print(asyncio.run(handle_ticket("TKT-1001", "cust-42")))
 ```
 
----
+## Workflow Extension
 
-!!! warning "Designed — not yet shipped"
-    **Durable work tracking** — pausing a ticket run for human approval, storing
-    work-order state across restarts, and resuming after approval — is part of the
-    **Workflow** layer. See
-    [Work Order Lifecycle](work-order-lifecycle.md) and
-    the [Workflow design spec](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md).
+Use `Workflow` when ticket handling needs durable approval pause/resume:
 
-    When Workflow ships, the pattern will be:
+```python
+from coactra import Workflow, step
 
-    ```python
-    # designed — not yet runnable
-    from coactra import Workflow, step
-
-    play = Workflow("support-ticket", steps=[
-        step("fetch and draft resolution", agent="support-desk"),
-        step("manager approval", approve=True),
-        step("mark resolved", agent="support-desk"),
-    ])
-    await play.run(team, durable=True)
-    ```
+play = Workflow("support-ticket", steps=[
+    step("fetch and draft resolution", agent="support-desk"),
+    step("manager approval", approve=True),
+    step("mark resolved", agent="support-desk"),
+])
+await play.run(team)
+```
 
 ## Production Notes
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
 | Memory backend | `"inprocess"` | `"graphiti"` or `"mem0"` |
 | Tool access | local functions | `gateway="https://gateway/mcp"` + `auth=` |

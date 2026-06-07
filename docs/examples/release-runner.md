@@ -1,20 +1,13 @@
 # Release Runner
 
-!!! warning "Designed — not yet shipped"
-    This page describes a durable release pipeline using the **Workflow** layer.
-    The design is finalized in
-    [design/2026-06-06-workflow-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md).
-    Code shown here is the **intended API** — it will not run against the current release.
-
 A release pipeline as an authored Workflow: each stage is a `step`, human
 sign-offs are approval pauses, and the whole run is durable — it survives
 restarts, records a checkpoint at each stage, and resumes from the last good
 checkpoint after a failure.
 
-## Intended API (designed)
+## Code
 
 ```python
-# designed — not yet runnable
 import asyncio
 from coactra import Agent, Team, Workflow, step, Skill
 
@@ -24,7 +17,7 @@ async def main(version: str) -> None:
         model="claude-sonnet-4-5",
         name="release-eng",
         tenant="acme",
-        auth=oidc(issuer, client_id, client_secret),
+        auth=oidc(token_url, client_id, client_secret),
         gateway="https://gateway/mcp",
         skills=[Skill("release.pipeline", description="Run release stages",
                       tags=["release", "deploy"])],

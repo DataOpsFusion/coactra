@@ -29,7 +29,7 @@ async def triage_incident(incident: str) -> str:
     agent = await Agent.create(
         model="claude-sonnet-4-5",
         name="triage-1",
-        token="dev-token",          # swap for auth=oidc(...) in production
+        auth="dev-token",          # swap for auth=oidc(...) in production
         tools=[get_runbook],
         instructions="You are a senior SRE. Be brief and actionable.",
     )
@@ -51,7 +51,7 @@ python basic_incident_triage.py
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
 | MCP tools | local functions only | `gateway="https://gateway/mcp"` with `auth=` |
 | Model | any litellm id | route via `gateway=` to slice by token scopes |
 

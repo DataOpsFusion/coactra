@@ -2,13 +2,13 @@
 
 Coactra's public surface is a single `Agent` door — `from coactra import Agent`.
 An agent is created by naming things (model id, capability names), never by
-constructing ports or injecting dependencies. The old ports-based `make_agent`
+constructing ports or injecting dependencies. The old ports-based factory
 composition root has been removed in the alpha redesign.
 
 **Key principles:**
 
 - `Agent.create(model=, tools=, memory=, workspace=, skills=, ...)` — one call, no DI
-- Tools are a unified list: local functions and `mcp()` server references are the same kind
+- Tools are unified after discovery: local functions and scoped MCP gateway tools enter the same model tool list
 - `gateway=` + `auth=` is the primary MCP path; the token's scopes slice the tool list
 - Memory is automatic: recall fires before the model turn; remember fires after
 - `agent.card` is the curated A2A Agent Card — raw tool schemas are never advertised

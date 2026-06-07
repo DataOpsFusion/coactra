@@ -1,13 +1,5 @@
 # Procedure-Backed Work
 
-!!! warning "Designed — not yet shipped"
-    This page describes capability-routing in the **Workflow** layer. The resolver
-    and Team matcher are finalized in
-    [design/2026-06-06-workflow-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md)
-    and
-    [design/2026-06-06-team-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-team-design.md).
-    Code shown here is the **intended API** — it will not run against the current release.
-
 A Workflow step can target an agent by **capability** (`needs=`) instead of by
 name (`agent=`). The Team's matcher resolves the best agent from its roster at
 runtime — keyword/tag match by default, embedding similarity on request.
@@ -19,10 +11,9 @@ runtime — keyword/tag match by default, embedding similarity on request.
 - Agents can be swapped or added without touching the playbook
 - Ties resolve by first-match or Team-defined priority
 
-## Intended API (designed)
+## Code
 
 ```python
-# designed — not yet runnable
 import asyncio
 from coactra import Agent, Team, Workflow, step, Skill
 
@@ -32,7 +23,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="sre-agent",
         tenant="acme",
-        auth=oidc(issuer, client_id, client_secret),
+        auth=oidc(token_url, client_id, client_secret),
         gateway="https://gateway/mcp",
         skills=[Skill("infra.restart", description="Restart infra services",
                       tags=["sre", "infra"])],
@@ -42,7 +33,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="security-agent",
         tenant="acme",
-        auth=oidc(issuer, client_id, client_secret),
+        auth=oidc(token_url, client_id, client_secret),
         gateway="https://gateway/mcp",
         skills=[Skill("cert.rotate", description="Rotate TLS certs",
                       tags=["security", "certs"])],

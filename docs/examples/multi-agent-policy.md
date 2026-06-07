@@ -1,29 +1,27 @@
 # Multi-Agent Policy
 
-A `Team` is a bag of agents plus a policy that decides who may talk to whom.
-By default only same-tenant agents may communicate. This example shows Team
-construction and policy enforcement.
+A `Team` is a bag of agents plus a policy that decides who may talk to whom. By default only same-tenant agents may communicate. This example shows Team construction, capability discovery, and outbound peer delegation.
 
-## Demonstrates (Runnable)
+## Demonstrates
 
 - `Team([agent_a, agent_b])` — registry with default same-tenant policy
-- `agent.card` — curated skills roster (the Agent Card)
+- `agent.card` — curated skills roster, formatted as the Agent Card
 - Same-tenant access allowed; cross-tenant access denied by default
+- `peers=[agent]` and `peers=[RemotePeer(...)]` create outbound A2A-style delegation tools
 
-## Code (Runnable)
+## Code
 
 ```python
 import asyncio
-from coactra import Agent, Team, Skill
+from coactra import Agent, RemotePeer, Team, Skill
 
 
 async def main() -> None:
-    # Two agents in the same tenant — same-tenant talk is allowed
     sre = await Agent.create(
         model="claude-haiku-4-5",
         name="sre-agent",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         skills=[Skill("infra.restart", description="Restart infrastructure services",
                       tags=["sre"], scopes=["infra:write"])],
         instructions="You manage infra.",
@@ -33,60 +31,68 @@ async def main() -> None:
         model="claude-haiku-4-5",
         name="security-agent",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         skills=[Skill("cert.rotate", description="Rotate TLS certificates",
                       tags=["security"], scopes=["cert:write"])],
         instructions="You handle security.",
     )
 
-    # Team: registry + same-tenant policy (default)
     team = Team([sre, security])
+    print("SRE card:", sre.card)
+    print("Security card:", security.card)
+    print("Roster:", team.roster())
 
-    # Inspect the curated capability roster
-    print("SRE skills:", sre.card)
-    print("Security skills:", security.card)
-    print("Team members:", [a.name for a in team])
+    caller = await Agent.create(
+        model="claude-haiku-4-5",
+        name="orchestrator",
+        tenant="acme",
+        auth="dev-token",
+        peers=[security],
+    )
+    await caller.run("Ask the security peer to review this cert rotation.")
+
+    remote_caller = await Agent.create(
+        model="claude-haiku-4-5",
+        name="remote-orchestrator",
+        tenant="acme",
+        auth="dev-token",
+        peers=[RemotePeer(
+            name="security-agent",
+            endpoint="https://security.example/a2a",
+            audience="security-agent",
+            tenant="acme",
+        )],
+    )
+    await remote_caller.run("Ask the security peer for the current exception policy.")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
----
+## Peer Forms
 
-!!! warning "Designed — not yet shipped"
-    **Outbound A2A peer delegation** — one agent actually *calling* another agent
-    over the wire — requires `peers=` and the A2A serving layer, which ship as part
-    of the **Workflow** / A2A milestone.
+| Peer form | Behavior |
+|---|---|
+| `peers=[security_agent]` | In-process `ask_security_agent` tool calling `security_agent.run(...)`. |
+| `peers=[RemotePeer(...)]` | A2A transport-backed `ask_security_agent` tool. |
+| `peers=["security-agent"]` | Creates the documented tool name and reports unavailable until a registry or remote config is supplied. |
 
-    When peers ship, the pattern will be:
-
-    ```python
-    # designed — not yet runnable
-    sre = await Agent.create(
-        ...,
-        peers=["security-agent"],   # outbound delegation targets
-    )
-    # sre can then ask security-agent for help during a run
-    ```
-
-    The same-tenant policy is enforced even then: cross-tenant delegation is denied
-    before the wire is touched.
+The same-tenant policy is enforced before local calls or remote A2A sends.
 
 ## Policy Rules
 
 | Caller tenant | Target tenant | Result |
 |---|---|---|
-| `acme` | `acme` | Allowed (same-tenant) |
-| `acme` | `other-corp` | Denied — `CollaborationDenied` |
+| `acme` | `acme` | Allowed by default. |
+| `acme` | `other-corp` | Denied before the wire is touched. |
 
-Custom policies (OpenFGA / AuthZEN) plug in at the Team level when you need
-finer-grained access control.
+Custom policies such as OpenFGA or AuthZEN can plug in at the Team/policy seam when a host needs finer-grained authorization.
 
 ## Production Notes
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
-| Policy | Same-tenant (default) | OpenFGA / AuthZEN adapter |
-| A2A transport | — | `OfficialA2ATransport` (when peers ship) |
+| Auth | `auth="dev-token"` | `auth=oidc(token_url, client_id, client_secret)` |
+| Policy | Same-tenant default | OpenFGA / AuthZEN adapter |
+| A2A transport | In-process Agent peer | `RemotePeer(...)` over `OfficialA2ATransport` |

@@ -44,10 +44,10 @@ Workflow routes each `needs=` step to a Team member via the matcher; A2A peer ca
 
 ## Today vs target
 
-**Today (`coactra.directory` + `coactra.agent.collaboration`):** `Organization` tree, `Authorizer` (in-memory/OpenFGA), `OrgStore`, `AllowSameTenant` policy, `AgentRef`.
+**Today (`coactra.team.directory` + `coactra.agent.collaboration`):** `Organization` tree, `Authorizer` (in-memory/OpenFGA), `OrgStore`, `AllowSameTenant` policy, `AgentRef`.
 
-**Target:** a `Team` facade (bag of agents + `match` + policy) over those pieces; the keyword matcher; the optional semantic matcher via `ai`; rename `coactra.directory`/`organization` → `coactra.team`.
+**Target:** a `Team` facade (bag of agents + `match` + policy) over those pieces; the keyword matcher; the optional semantic matcher via `ai`; rename `coactra.team.directory`/`organization` → `coactra.team`.
 
 ## Out of scope (this spec)
 
-Deep org-tree/permission modeling (inheritance, seats) — stays in directory backends, surfaced only as needed; migrating homelab off `coactra.directory`.
+Deep org-tree/permission modeling (inheritance, seats) — stays in directory backends, surfaced only as needed; migrating homelab off `coactra.team.directory`.

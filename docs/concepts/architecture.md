@@ -14,7 +14,7 @@ Coactra owns the cross-capability shell:
 - workspace desk and execution policy
 - memory backend neutrality
 - work-order vocabulary, audit state, approvals, artifacts, and budgets
-- organization hierarchy, permissions, escalation, and authorization seams
+- team hierarchy, permissions, escalation, and authorization seams
 
 Coactra should not grow into a general durable workflow engine. Runtime execution should be wrapped through adapters to LangGraph, Temporal, Prefect, DBOS, or similar backends.
 
@@ -26,7 +26,7 @@ The project should use an adopt-first rule for generic infrastructure:
 - Temporal is the first-choice target for hard durable execution and same-thread signal/resume.
 - Prefect is useful for Python deployment-triggered workflows, but Coactra must document whether resume is same-thread, host-owned, or a new run carrying prior state.
 - PydanticAI is a useful API-design reference for typed dependencies, tools, and structured output, but adopting its vocabulary should not force a rewrite of Coactra's package model.
-- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra-ai`.
+- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra[ai]`.
 
 See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/release-policy.md](../maintainers/release-policy.md) for the concrete v1 plan.
 
@@ -34,7 +34,7 @@ See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/r
 
 ```text
 Application functions
-  -> coactra-agent composition root
+  -> coactra[agent] composition root
   -> Coactra policy and state contracts
   -> runtime adapter where needed
        LangGraph as the default agentic stateful execution adapter
@@ -48,13 +48,13 @@ Application functions
 | Package | Keep owning | Avoid owning |
 |---|---|---|
 | `coactra` | shared `CoactraScope` and umbrella extras | runtime behavior |
-| `coactra-ai` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
-| `coactra-memory` | backend-neutral memory contract | a custom vector/graph memory engine |
-| `coactra-workspace` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
-| `coactra-jobs` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
-| `coactra-jobs` | procedure data model and engine adapters | custom durable engine beyond adapters/gates |
-| `coactra-directory` | tenant org tree, permissions, escalation | workflow execution or messaging |
-| `coactra-agent` | composition, tool mount policy, identity, collaboration | sibling package internals |
+| `coactra[ai]` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
+| `coactra[memory]` | backend-neutral memory contract | a custom vector/graph memory engine |
+| `coactra[workspace]` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
+| `coactra[workflow]` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
+| `coactra[workflow]` | procedure data model and engine adapters | custom durable engine beyond adapters/gates |
+| `coactra[team]` | tenant org tree, permissions, escalation | workflow execution or messaging |
+| `coactra[agent]` | composition, tool mount policy, identity, collaboration | sibling package internals |
 
 ## Runtime Adoption Rule
 
@@ -64,7 +64,7 @@ Before adding orchestration code, classify it:
 2. Portable ledger/state vocabulary: keep it if it improves auditability across runtimes.
 3. Generic retries, recovery, scheduling, state replay, or worker orchestration: use a runtime adapter.
 4. Framework-specific API ergonomics: hide behind ports until the public API choice is proven.
-5. New public vocabulary such as `Kernel`, `Session`, or `Task`: add only when it simplifies current examples more than the existing factories and facades.
+5. New public vocabulary should be added only when it simplifies current examples more than the existing Agent / Team / Workflow facades.
 
 ## Near-Term Migration Shape
 
@@ -72,7 +72,7 @@ Before adding orchestration code, classify it:
 WorkOrder / Procedure / Approval / Artifact / Audit
   -> LangGraph adapter for stateful agent graphs
   -> Temporal/Prefect/DBOS adapters for durable workflows
-  -> Coactra organization/workspace/memory policy remains outside the runtime
+  -> Coactra team/workspace/memory policy remains outside the runtime
 ```
 
 ## Source Anchors
