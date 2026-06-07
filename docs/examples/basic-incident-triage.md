@@ -1,44 +1,58 @@
 # Basic Incident Triage
 
-Use this as the first example for a normal Coactra application. It combines a
-plain incident workflow, `make_agent(...)`, and `WorkManager` without introducing
-a class hierarchy.
+The smallest Coactra application: one `Agent` that receives an incident description
+and returns a triage plan. No Team, no Workflow — just the agent thinking.
 
 ## Demonstrates
 
-- `make_agent(...)` with dependency-light defaults
-- `WorkManager` and `WorkOrder`
-- idempotency keys for repeated incidents
-- plain functions for application behavior
+- `Agent.create(model=, tools=, instructions=)`
+- `agent.run(prompt)` — synchronous result
+- plain local tools passed to the agent
 
-## Function Style
-
-The example keeps names action-oriented and specific:
+## Code
 
 ```python
-def incident_key(incident: str) -> str:
-    ...
+import asyncio
+from coactra import Agent
 
 
-def submit_incident(work, scope, incident: str):
-    ...
+def get_runbook(service: str) -> str:
+    """Return the runbook URL for a service."""
+    runbooks = {
+        "nginx": "https://wiki.example.com/runbooks/nginx",
+        "postgres": "https://wiki.example.com/runbooks/postgres",
+    }
+    return runbooks.get(service, "https://wiki.example.com/runbooks/generic")
 
 
-def draft_first_checks(agent, incident: str) -> str:
-    ...
+async def triage_incident(incident: str) -> str:
+    agent = await Agent.create(
+        model="claude-sonnet-4-5",
+        name="triage-1",
+        auth="dev-token",          # swap for auth=oidc(...) in production
+        tools=[get_runbook],
+        instructions="You are a senior SRE. Be brief and actionable.",
+    )
+    return await agent.run(f"Triage this incident: {incident}")
 
 
-def triage_incident(incident: str) -> dict[str, str]:
-    ...
+if __name__ == "__main__":
+    result = asyncio.run(triage_incident("nginx is returning 502 on /api/checkout"))
+    print(result)
 ```
 
 ## Run
 
 ```bash
-python3 examples/basic_incident_triage.py
+python basic_incident_triage.py
 ```
 
-The default agent uses an in-process fake model, so the draft text is an echo-like
-placeholder. Wire a real model for production behavior.
+## Production Notes
 
-Source: [https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py)
+| Concern | Dev default | Production |
+|---|---|---|
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| MCP tools | local functions only | `gateway="https://gateway/mcp"` with `auth=` |
+| Model | any litellm id | route via `gateway=` to slice by token scopes |
+
+See [Concepts: Architecture](../concepts/architecture.md) for the full Agent/Team/Workflow model.

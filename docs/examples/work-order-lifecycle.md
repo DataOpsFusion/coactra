@@ -1,40 +1,79 @@
 # Work Order Lifecycle
 
-Use this when you need durable work state: leases, checkpoints, approvals, and
-artifacts — not a one-shot function call.
+A **Workflow run** is the durable unit of work: it survives restarts, pauses for
+approvals, retries failed steps, and stores its full audit trail. "Work order /
+job / orchestration" are properties of a Workflow running — not separate things.
 
-## Demonstrates
+## What Ships with Workflow
 
-- `WorkManager` as the lifecycle ledger
-- `Scope` for tenant-scoped work
-- checkpoint → approval → resume → complete
-- audit event history
+- `Workflow("name", steps=[...])` — authored playbook
+- `step("description", agent=, needs=, approve=)` — step builder
+- `Workflow.run_goal("goal text", team=team)` — triage: reuse saved or plan new
+- Durable execution via LangGraph (default) / Temporal / Prefect
+- Approval pauses: run halts until a human resolves, then resumes
+- Internal run ledger: `WorkflowRun`, `Checkpoint`, `Approval`
 
-## Run
-
-```bash
-python3 examples/work/submit_and_complete.py
-python3 examples/work/lifecycle_with_approval.py
-```
-
-## Function Style
-
-Keep application behavior in named functions:
+## Code
 
 ```python
-def submit_publish_work(work: WorkManager, title: str) -> WorkOrder:
-    ...
+import asyncio
+from coactra import Agent, Team, Workflow, step
 
-def run_publish_with_approval(work: WorkManager, title: str) -> dict[str, object]:
-    ...
+
+async def main() -> None:
+    sre = await Agent.create(
+        model="claude-sonnet-4-5",
+        name="sre-agent",
+        tenant="acme",
+        auth=oidc(token_url, client_id, client_secret),
+        gateway="https://gateway/mcp",
+        skills=["infra restart", "deployment"],
+    )
+
+    team = Team([sre])
+
+    # Authored playbook — runs directly, no planning step
+    play = Workflow("deploy-service", steps=[
+        step("validate config and run pre-checks", needs="deployment"),
+        step("deploy to staging", agent="sre-agent"),
+        step("manager sign-off", approve=True),          # pauses for human
+        step("deploy to production", agent="sre-agent"),
+        step("verify and close", agent="sre-agent"),
+    ])
+
+    # durable=True → uses LangGraph checkpointing (Temporal swappable)
+    run = await play.run(team, durable=True)
+    print("Run ID:", run.id, "Status:", run.status)
+
+
+asyncio.run(main())
 ```
 
-## Production Swap
+## Lifecycle Stages
+
+```
+submitted → running → [paused for approval] → resumed → done
+                                                       → failed → retried
+                                                       → cancelled
+```
+
+## Run Goal (triage mode)
 
 ```python
-from coactra.jobs import SqlWorkStore, WorkManager
-
-work = WorkManager(store=SqlWorkStore.from_url("postgresql+psycopg://..."))
+# triage: runs saved playbook if goal is known; plans + saves candidate if new
+run = await Workflow.run_goal(
+    "rotate prod cert and redeploy web tier",
+    team=team,
+    durable=True,
+)
 ```
 
-See also [Work Orders](../operations/work-orders.md) and [Release Runner](release-runner.md).
+Planned playbooks are saved as **candidates** — promoted to the reusable library
+only after review or N successful runs (never auto-saved, preventing library
+self-poisoning with bad generated plans).
+
+## See Also
+
+- [Procedure-Backed Work](procedure-backed-work.md) — steps assigned by capability
+- [Release Runner](release-runner.md) — pipeline with checkpoints
+- [Workflow design spec](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md)

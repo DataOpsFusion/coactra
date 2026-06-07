@@ -1,37 +1,61 @@
 # coactra
 
-Convenience installer and dependency-light shell for the modular Coactra libraries. It contains shared scope, error, plugin, and Kernel/Session DTOs, but no backend business logic.
-
-Install only the capability you need:
+Single-distribution package for composing existing AI application pieces: Agent, Team, Workflow, MCP toolsets, memory, workspace, and optional backend adapters.
 
 ```bash
-pip install coactra[memory]
-pip install coactra[workspace]
-pip install coactra[orchestration]
-pip install coactra[agent]
-pip install coactra[all]
+pip install "coactra[agent]"
 ```
 
-The former split-package roots are compatibility paths; new installs should use
-the single `coactra` distribution plus extras.
+Common extras:
 
+```bash
+pip install "coactra[agent-gateway,oauth]"  # MCP gateway and OAuth
+pip install "coactra[graphiti]"
+pip install "coactra[mem0]"
+pip install "coactra[langgraph]"
+pip install "coactra[sql]"
+```
 
-## Dependency-Light Shell
+## Small Surface
 
 ```python
-from coactra.kernel import Kernel, Task
-from coactra.scope import CoactraScope
-
-
-def handler(context, task):
-    return {"tenant": context.scope.tenant_id, "input": dict(task.input)}
-
-
-session = (
-    Kernel.builder()
-    .with_handler("echo", handler)
-    .build()
-    .session(CoactraScope(tenant_id="acme", namespace="support"))
-)
-result = await session.run(Task("echo", {"x": 1}))
+from coactra import Agent, Skill, Team, Workflow, mcp, step
 ```
+
+Use this root surface for application code. Use lower-level modules only for adapters and host runtime wiring:
+
+- `coactra.agent` for event/runtime types and A2A adapter helpers
+- `coactra.workflow` and `coactra.workflow.ledger` for workflow engines and durable work storage
+- `coactra.team.directory` for org/member/seat persistence
+- `coactra.memory` and `coactra.workspace` for backend integration
+
+## Bring Existing Pieces
+
+```python
+import asyncio
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import FunctionModel
+from coactra import Agent, mcp
+
+
+def existing_model(messages, info):
+    return ModelResponse(parts=[TextPart("existing model handled it")])
+
+
+async def main() -> None:
+    agent = await Agent.create(
+        model=FunctionModel(existing_model),
+        tools=[mcp("https://tools.example/mcp", name="tools")],
+        memory="inprocess",
+        workspace="./desk",
+    )
+    try:
+        print(await agent.run("Use my existing stack"))
+    finally:
+        await agent.aclose()
+
+
+asyncio.run(main())
+```
+
+See `examples/acceptance/` for the checked examples that define the alpha acceptance path.

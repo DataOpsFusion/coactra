@@ -1,31 +1,32 @@
 # Examples
 
-The examples are small and runnable. They show the intended Coactra style:
-application behavior is written as plain functions, while classes stay at durable
-state and backend boundaries.
+These examples show the current Coactra **Agent · Team · Workflow** model. Runnable examples use features that are built and ship today.
 
-## Start Here
+## Runnable Today
 
 | Goal | Example |
 |---|---|
-| Smallest normal app | [Basic Incident Triage](basic-incident-triage.md) |
-| Explicit composition with plain functions | [Composed Support Agent](composed-support-agent.md) |
-| Higher-level SDK shape | [Offline Agent SDK](offline-agent-sdk.md) |
-| Scoped support memory | [Customer Support Memory](customer-support-memory.md) |
-| Agent + work + memory (project) | [Support Desk](support-desk.md) |
-| **Work orders (focused scripts)** | [Work Order Lifecycle](work-order-lifecycle.md) |
-| **Procedure-backed work** | [Procedure-Backed Work](procedure-backed-work.md) |
-| Durable work lifecycle (project) | [Release Runner](release-runner.md) |
-| Workspace files and handoff | [Workspace Research Desk](workspace-research-desk.md) |
-| Policy-gated collaboration | [Multi-Agent Policy](multi-agent-policy.md) |
+| Smallest agent app | [Basic Incident Triage](basic-incident-triage.md) |
+| Agent with tools + instructions | [Offline Agent SDK](offline-agent-sdk.md) |
+| Agent + automatic memory | [Customer Support Memory](customer-support-memory.md) |
+| Agent + workspace desk | [Workspace Research Desk](workspace-research-desk.md) |
+| Agent + memory + tools | [Support Desk](support-desk.md) |
+| Team routing + same-tenant policy | [Multi-Agent Policy](multi-agent-policy.md) |
+| Agent composition with skills | [Composed Support Agent](composed-support-agent.md) |
+| Durable work with approval | [Work Order Lifecycle](work-order-lifecycle.md) |
+| Procedure-backed steps | [Procedure-Backed Work](procedure-backed-work.md) |
+| Release pipeline with checkpoints | [Release Runner](release-runner.md) |
 
 ## Local Setup
 
-Install the package editable when running examples from a checkout:
-
 ```bash
-python -m pip install -e "./coactra[all,dev]"
+pip install coactra[agent]
 ```
 
-Run examples from the repository root. Each page lists its exact command and the
-production boundary it is meant to demonstrate.
+For a development checkout:
+
+```bash
+pip install -e "./coactra[all,dev]"
+```
+
+Pass `auth="dev-token"` or `auth=oidc(...)` in every `Agent.create()` call. See [Getting Started](../getting-started/quickstart.md) for the full quickstart.

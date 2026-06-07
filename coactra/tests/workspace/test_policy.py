@@ -33,3 +33,11 @@ def test_deny_takes_precedence_over_allow():
 def test_empty_command_is_rejected():
     with pytest.raises(PolicyError):
         CliPolicy().check("   ")
+
+
+def test_safe_default_denies_python_exec():
+    pol = CliPolicy.safe_default()
+    with pytest.raises(PolicyError, match="python"):
+        pol.check("python -c print('hi')")
+    with pytest.raises(PolicyError, match="python3"):
+        pol.check(["python3", "-c", "print('hi')"])

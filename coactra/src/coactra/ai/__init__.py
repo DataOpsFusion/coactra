@@ -8,6 +8,13 @@
                              reasoner=lambda p: ai.ask(p))
     eng.recall_or_reason("tenant", problem)   # replay or re-reason
 """
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+from coactra._version import distribution_version
+
 # Wrap shelf (LiteLLM + Instructor). Guarded: if those heavy/optional providers
 # cannot be imported, the novel reasoning core below still loads and works.
 try:
@@ -36,7 +43,13 @@ except ImportError:  # pragma: no cover - only when litellm/instructor missing
     Client = _MissingProviderSDK
     LiteLLMCompleter = _MissingProviderSDK
 
-from coactra.ai.completion.embedding import LiteLLMEmbedding, cosine
+from coactra.ai.lifelong import (
+    CurriculumTask,
+    ExecutableSkill,
+    LearningResult,
+    LifelongLearner,
+    SkillLibrary,
+)
 from coactra.ai.replay.engine import ReasoningEngine
 from coactra.ai.replay.gate import AdaptiveGate
 from coactra.ai.replay.models import Decision, ReasoningTrace, RecallResult
@@ -44,7 +57,9 @@ from coactra.ai.replay.store import InMemoryStore
 from coactra.ai.routing import TenantReasoningStoreRouter
 from coactra.ai.tokens import ApproximateTokenCounter, TiktokenCounter, TokenCounter, count_tokens
 
-__version__ = "0.2.0"
+__version__ = distribution_version()
+
+_LAZY_AI_EXPORTS = frozenset({"LiteLLMEmbedding", "cosine"})
 
 __all__ = [
     "__version__",
@@ -56,6 +71,11 @@ __all__ = [
     "LiteLLMEmbedding",
     "cosine",
     "ReasoningEngine",
+    "CurriculumTask",
+    "ExecutableSkill",
+    "LearningResult",
+    "LifelongLearner",
+    "SkillLibrary",
     "AdaptiveGate",
     "InMemoryStore",
     "ReasoningTrace",
@@ -67,3 +87,10 @@ __all__ = [
     "count_tokens",
     "TenantReasoningStoreRouter",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _LAZY_AI_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    embedding = import_module("coactra.ai.completion.embedding")
+    return getattr(embedding, name)

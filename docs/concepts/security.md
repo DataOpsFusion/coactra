@@ -33,7 +33,7 @@ Coactra is a library suite. The host application remains responsible for product
 
 ## Organization and Authorization
 
-- The organization package models who exists, who reports to whom, and who may do what.
+- The directory package models who exists, who reports to whom, and who may do what.
 - External authorization enforcement should use an `Authorizer` such as OpenFGA or a host-supplied policy engine.
 - Permission decisions should be auditable by the host application.
 

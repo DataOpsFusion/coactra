@@ -2,13 +2,6 @@
 
 from __future__ import annotations
 
+from coactra.errors import MissingExtraError
 
-class MissingExtraError(RuntimeError):
-    """Raised when a backend is used but its optional engine extra isn't installed."""
-
-    def __init__(self, extra: str) -> None:
-        super().__init__(
-            f"this backend requires the optional '{extra}' extra; "
-            f"install with: pip install coactra-memory[{extra}]"
-        )
-        self.extra = extra
+__all__ = ["MissingExtraError"]

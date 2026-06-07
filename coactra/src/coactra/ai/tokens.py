@@ -20,13 +20,13 @@ class ApproximateTokenCounter:
 
 
 class TiktokenCounter:
-    """Exact OpenAI-tokenizer adapter. Install ``coactra-ai[tiktoken]``."""
+    """Exact OpenAI-tokenizer adapter. Install ``coactra[ai][tiktoken]``."""
 
     def __init__(self, *, default_model: str = "gpt-4o-mini") -> None:
         try:
             import tiktoken
         except ImportError as exc:  # pragma: no cover - environment dependent
-            raise ImportError("TiktokenCounter requires: pip install coactra-ai[tiktoken]") from exc
+            raise ImportError("TiktokenCounter requires: pip install coactra[ai][tiktoken]") from exc
         self._tiktoken = tiktoken
         self._default_model = default_model
 

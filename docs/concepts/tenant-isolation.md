@@ -7,19 +7,19 @@ Tenant isolation is a design constraint across the library. Every package should
 | Package | Scope shape | Purpose |
 |---|---|---|
 | `coactra` | `CoactraScope(tenant_id, namespace, agent_id, session_id)` | Canonical DTO and conversion helper. |
-| `coactra-agent` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
-| `coactra-memory` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
-| `coactra-workspace` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
-| `coactra-jobs` | `Scope(tenant_id, namespace)` | Work-order ledger partition. |
-| `coactra-jobs` | `Scope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
-| `coactra-directory` | tenant on root/org/store operations | Tenant is the org directory isolation boundary. |
+| `coactra[agent]` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
+| `coactra[memory]` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
+| `coactra[workspace]` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
+| `coactra[workflow]` | `Scope(tenant_id, namespace)` | Procedure and workflow runtime partition. |
+| `coactra[workflow]` | `WorkScope(tenant_id, namespace)` | Durable work ledger partition. |
+| `coactra[team]` | tenant on root/org/store operations | Tenant is the team directory isolation boundary. |
 
 ## Isolation Mechanisms
 
 - Memory encodes tenant into backend-specific keys such as in-process scope keys, mem0 user/agent/run ids, or Graphiti group ids.
 - Workspace confines file paths under tenant/agent roots and rejects traversal.
-- Work stores list/get/save by work scope and tenant-indexed columns in SQL.
-- Organization repositories require tenant arguments and filter by tenant.
+- Workflow ledger stores list/get/save by `WorkScope` and tenant-indexed columns in SQL.
+- Team directory repositories require tenant arguments and filter by tenant.
 - Agent collaboration uses tenant-qualified `AgentRef` and denies cross-tenant talk by default.
 - Tenant routers select a physical backend/runtime per tenant where hard silos are needed.
 
@@ -41,6 +41,9 @@ Tenant isolation is a design constraint across the library. Every package should
 - `TenantProcedureStoreRouter`
 - `TenantWorkflowEngineRouter`
 - `TenantOrgStoreRouter`
-- `TenantAgentRouter`
 
 Routers are a production silo tool, so protocol conformance tests should cover every method they forward.
+
+## App-Facing Rule
+
+Application code should start with `coactra.scope.CoactraScope` and convert outward only at package boundaries. Use `to_workflow_kwargs()` for procedure/runtime state, `to_work_kwargs()` for `WorkScope`, `to_memory_kwargs()` for memory, and `to_workspace_kwargs()` for workspace desks. Do not pass package-specific `Scope` objects across package boundaries.

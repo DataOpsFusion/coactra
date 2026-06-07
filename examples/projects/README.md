@@ -1,6 +1,6 @@
 # Sample Projects
 
-Small runnable projects that show Coactra patterns without a class-heavy application design.
+Small runnable projects with concrete names and local defaults.
 
 Install from the repository root:
 
@@ -10,12 +10,12 @@ python -m pip install -e "./coactra[all,dev]"
 
 | Project | Shows | Run |
 |---|---|---|
-| `customer_support_memory` | support memory with `Memory.remember` and `Memory.recall` | `python3 examples/projects/customer_support_memory/app.py` |
-| `support_desk` | agent draft + work lifecycle + ticket memory | `python3 examples/projects/support_desk/app.py` |
-| `release_runner` | durable work lifecycle with `WorkManager` | `python3 examples/projects/release_runner/app.py` |
-| `workspace_research_desk` | scoped workspace files, handoff, capability manifest | `python3 examples/projects/workspace_research_desk/app.py` |
-| `multi_agent_policy` | policy-gated agent collaboration before A2A transport | `python3 examples/projects/multi_agent_policy/app.py` |
+| `resolution_memory` | remember and recall prior fixes | `python3 examples/projects/resolution_memory/app.py` |
+| `ticket_triage` | agent draft + work lifecycle + ticket memory | `python3 examples/projects/ticket_triage/app.py` |
+| `release_checkpoint` | release work checkpoints and artifacts | `python3 examples/projects/release_checkpoint/app.py` |
+| `research_workspace` | scoped files, handoff, capability manifest | `python3 examples/projects/research_workspace/app.py` |
+| `approval_routing` | policy-gated collaboration before A2A transport | `python3 examples/projects/approval_routing/app.py` |
 
-For focused work-order scripts (no project folder), see [../work/README.md](../work/README.md).
-
-Examples use in-process defaults. Swap backend boundaries for production; keep application functions mostly unchanged.
+These are local examples, not production deployments. Replace memory backends,
+work stores, AI ports, workspace backends, and A2A verifiers at the adapter
+boundary.
