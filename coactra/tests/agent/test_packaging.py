@@ -6,9 +6,9 @@ def test_agent_imports():
     assert mod.__name__ == "coactra.agent"
 
 
-def test_coactra_is_namespace_package():
+def test_coactra_is_regular_package_with_lazy_init():
     import coactra
 
-    # PEP 420 namespace packages have no __file__ and a virtual __path__.
-    assert getattr(coactra, "__file__", None) is None
+    # coactra now has a top-level __init__.py with lazy PEP 562 exports.
+    assert coactra.__file__ is not None
     assert hasattr(coactra, "__path__")

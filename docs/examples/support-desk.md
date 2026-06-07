@@ -1,29 +1,73 @@
 # Support Desk
 
-Use this when a helpdesk app needs agent drafting, durable work state, and ticket
-memory in one place.
+A helpdesk agent that drafts answers with automatic memory. The runnable part
+combines `Agent` + memory. Durable work tracking and approval pauses are part of
+the **Workflow** layer — see the badge below.
 
-## Demonstrates
+## Demonstrates (Runnable)
 
-- `make_agent(...)` with dependency-light defaults
-- `WorkManager` lifecycle and completion artifacts
-- `Memory.remember` / `Memory.recall` for prior fixes
-- canonical imports across agent, jobs, and memory
+- `Agent.create(model=, memory=, tools=, instructions=)`
+- Automatic recall of prior tickets per customer
+- Local tools for ticket resolution
 
-## Run
-
-```bash
-python3 examples/projects/support_desk/app.py
-```
-
-The default agent uses an in-process fake model. Wire a real model for production
-drafts.
-
-## Production Swap
+## Code (Runnable)
 
 ```python
-memory = Memory(backend=make_backend("graphiti", ...))
-work = WorkManager(store=SqlWorkStore.from_url("postgresql+psycopg://..."))
+import asyncio
+from coactra import Agent
+
+
+def fetch_ticket(ticket_id: str) -> dict:
+    """Stub: look up a ticket from your ticketing system."""
+    return {"id": ticket_id, "subject": "Can't log in", "status": "open"}
+
+
+def mark_resolved(ticket_id: str, resolution: str) -> str:
+    """Stub: mark a ticket resolved."""
+    return f"Ticket {ticket_id} marked resolved: {resolution}"
+
+
+async def handle_ticket(ticket_id: str, customer_id: str) -> str:
+    agent = await Agent.create(
+        model="claude-sonnet-4-5",
+        name="support-desk",
+        tenant="acme",
+        auth="dev-token",
+        memory="inprocess",     # swap to "graphiti" or "mem0" in production
+        tools=[fetch_ticket, mark_resolved],
+        instructions=(
+            "You are a tier-1 support agent. Recall past issues, draft a clear "
+            "resolution, and mark the ticket resolved when done."
+        ),
+    )
+    return await agent.run(
+        f"Handle ticket {ticket_id} for customer {customer_id}"
+    )
+
+
+if __name__ == "__main__":
+    print(asyncio.run(handle_ticket("TKT-1001", "cust-42")))
 ```
 
-Source: [https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/support_desk](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/support_desk)
+## Workflow Extension
+
+Use `Workflow` when ticket handling needs durable approval pause/resume:
+
+```python
+from coactra import Workflow, step
+
+play = Workflow("support-ticket", steps=[
+    step("fetch and draft resolution", agent="support-desk"),
+    step("manager approval", approve=True),
+    step("mark resolved", agent="support-desk"),
+])
+await play.run(team)
+```
+
+## Production Notes
+
+| Concern | Dev default | Production |
+|---|---|---|
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Memory backend | `"inprocess"` | `"graphiti"` or `"mem0"` |
+| Tool access | local functions | `gateway="https://gateway/mcp"` + `auth=` |

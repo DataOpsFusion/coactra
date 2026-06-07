@@ -28,7 +28,7 @@ def _require_a2a_sdk() -> dict[str, Any]:
         from a2a.types import SendMessageRequest
     except ImportError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
-            "coactra-agent[a2a] is required for OfficialA2AClient"
+            "coactra[a2a] is required for OfficialA2AClient"
         ) from exc
     return {
         "httpx": httpx,

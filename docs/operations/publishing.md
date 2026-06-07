@@ -17,7 +17,7 @@ feature/* -> dev -> release/x.y.z -> main -> PyPI
 5. Open a pull request from the release branch into `main`.
 6. Merge to `main`.
 
-The `.github/workflows/workflow.yml` workflow builds the source distribution and
+The `.github/workflows/release.yml` workflow builds the source distribution and
 wheel, then publishes to PyPI through Trusted Publishing.
 
 PyPI Trusted Publisher settings must match the GitHub OIDC claims:
@@ -26,7 +26,7 @@ PyPI Trusted Publisher settings must match the GitHub OIDC claims:
 |---|---|
 | Owner | `DataOpsFusion` |
 | Repository | `coactra` |
-| Workflow | `workflow.yml` |
+| Workflow | `release.yml` |
 | Environment | `pypi` |
 
 PyPI rejects duplicate uploads for an existing version. Every merge to `main`

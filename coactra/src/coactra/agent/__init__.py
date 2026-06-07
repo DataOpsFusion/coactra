@@ -1,20 +1,17 @@
 """coactra.agent — scoped agent composition and policy facade.
 
-The stable root API exposes the agent facade, local domain types, policy/identity
-Protocols, and composition helpers. Test fakes, A2A server helpers, and internal data
-structures remain importable from their concrete modules and are available at the root only
-through deprecated compatibility lookups.
+The stable root API exposes local domain types, policy/identity protocols, and the async
+collaboration stack. Adapters (a2a/a2a_server/keycloak), SDK, and internal data structures
+live in their concrete submodules.
 """
 
 from __future__ import annotations
 
-import warnings
 from importlib import import_module
 from typing import Any
 
-from coactra.agent.agent import Agent
+from coactra._version import distribution_version
 from coactra.agent.collaboration import (
-    A2ATransportPort,
     AgentRef,
     AsyncA2ATransportPort,
     AsyncNullTransport,
@@ -22,8 +19,6 @@ from coactra.agent.collaboration import (
     AllowSameTenant,
     CollaborationDenied,
     CollaborationPolicy,
-    NullTransport,
-    PolicyGatedCollaborator,
 )
 from coactra.agent.conformance import TokenExchangeReport, check_token_exchanger_contract
 from coactra.agent.domain import (
@@ -31,11 +26,9 @@ from coactra.agent.domain import (
     ExchangedIdentity,
     Hop,
     Scope,
-    ToolSpec,
     TokenPassthroughError,
 )
 from coactra.agent.errors import AgentError
-from coactra.agent.factory import make_agent
 from coactra.agent.identity import (
     AsyncTokenExchanger,
     AsyncTokenExchangerAdapter,
@@ -43,24 +36,28 @@ from coactra.agent.identity import (
     InProcessExchanger,
     TokenExchanger,
 )
-from coactra.agent.mounting import (
-    ConflictPolicy,
-    MCPServerPort,
-    MountConflictError,
-    MountRegistry,
-    NamespaceByMountId,
-    RejectOnConflict,
+from coactra.agent.events import (
+    Assistant,
+    Event,
+    RunResult,
+    Status,
+    Thinking,
+    ToolCall,
+    ToolResult,
+    Usage,
 )
-from coactra.agent.ports import (
-    AIPort,
-    MemoryPort,
-    OrganizationPort,
-    WorkflowPort,
-    WorkspacePort,
-    WorkPort,
-)
-from coactra.agent.routing import TenantAgentRouter
-from coactra.agent.sdk import Agent as SdkAgent  # noqa: F401  -- elegant-facade re-export, deliberately kept out of __all__ (public-surface test pins __all__)
+
+_LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    "Agent": ("coactra.agent.facade", "Agent"),
+    "Run": ("coactra.agent.run", "Run"),
+    "RemotePeer": ("coactra.agent.peers", "RemotePeer"),
+    "FleetEntry": ("coactra.agent.registry", "FleetEntry"),
+    "FleetRegistry": ("coactra.agent.registry", "FleetRegistry"),
+    "InMemoryFleetRegistry": ("coactra.agent.registry", "InMemoryFleetRegistry"),
+    "AgentRuntimePort": ("coactra.agent.ports", "AgentRuntimePort"),
+    "PydanticAIRuntime": ("coactra.agent.runtime", "PydanticAIRuntime"),
+    "mcp": ("coactra.agent.domain.tools", "mcp"),
+}
 
 __all__ = [
     "__version__",
@@ -68,19 +65,11 @@ __all__ = [
     "AgentError",
     # domain
     "Scope",
-    "ToolSpec",
     "AgentRef",
     "DelegationGrant",
     "ExchangedIdentity",
     "Hop",
     "TokenPassthroughError",
-    # mounting
-    "MCPServerPort",
-    "ConflictPolicy",
-    "NamespaceByMountId",
-    "RejectOnConflict",
-    "MountConflictError",
-    "MountRegistry",
     # identity
     "TokenExchanger",
     "AsyncTokenExchanger",
@@ -89,60 +78,39 @@ __all__ = [
     "TokenExchangeReport",
     "check_token_exchanger_contract",
     "InProcessExchanger",
-    # collaboration
+    # async collaboration
     "CollaborationPolicy",
     "AllowSameTenant",
-    "A2ATransportPort",
     "AsyncA2ATransportPort",
-    "NullTransport",
     "AsyncNullTransport",
-    "PolicyGatedCollaborator",
     "AsyncPolicyGatedCollaborator",
     "CollaborationDenied",
-    # ports
-    "AIPort",
-    "MemoryPort",
-    "WorkspacePort",
-    "WorkflowPort",
-    "OrganizationPort",
-    "WorkPort",
-    # facade + composition root
+    "RemotePeer",
+    "FleetEntry",
+    "FleetRegistry",
+    "InMemoryFleetRegistry",
+    # agent SDK
     "Agent",
-    "make_agent",
-    "TenantAgentRouter",
+    "Run",
+    "RunResult",
+    "Event",
+    "Assistant",
+    "Thinking",
+    "ToolCall",
+    "ToolResult",
+    "Usage",
+    "Status",
+    "AgentRuntimePort",
+    "PydanticAIRuntime",
+    "mcp",
 ]
 
-_DEPRECATED_ROOT_EXPORTS: dict[str, tuple[str, str]] = {
-    "ToolTrie": ("coactra.agent.mounting", "ToolTrie"),
-    "FakeAI": ("coactra.agent.ports", "FakeAI"),
-    "FakeMemory": ("coactra.agent.ports", "FakeMemory"),
-    "FakeWorkspace": ("coactra.agent.ports", "FakeWorkspace"),
-    "FakeWorkflow": ("coactra.agent.ports", "FakeWorkflow"),
-    "FakeOrganization": ("coactra.agent.ports", "FakeOrganization"),
-    "FakeWork": ("coactra.agent.ports", "FakeWork"),
-    "FakeOrgNode": ("coactra.agent.ports", "FakeOrgNode"),
-    "FakeMember": ("coactra.agent.ports", "FakeMember"),
-    "A2AInboundRequest": ("coactra.agent.adapters.a2a_server", "A2AInboundRequest"),
-    "A2ARequestVerifier": ("coactra.agent.adapters.a2a_server", "A2ARequestVerifier"),
-    "build_a2a_app": ("coactra.agent.adapters.a2a_server", "build_a2a_app"),
-    "make_a2a_executor": ("coactra.agent.adapters.a2a_server", "make_a2a_executor"),
-    "parse_a2a_envelope": ("coactra.agent.adapters.a2a_server", "parse_a2a_envelope"),
-    "render_task_text": ("coactra.agent.adapters.a2a_server", "render_task_text"),
-}
+__version__ = distribution_version()
 
 
 def __getattr__(name: str) -> Any:
-    target = _DEPRECATED_ROOT_EXPORTS.get(name)
+    target = _LAZY_EXPORTS.get(name)
     if target is None:
-        raise AttributeError(name)
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     module_name, attr_name = target
-    warnings.warn(
-        f"coactra.agent.{name} is deprecated at the package root; "
-        f"import {attr_name} from {module_name} instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return getattr(import_module(module_name), attr_name)
-
-
-__version__ = "0.2.0"

@@ -48,8 +48,8 @@ class CliPolicy(BaseModel):
         changing explicitly provided policies.
         """
         return cls(
-            allow=["pwd", "ls", "cat", "echo", "python", "python3"],
-            deny=["rm", "git push", "curl", "wget", "ssh", "scp"],
+            allow=["pwd", "ls", "cat", "echo"],
+            deny=["rm", "git push", "curl", "wget", "ssh", "scp", "python", "python3"],
         )
 
     def check(self, command: str | Sequence[str]) -> list[str]:

@@ -22,3 +22,18 @@ class ToolSpec(BaseModel):
     def qualified_name(self) -> str:
         """The collision-free name: the mount id namespaces the bare tool name."""
         return f"{self.mount_id}.{self.name}"
+
+
+class MCPServer(BaseModel):
+    """An additive remote MCP server requested through the public mcp() helper."""
+
+    model_config = {"frozen": True}
+
+    url: str = Field(min_length=1)
+    name: str | None = None
+    auth: object | None = None
+
+
+def mcp(url: str, *, name: str | None = None, auth: object | None = None) -> MCPServer:
+    """Tag a remote MCP server so Agent.create(tools=[...]) expands it as a toolset."""
+    return MCPServer(url=url, name=name, auth=auth)

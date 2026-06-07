@@ -1,4 +1,4 @@
-"""Optional ChromaStore adapter - install with `pip install coactra-ai[chroma]`.
+"""Optional ChromaStore adapter - install with `pip install coactra[ai][chroma]`.
 
 Implements the ReasoningStore Protocol shape over a Chroma collection. Construction
 fails loudly if chromadb is not installed.
@@ -41,7 +41,7 @@ class ChromaStore:
         except ImportError as exc:  # pragma: no cover - exercised only without extra
             raise ImportError(
                 "ChromaStore requires chromadb (the 'chroma' extra): "
-                "pip install coactra-ai[chroma]"
+                "pip install coactra[ai][chroma]"
             ) from exc
         self._client = chromadb.Client(**client_kwargs)
         self._col = self._client.get_or_create_collection(collection)
