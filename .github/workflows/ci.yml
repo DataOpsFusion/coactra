@@ -27,6 +27,21 @@ jobs:
         working-directory: coactra
         run: pytest -q tests/test_base_install.py
 
+  clean-install:
+    name: Clean wheel install and examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build, install into fresh venv, and run public examples
+        run: python coactra/scripts/check_clean_install.py
+
   tests:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -67,7 +82,45 @@ jobs:
           python -m pip install './coactra[dev]'
 
       - name: Ruff
-        run: ruff check coactra/src
+        working-directory: coactra
+        run: ruff check src tests
+
+      - name: Removed-path scan
+        run: python coactra/scripts/check_no_legacy_paths.py
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install docs tooling
+        run: python -m pip install --upgrade pip mkdocs-material
+
+      - name: Build docs strictly
+        run: mkdocs build --strict
+
+  live-gate:
+    name: Live backend gate inventory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dev tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e './coactra[dev]'
+
+      - name: Report configured live backend checks
+        run: python coactra/scripts/check_live_backends.py
 
   typecheck:
     name: Typecheck
