@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pprint import pprint
 
-from coactra.jobs import Scope, WorkManager, WorkOrder
-from coactra.jobs.work import Artifact, ArtifactPart
+from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import Artifact, ArtifactPart
 
-SCOPE = Scope(tenant_id="acme", namespace="release")
+SCOPE = WorkScope(tenant_id="acme", namespace="release")
 
 
 def run_release_checklist(work: WorkManager, version: str) -> dict[str, object]:

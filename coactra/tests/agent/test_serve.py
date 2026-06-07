@@ -32,7 +32,7 @@ def _static_model(reply: str):
     return FunctionModel(_fn)
 
 
-async def _make_agent_with_skills(name: str = "test-agent", tenant: str = "acme") -> Agent:
+async def _create_agent_with_skills(name: str = "test-agent", tenant: str = "acme") -> Agent:
     return await Agent.create(
         model=_static_model(f"reply-from-{name}"),
         name=name,
@@ -52,7 +52,7 @@ async def test_serve_agent_returns_starlette_app():
     from coactra.agent.serve import serve_agent
     from starlette.applications import Starlette
 
-    agent = await _make_agent_with_skills()
+    agent = await _create_agent_with_skills()
     app = serve_agent(agent)
 
     assert isinstance(app, Starlette), (
@@ -69,7 +69,7 @@ async def test_serve_agent_app_has_agent_card_route():
     """The built app must include the /.well-known/agent-card.json route."""
     from coactra.agent.serve import serve_agent
 
-    agent = await _make_agent_with_skills()
+    agent = await _create_agent_with_skills()
     app = serve_agent(agent)
 
     # Extract all registered URL paths from the app's route table
@@ -94,7 +94,7 @@ async def test_serve_agent_app_has_jsonrpc_route():
     from coactra.agent.serve import serve_agent
     from a2a.utils.constants import DEFAULT_RPC_URL
 
-    agent = await _make_agent_with_skills()
+    agent = await _create_agent_with_skills()
     app = serve_agent(agent)
 
     paths = [getattr(r, "path", "") for r in app.routes]
@@ -112,7 +112,7 @@ async def test_serve_agent_card_skills_propagated():
     """The agent's card (name, skills) is used when assembling the app."""
     from coactra.agent.serve import serve_agent
 
-    agent = await _make_agent_with_skills(name="security-bot")
+    agent = await _create_agent_with_skills(name="security-bot")
     # agent.card must be non-None because skills and expose=True are set
     assert agent.card is not None
     assert agent.card["name"] == "security-bot"
@@ -141,7 +141,7 @@ async def test_serve_agent_with_verifier():
         ):
             return {"sub": "agent-x"}
 
-    agent = await _make_agent_with_skills()
+    agent = await _create_agent_with_skills()
     app = serve_agent(agent, verifier=_FakeVerifier())
     assert app is not None
 
@@ -176,7 +176,7 @@ async def test_serve_agent_card_route_returns_json_with_current_sdk():
     from coactra.agent.serve import serve_agent
     from starlette.testclient import TestClient
 
-    agent = await _make_agent_with_skills(name="security-agent")
+    agent = await _create_agent_with_skills(name="security-agent")
     app = serve_agent(agent)
 
     with TestClient(app) as client:
@@ -193,7 +193,7 @@ async def test_serve_agent_url_is_published_in_official_card():
     from coactra.agent.serve import serve_agent
     from starlette.testclient import TestClient
 
-    agent = await _make_agent_with_skills(name="security-agent")
+    agent = await _create_agent_with_skills(name="security-agent")
     app = serve_agent(agent, url="http://127.0.0.1:8123")
 
     with TestClient(app) as client:

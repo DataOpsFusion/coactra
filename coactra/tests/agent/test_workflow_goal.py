@@ -23,8 +23,9 @@ from coactra.agent.checkpoint import InMemoryCheckpointStore, run_from_state
 from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.agent.planner import PlannedPlan, PlannedStep
 from coactra.agent.skills import Skill
-from coactra.agent.team import Team
-from coactra.agent.workflow import Playbook, Workflow, step
+from coactra.team import Team
+from coactra.agent.workflow import Workflow
+from coactra.workflow.playbook import Playbook, step
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +119,7 @@ async def test_run_goal_store_hit_uses_promoted_playbook(team):
 
 async def test_run_goal_store_hit_returns_workflow_run(team):
     """run_goal returns a WorkflowRun when a playbook is found in the store."""
-    from coactra.agent.workflow import WorkflowRun
+    from coactra.workflow.playbook import WorkflowRun
 
     store = InMemoryPlaybookStore()
     pb = Playbook(name="deploy service", steps=[
@@ -357,6 +358,11 @@ async def test_resume_from_interrupted_approval_denied(team):
     assert denied.results[1].status == "skipped"
     assert denied.approvals[0].decision is False
 
+    saved = run_from_state(cp_store.load(run_id))
+    assert saved.status == "denied"
+    assert len(saved.results) == 2
+    assert saved.results[1].status == "skipped"
+
 
 async def test_resume_from_non_approval_run_continues(team):
     """resume_from on a non-interrupted run (e.g. status='running') continues from
@@ -365,7 +371,7 @@ async def test_resume_from_non_approval_run_continues(team):
     run_id = "resume-mid"
 
     # Manually simulate a mid-run state (e.g. one step done, one remaining)
-    from coactra.agent.workflow import StepResult, WorkflowRun
+    from coactra.workflow.playbook import StepResult, WorkflowRun
     from coactra.agent.checkpoint import run_to_state
 
     mid_run = WorkflowRun(

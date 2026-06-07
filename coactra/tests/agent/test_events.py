@@ -1,5 +1,5 @@
 from coactra.agent.events import (
-    Assistant, Thinking, ToolCall, ToolResult, Usage, Status, RunResult, Event,
+    Assistant, ToolCall, ToolResult, Usage, RunResult,
 )
 
 

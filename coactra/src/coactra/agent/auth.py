@@ -15,7 +15,12 @@ import time
 from collections.abc import AsyncGenerator, Callable
 from typing import Any, Protocol, runtime_checkable
 
-import httpx
+try:  # Optional: only gateway/oauth users need httpx at runtime.
+    import httpx as _httpx
+except ImportError:  # pragma: no cover - exercised in base-install subprocess tests.
+    _httpx = None
+
+_AuthBase = _httpx.Auth if _httpx is not None else object
 
 __all__ = ["TokenSource", "StaticToken", "BearerAuth", "oidc"]
 
@@ -37,7 +42,7 @@ class TokenSource(Protocol):
 # BearerAuth — httpx.Auth subclass that injects a bearer token per request
 # ---------------------------------------------------------------------------
 
-class BearerAuth(httpx.Auth):
+class BearerAuth(_AuthBase):
     """An ``httpx.Auth`` subclass that injects a bearer token per request.
 
     Calls ``source.token()`` on every async auth flow so tokens are
@@ -49,8 +54,8 @@ class BearerAuth(httpx.Auth):
         self._source = source
 
     async def async_auth_flow(
-        self, request: httpx.Request
-    ) -> AsyncGenerator[httpx.Request, httpx.Response]:
+        self, request: Any
+    ) -> AsyncGenerator[Any, Any]:
         """Set Authorization header then yield the request."""
         token = await self._source.token()
         request.headers["Authorization"] = f"Bearer {token}"
@@ -119,7 +124,9 @@ class _OidcTokenSource:
         if http is None:
             # Lazy default: build a one-shot httpx.AsyncClient call
             async def _default_http(token_url: str, frm: dict) -> dict:
-                async with httpx.AsyncClient() as client:
+                if _httpx is None:
+                    raise RuntimeError("coactra[oauth] or coactra[agent-gateway] is required for oidc() HTTP token fetch")
+                async with _httpx.AsyncClient() as client:
                     resp = await client.post(token_url, data=frm)
                     resp.raise_for_status()
                     return resp.json()

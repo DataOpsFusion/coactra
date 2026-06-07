@@ -14,8 +14,8 @@ import pytest
 from pydantic_ai.models.test import TestModel
 
 from coactra.agent.skills import Skill
-from coactra.agent.team import Team
-from coactra.agent.workflow import Playbook, Step
+from coactra.team import Team
+from coactra.workflow.playbook import Playbook, Step
 from coactra.agent import Agent
 
 

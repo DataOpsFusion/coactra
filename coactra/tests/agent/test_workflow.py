@@ -18,7 +18,7 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
 from coactra.agent import Agent
 from coactra.agent.skills import Skill
-from coactra.agent.team import Team
+from coactra.team import Team
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ async def test_approval_pending_step_accessible(team):
 
 def test_playbook_to_dict_from_dict_round_trip():
     """Playbook round-trips through to_dict/from_dict without data loss."""
-    from coactra.agent.workflow import Playbook, step
+    from coactra.workflow.playbook import Playbook, step
 
     pb = Playbook(name="cert-rotation", steps=[
         step("rotate the cert", needs="cert rotation"),
@@ -234,7 +234,8 @@ def test_playbook_to_dict_from_dict_round_trip():
 
 async def test_playbook_from_yaml_runs(team):
     """from_yaml loads a small YAML playbook and runs it end-to-end."""
-    from coactra.agent.workflow import Playbook, Workflow
+    from coactra.agent.workflow import Workflow
+    from coactra.workflow.playbook import Playbook
 
     yaml_text = """\
 name: yaml-cert-rotation
@@ -320,7 +321,6 @@ def test_workflow_and_step_importable_from_coactra():
 
 def test_workflow_import_does_not_pull_pydantic_ai():
     """Importing coactra.agent.workflow must NOT pull pydantic_ai."""
-    import importlib
     import coactra.agent.workflow as wf_mod
     with open(wf_mod.__file__) as f:
         source = f.read()

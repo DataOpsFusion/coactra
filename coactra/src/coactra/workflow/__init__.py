@@ -1,19 +1,20 @@
 """coactra.workflow — public playbooks plus durable Procedure engines.
 
-A Procedure is a DATA STRUCTURE: an authored flow and an induced (learned) flow are the
-SAME type and run the SAME compile->run path on the default LangGraph engine. Steps may
-collaborate (ask another agent) or escalate up the org until a decider resolves it.
-workflow owns when/what; organization routes who; agent carries the talk. Induction is
-trace-faithful and deterministic; update() is manual — we do NOT overclaim self-learning.
+Workflow owns the definition and run ledger: authored flows, induced procedures,
+approvals, checkpoints, and runtime adapters. Team/directory policy decides who may act;
+agent transports carry the talk. Induction is trace-faithful and deterministic; update()
+is manual so the library does not overclaim self-learning.
 """
 
+from importlib import import_module
+from typing import Any
+
 from coactra._version import distribution_version
-from coactra.agent.workflow import (
+from coactra.workflow.playbook import (
     Approval,
     Playbook,
     Step as PlaybookStep,
     StepResult,
-    Workflow,
     WorkflowRun as PlaybookRun,
     step,
 )
@@ -110,6 +111,56 @@ from coactra.workflow.routing import (
     TenantProcedureStoreRouter,
     TenantWorkflowEngineRouter,
 )
+from coactra.workflow.ledger import (
+    AgentSpec,
+    ApprovalRequest,
+    Artifact,
+    ArtifactPart,
+    ArtifactRef,
+    Assignment,
+    Attempt,
+    AttemptStatus,
+    AuditContext,
+    Budget,
+    CapabilityDescriptor,
+    CapabilityRequirement,
+    CapabilitySet,
+    Checkpoint,
+    Deadline,
+    Decision,
+    DecisionOutcome,
+    ElicitationRequest,
+    EventEnvelope,
+    ExecutionPlan,
+    ExecutionReceipt,
+    InMemoryWorkStore,
+    InvalidTransitionError,
+    Lease,
+    LeaseError,
+    Provenance,
+    ResumeToken,
+    RetryPolicy,
+    Scope as WorkScope,
+    SkillSpec,
+    SqlWorkStore,
+    TenantWorkStoreRouter,
+    WorkError,
+    WorkManager,
+    WorkNotFoundError,
+    WorkOrder,
+    WorkStatus,
+    WorkStore,
+    WorkStoreReport,
+    check_work_store_contract,
+)
+from coactra.workflow.ledger_facade import (
+    DurableOrchestrationResult,
+    DurableOrchestrator,
+    OrchestrationResult,
+    Orchestrator,
+    ProcedureNotFoundError,
+    WorkflowEngineRequiredError,
+)
 
 __version__ = distribution_version()
 
@@ -175,4 +226,56 @@ __all__ = [
     "InMemoryProcedurePromotionStore",
     "TenantProcedureStoreRouter",
     "TenantWorkflowEngineRouter",
+    "AgentSpec",
+    "ApprovalRequest",
+    "Artifact",
+    "ArtifactPart",
+    "ArtifactRef",
+    "Assignment",
+    "Attempt",
+    "AttemptStatus",
+    "AuditContext",
+    "Budget",
+    "CapabilityDescriptor",
+    "CapabilityRequirement",
+    "CapabilitySet",
+    "Checkpoint",
+    "Deadline",
+    "Decision",
+    "DecisionOutcome",
+    "DurableOrchestrationResult",
+    "DurableOrchestrator",
+    "ElicitationRequest",
+    "EventEnvelope",
+    "ExecutionPlan",
+    "ExecutionReceipt",
+    "InMemoryWorkStore",
+    "InvalidTransitionError",
+    "Lease",
+    "LeaseError",
+    "OrchestrationResult",
+    "Orchestrator",
+    "ProcedureNotFoundError",
+    "Provenance",
+    "ResumeToken",
+    "RetryPolicy",
+    "SkillSpec",
+    "SqlWorkStore",
+    "TenantWorkStoreRouter",
+    "WorkError",
+    "WorkManager",
+    "WorkNotFoundError",
+    "WorkOrder",
+    "WorkScope",
+    "WorkStatus",
+    "WorkStore",
+    "WorkStoreReport",
+    "WorkflowEngineRequiredError",
+    "check_work_store_contract",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "Workflow":
+        return getattr(import_module("coactra.agent.workflow"), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

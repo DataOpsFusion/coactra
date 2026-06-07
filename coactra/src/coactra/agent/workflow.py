@@ -1,22 +1,15 @@
-"""Core Workflow — pure-data Playbook + runner over Team.
+"""Agent-side Workflow runner over Team.
 
-Public API
-----------
-- ``step``         — helper that builds a :class:`Step` (instruction-first).
-- ``Step``         — frozen dataclass: instruction, agent, needs, approve.
-- ``Playbook``     — definition: name + list[Step].  to_dict/from_dict/from_yaml.
-- ``StepResult``   — run ledger entry: instruction, agent, output, status.
-- ``Approval``     — record of a human decision on an approve=True step.
-- ``WorkflowRun``  — run instance: status, results ledger, pending_index.
-- ``Workflow``     — runner: run(team) / resume(run, team, decision=) /
-                     run_goal(goal, team, ...) / resume_from(checkpoint, run_id, ...).
+Pure playbook DTOs (`Step`, `Playbook`, `StepResult`, `Approval`, `WorkflowRun`,
+and `step`) are owned by `coactra.workflow.playbook` and re-exported here for
+runner-local convenience. This module owns execution over a Team, checkpoint
+bridging, and goal planning.
 
-No pydantic-ai imports at module level.  Duck-types team and agent.
+No pydantic-ai imports at module level. Duck-types team and agent.
 """
 from __future__ import annotations
 
 from contextlib import nullcontext
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -34,181 +27,18 @@ __all__ = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Step — frozen data (the definition unit)
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True)
-class Step:
-    """One step in a Playbook.
-
-    Parameters
-    ----------
-    instruction:
-        What the agent should do.
-    agent:
-        Pin to an agent by name (mutually exclusive with *needs* in spirit,
-        but both may be provided — name-pin wins).
-    needs:
-        Route by capability: the Team's capability matcher selects the best
-        agent whose skills cover this need.
-    approve:
-        If True, the runner pauses here and waits for a human decision before
-        executing this step.
-    """
-
-    instruction: str
-    agent: str | None = None
-    needs: str | None = None
-    approve: bool = False
-
-
-def step(
-    instruction: str,
-    *,
-    agent: str | None = None,
-    needs: str | None = None,
-    approve: bool = False,
-) -> Step:
-    """Build a :class:`Step`.  Instruction-first, keyword-only options."""
-    return Step(instruction=instruction, agent=agent, needs=needs, approve=approve)
-
-
-# ---------------------------------------------------------------------------
-# Playbook — the definition (pure data)
-# ---------------------------------------------------------------------------
-
-@dataclass
-class Playbook:
-    """A named list of steps.  Canonical form is plain dict/YAML.
-
-    Parameters
-    ----------
-    name:
-        Playbook identifier.
-    steps:
-        Ordered list of :class:`Step` objects.
-    """
-
-    name: str
-    steps: list[Step]
-
-    # ------------------------------------------------------------------
-    # Serialisation
-    # ------------------------------------------------------------------
-
-    def to_dict(self) -> dict:
-        """Convert to a plain dict (JSON-serialisable)."""
-        return {
-            "name": self.name,
-            "steps": [
-                {
-                    "instruction": s.instruction,
-                    "agent": s.agent,
-                    "needs": s.needs,
-                    "approve": s.approve,
-                }
-                for s in self.steps
-            ],
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict) -> "Playbook":
-        """Reconstruct a :class:`Playbook` from a plain dict."""
-        steps = [
-            Step(
-                instruction=s["instruction"],
-                agent=s.get("agent"),
-                needs=s.get("needs"),
-                approve=bool(s.get("approve", False)),
-            )
-            for s in d.get("steps", [])
-        ]
-        return cls(name=d["name"], steps=steps)
-
-    @classmethod
-    def from_yaml(cls, text: str) -> "Playbook":
-        """Parse a YAML string into a :class:`Playbook`.
-
-        ``pyyaml`` is imported lazily so the module stays import-light.
-        """
-        import yaml  # noqa: PLC0415 — lazy import to keep module light
-
-        data = yaml.safe_load(text)
-        return cls.from_dict(data)
-
-
-# ---------------------------------------------------------------------------
-# Run ledger types
-# ---------------------------------------------------------------------------
-
-@dataclass
-class StepResult:
-    """A single entry in the run ledger."""
-
-    instruction: str
-    agent: str          # resolved agent name; "" if unresolved
-    output: str         # agent output; "" if not run
-    status: str         # "done" | "failed" | "skipped"
-
-
-@dataclass
-class Approval:
-    """Record of a human decision on an approve=True step."""
-
-    step_index: int
-    instruction: str
-    decision: bool      # True = approved, False = denied
-
-
-@dataclass
-class WorkflowRun:
-    """The result of one Workflow execution (complete, interrupted, or failed).
-
-    Attributes
-    ----------
-    name:
-        Playbook name.
-    status:
-        One of ``"completed"``, ``"interrupted"``, ``"failed"``, ``"denied"``.
-    results:
-        Ordered run ledger — one :class:`StepResult` per step that was
-        attempted or skipped.
-    pending_index:
-        Index of the step that caused an interruption (approve=True pause).
-        ``None`` when not interrupted.
-    approvals:
-        List of :class:`Approval` records for any approval decisions made.
-    _steps:
-        Internal reference to the full step list (for ``pending_step``).
-    """
-
-    name: str
-    status: str
-    results: list[StepResult]
-    pending_index: int | None = None
-    approvals: list[Approval] = field(default_factory=list)
-    _steps: list[Step] = field(default_factory=list, repr=False)
-    thread_id: str | None = None
-
-    @property
-    def pending_step(self) -> Step | None:
-        """Return the Step awaiting approval, or ``None``."""
-        if self.pending_index is None:
-            return None
-        try:
-            return self._steps[self.pending_index]
-        except IndexError:
-            return None
-
-    def output_texts(self) -> list[str]:
-        """Return the output string from every 'done' step in order."""
-        return [r.output for r in self.results if r.status == "done"]
-
+from coactra.workflow.playbook import (
+    Approval,
+    Playbook,
+    Step,
+    StepResult,
+    WorkflowRun,
+    step,
+)
 
 
 class _TeamCollaborator:
-    """Adapter from old workflow ask steps to the public Team roster."""
+    """Adapter from workflow ask steps to the public Team roster."""
 
     def __init__(self, team: Any) -> None:
         self._team = team
@@ -379,7 +209,7 @@ class Workflow:
         )
 
     async def _run_with_engine(
-        self, team: Any, engine: Any, *, run_id: str | None
+        self, team: Any, engine: Any, *, run_id: str | None, span: Any | None = None
     ) -> WorkflowRun:
         from coactra.workflow import RunContext, Scope  # noqa: PLC0415
 
@@ -391,8 +221,16 @@ class Workflow:
             scope=Scope(tenant_id=self._tenant_for_team(team)),
             collaborator=_TeamCollaborator(team),
         )
+        if span is not None:
+            span.add_event("coactra.workflow.engine.start")
         snapshot = await engine.start(procedure, {}, ctx, thread_id=run_id)
-        return self._run_from_engine_snapshot(snapshot, resolved)
+        run = self._run_from_engine_snapshot(snapshot, resolved)
+        if span is not None:
+            span.add_event(
+                "coactra.workflow.engine.complete",
+                attributes={"coactra.workflow.status": run.status},
+            )
+        return run
 
     async def resume_engine(
         self,
@@ -449,7 +287,7 @@ class Workflow:
         Parameters
         ----------
         team:
-            A :class:`~coactra.agent.team.Team` (duck-typed: needs
+            A :class:`~coactra.team.Team` (duck-typed: needs
             ``.member(name)`` and ``.match(needs)``).
         start:
             Step index to begin from.  Used by :meth:`resume` to continue
@@ -471,13 +309,6 @@ class Workflow:
         -------
         :class:`WorkflowRun`
         """
-        if engine is not None:
-            if start != 0 or ledger is not None or approvals is not None:
-                raise ValueError(
-                    "engine= runs must start from a fresh Workflow; use resume_engine()"
-                )
-            return await self._run_with_engine(team, engine, run_id=run_id)
-
         span_cm = (
             tracer.start_as_current_span(
                 "coactra.workflow.run",
@@ -490,6 +321,13 @@ class Workflow:
             else nullcontext(None)
         )
         with span_cm as span:
+            if engine is not None:
+                if start != 0 or ledger is not None or approvals is not None:
+                    raise ValueError(
+                        "engine= runs must start from a fresh Workflow; use resume_engine()"
+                    )
+                return await self._run_with_engine(team, engine, run_id=run_id, span=span)
+
             return await self._run_local(
                 team,
                 start=start,
@@ -637,7 +475,7 @@ class Workflow:
             The :class:`WorkflowRun` returned by a previous :meth:`run` call
             with ``status="interrupted"``.
         team:
-            The same :class:`~coactra.agent.team.Team` used for routing.
+            The same :class:`~coactra.team.Team` used for routing.
         decision:
             ``True`` → approve and run the pending step, then continue.
             ``False`` → deny the pending step, record it as skipped, stop.
@@ -657,6 +495,12 @@ class Workflow:
             )
 
         steps = self._playbook.steps
+
+        def _save(resumed: WorkflowRun) -> None:
+            if checkpoint is not None and run_id is not None:
+                from coactra.agent.checkpoint import run_to_state  # noqa: PLC0415
+                checkpoint.save(run_id, run_to_state(resumed))
+
         i = run.pending_index
         s = steps[i]
 
@@ -673,7 +517,7 @@ class Workflow:
                 output="",
                 status="failed",
             ))
-            return WorkflowRun(
+            failed = WorkflowRun(
                 name=self._playbook.name,
                 status="failed",
                 results=results,
@@ -681,6 +525,8 @@ class Workflow:
                 approvals=approval_log,
                 _steps=steps,
             )
+            _save(failed)
+            return failed
 
         if not decision:
             # Denied — record approval and skip the step
@@ -695,7 +541,7 @@ class Workflow:
                 output="",
                 status="skipped",
             ))
-            return WorkflowRun(
+            denied = WorkflowRun(
                 name=self._playbook.name,
                 status="denied",
                 results=results,
@@ -703,6 +549,8 @@ class Workflow:
                 approvals=approval_log,
                 _steps=steps,
             )
+            _save(denied)
+            return denied
 
         # Approved — run the pending step
         approval_log.append(Approval(
@@ -750,7 +598,7 @@ class Workflow:
         run_id:
             The key under which the state was saved.
         team:
-            The :class:`~coactra.agent.team.Team` used for routing.
+            The :class:`~coactra.team.Team` used for routing.
         decision:
             For runs that were ``"interrupted"`` at an approval step:
             ``True`` to approve, ``False`` to deny.  Pass ``None`` when
@@ -822,7 +670,7 @@ class Workflow:
         goal:
             Plain-language description of the goal to accomplish.
         team:
-            A :class:`~coactra.agent.team.Team` for routing and planning.
+            A :class:`~coactra.team.Team` for routing and planning.
         store:
             Optional :class:`~coactra.agent.playbook_store.PlaybookStore`.
             When provided, ``store.find(goal)`` is checked first.  If a

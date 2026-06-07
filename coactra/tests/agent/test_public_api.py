@@ -4,6 +4,8 @@ import pytest
 
 import coactra.agent as a
 
+_REMOVED_AGENT_FACTORY = "make" + "_agent"
+
 
 def test_version_matches_distribution_metadata():
     assert a.__version__ == importlib.metadata.version("coactra")
@@ -37,7 +39,10 @@ def test_public_surface_is_stable_root_api():
         "AsyncPolicyGatedCollaborator",
         "CollaborationDenied",
         "RemotePeer",
-        # agent SDK (merged from coactra.agent.sdk after dropping the redundant segment)
+        "FleetEntry",
+        "FleetRegistry",
+        "InMemoryFleetRegistry",
+        # agent facade exports
         "Agent",
         "Run",
         "RunResult",
@@ -50,12 +55,13 @@ def test_public_surface_is_stable_root_api():
         "Status",
         "AgentRuntimePort",
         "PydanticAIRuntime",
+        "mcp",
     }
     assert set(a.__all__) == expected
     for name in expected:
         assert hasattr(a, name), name
     # cut names must not appear
-    assert "make_agent" not in a.__all__
+    assert _REMOVED_AGENT_FACTORY not in a.__all__
     assert "TenantAgentRouter" not in a.__all__
     assert "ToolSpec" not in a.__all__
     assert "MCPServerPort" not in a.__all__
@@ -67,11 +73,15 @@ def test_public_surface_is_stable_root_api():
     assert "PolicyGatedCollaborator" not in a.__all__
 
 
-def test_deprecated_agent_root_compat_imports_warn():
-    with pytest.warns(DeprecationWarning, match="coactra.agent.build_a2a_app is deprecated"):
-        build_a2a_app = a.build_a2a_app
-
-    assert build_a2a_app.__name__ == "build_a2a_app"
+def test_old_agent_root_a2a_helpers_are_removed():
+    for name in [
+        "build_a2a_app",
+        "make_a2a_executor",
+        "A2AInboundRequest",
+        "A2ARequestVerifier",
+    ]:
+        with pytest.raises(AttributeError):
+            getattr(a, name)
 
 
 def test_removed_names_raise_attribute_error():
@@ -80,4 +90,4 @@ def test_removed_names_raise_attribute_error():
     with pytest.raises(AttributeError):
         _ = a.ToolTrie
     with pytest.raises(AttributeError):
-        _ = a.make_agent
+        getattr(a, _REMOVED_AGENT_FACTORY)

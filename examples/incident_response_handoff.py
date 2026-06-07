@@ -1,21 +1,23 @@
-"""Incident response handoff with the stable Coactra facades.
+"""Incident response handoff using the current Agent facade.
 
-This is the smallest normal app example. It runs offline: WorkManager uses an
-in-memory store, and make_agent uses the local fake AI port unless you inject a
-real model adapter.
+This example runs offline with pydantic-ai FunctionModel and keeps durable work
+state in the in-memory WorkManager.
 """
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from pprint import pprint
 
-from coactra.agent import Scope as AgentScope, make_agent
-from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
-from coactra.jobs.work import Artifact, ArtifactPart
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+from coactra import Agent
+from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import Artifact, ArtifactPart
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")
-AGENT_SCOPE = AgentScope(tenant_id="acme", namespace="agent:oncall")
 
 
 def incident_key(summary: str) -> str:
@@ -33,12 +35,24 @@ def open_incident(work: WorkManager, summary: str) -> WorkOrder:
     )
 
 
-def handoff_incident(summary: str) -> dict[str, object]:
+def handoff_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
+    return ModelResponse(
+        parts=[TextPart("Likely deploy regression. Check error budget, rollback criteria, and DB saturation.")]
+    )
+
+
+async def handoff_incident(summary: str) -> dict[str, object]:
     work = WorkManager()
-    agent = make_agent(scope=AGENT_SCOPE)
+    agent = await Agent.create(
+        model=FunctionModel(handoff_model),
+        name="oncall-agent",
+        tenant="acme",
+        auth="dev-token",
+        instructions="Draft concise on-call handoffs.",
+    )
 
     order = open_incident(work, summary)
-    draft = agent.think(
+    draft = await agent.run(
         "Draft a short on-call handoff with likely cause, first check, and owner: "
         f"{summary}"
     )
@@ -49,12 +63,7 @@ def handoff_incident(summary: str) -> dict[str, object]:
     completed = work.complete(
         lease,
         WORK_SCOPE,
-        artifacts=[
-            Artifact(
-                name="on-call-handoff",
-                parts=[ArtifactPart(kind="text", text=draft)],
-            )
-        ],
+        artifacts=[Artifact(name="on-call-handoff", parts=[ArtifactPart(kind="text", text=draft)])],
     )
 
     return {
@@ -66,4 +75,4 @@ def handoff_incident(summary: str) -> dict[str, object]:
 
 
 if __name__ == "__main__":
-    pprint(handoff_incident("checkout latency spiked after the 14:05 deploy"))
+    pprint(asyncio.run(handoff_incident("checkout latency spiked after the 14:05 deploy")))

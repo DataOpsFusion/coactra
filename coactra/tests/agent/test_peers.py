@@ -9,7 +9,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 
 from coactra.agent import Agent
-from coactra.agent.team import Team
+from coactra.team import Team
 from coactra.agent.domain import AgentRef
 
 # ---------------------------------------------------------------------------

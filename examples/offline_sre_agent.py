@@ -11,7 +11,7 @@ import asyncio
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra.agent.sdk import Agent
+from coactra import Agent
 
 
 def sre_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001

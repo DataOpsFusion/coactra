@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pathlib
 
-import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel

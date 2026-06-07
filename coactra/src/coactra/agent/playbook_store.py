@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from coactra.agent.workflow import Playbook
+from coactra.workflow.playbook import Playbook
 
 __all__ = ["PlaybookStore", "InMemoryPlaybookStore"]
 

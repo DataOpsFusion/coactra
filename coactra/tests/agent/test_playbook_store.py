@@ -11,7 +11,7 @@ Covers:
 """
 from __future__ import annotations
 
-from coactra.agent.workflow import Playbook, Step
+from coactra.workflow.playbook import Playbook, Step
 
 
 # ---------------------------------------------------------------------------

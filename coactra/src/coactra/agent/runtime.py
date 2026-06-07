@@ -1,36 +1,57 @@
-"""AgentRuntimePort + the default pydantic-ai runtime (Slice 1: run + stream)."""
+"""Default pydantic-ai backed agent runtime."""
 from __future__ import annotations
 
+import logging
 from contextlib import nullcontext
-from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
+from typing import Any, Callable
 
 from pydantic_ai import Agent as PydAgent
 
-from coactra.agent.events import (
-    Assistant,
-    Event,
-    RunResult,
-    Status,
-    Thinking,
-    ToolCall,
-    ToolResult,
-    Usage,
+from coactra.agent.events import RunResult, Status, ToolCall
+from coactra.agent.ports import AgentRuntimePort
+from coactra.agent.runtime_events import iter_call_tools_node_events
+from coactra.agent.runtime_wiring import (
+    bind_runtime_memory,
+    bind_runtime_workspace,
+    close_workspace,
 )
 
+__all__ = ["AgentRuntimePort", "PydanticAIRuntime"]
 
-@runtime_checkable
-class AgentRuntimePort(Protocol):
-    async def run(self, prompt: str, *, run_id: str, output_type: type | None = None,
-                  message_history: list[Any] | None = None) -> RunResult: ...
+logger = logging.getLogger(__name__)
 
-    def stream(self, prompt: str, *, run_id: str, output_type: type | None = None,
-               message_history: list[Any] | None = None,
-               on_result: Callable[[RunResult], None] | None = None) -> AsyncIterator[Event]: ...
+
+def _resolve_model(
+    model: Any,
+    *,
+    api_base: str | None,
+    api_key: str | None,
+    defaults: dict[str, Any],
+) -> Any:
+    if not isinstance(model, str):
+        return model
+
+    from coactra.agent.litellm_model import LiteLLMModel  # noqa: PLC0415
+
+    return LiteLLMModel(model, api_base=api_base, api_key=api_key, **defaults)
+
+
+def _usage(result: Any, run_id: str, *, seq: int = 0):
+    try:
+        usage = result.usage
+        tokens = getattr(usage, "total_tokens", 0) or (
+            (getattr(usage, "input_tokens", 0) or 0)
+            + (getattr(usage, "output_tokens", 0) or 0)
+        )
+        from coactra.agent.events import Usage  # noqa: PLC0415
+
+        return Usage(run_id=run_id, seq=seq, tokens=tokens)
+    except Exception:
+        return None
 
 
 class PydanticAIRuntime:
-    """Default runtime. `model` is a str (litellm-style id) or a pydantic-ai model instance
-    (e.g. FunctionModel/TestModel in tests)."""
+    """Default runtime for pydantic-ai model instances or LiteLLM-style model ids."""
 
     def __init__(self, *, model: Any, instructions: str | None = None,
                  tools: list[Any] | None = None,
@@ -42,130 +63,108 @@ class PydanticAIRuntime:
                  tenant: str | None = None,
                  memory: Any = None,
                  workspace: Any = None,
-                 skills: Any = None,
-                 expose: bool = False,
                  tracer: Any | None = None,
+                 mcp_servers: list[Any] | None = None,
                  **defaults: Any) -> None:
-        if isinstance(model, str):
-            # Route string ids through litellm + coactra.ai's thinking-model handling.
-            # Lazy import so model-instance usage stays free of the litellm dependency.
-            from coactra.agent.litellm_model import LiteLLMModel
-            self._model: Any = LiteLLMModel(model, api_base=api_base, api_key=api_key, **defaults)
-        else:
-            # Model instance passed directly — provider config does not apply.
-            self._model = model
+        self._model = _resolve_model(
+            model,
+            api_base=api_base,
+            api_key=api_key,
+            defaults=defaults,
+        )
         self._instructions = instructions
         self._tools = tools or []
         self._agent_name = name or "agent"
         self._tenant_name = tenant or "default"
         self._tracer = tracer
 
-        # Gateway / MCP toolset wiring
-        self._gateway_toolset: Any = None
-        self._gateway_url: str | None = None
-        if gateway is not None:
-            # Lazy imports: only pulled in when gateway is used.
-            from pydantic_ai.mcp import MCPToolset  # noqa: PLC0415
-            from coactra.agent.auth import BearerAuth, StaticToken  # noqa: PLC0415
+        from coactra.agent.toolsets import build_mcp_toolsets  # noqa: PLC0415
 
-            # Normalize auth → TokenSource
-            if isinstance(auth, str):
-                token_source = StaticToken(auth)
-            elif auth is not None:
-                token_source = auth
-            else:
-                token_source = None
+        self._gateway_toolset, self._mcp_toolsets = build_mcp_toolsets(
+            gateway=gateway,
+            auth=auth,
+            mcp_servers=mcp_servers,
+        )
+        self._gateway_url: str | None = gateway
+        self._memory = bind_runtime_memory(
+            memory,
+            tenant=self._tenant_name,
+            agent=self._agent_name,
+        )
+        self._workspace, self._workspace_tools = bind_runtime_workspace(
+            workspace,
+            tenant=self._tenant_name,
+            agent=self._agent_name,
+        )
 
-            if token_source is not None:
-                self._gateway_toolset = MCPToolset(gateway, auth=BearerAuth(token_source))
-            else:
-                self._gateway_toolset = MCPToolset(gateway)
-
-            self._gateway_url = gateway
-
-        # Resolve effective agent/tenant names for scoping
-        _agent_name = self._agent_name
-        _tenant_name = self._tenant_name
-
-        # Memory binding
-        self._memory: Any = None
-        if memory is not None:
-            from coactra.agent.memory import bind_memory  # noqa: PLC0415
-            from coactra.memory.types import Scope as MemScope  # noqa: PLC0415
-            mem_scope = MemScope(tenant=_tenant_name, agent=_agent_name)
-            self._memory = bind_memory(memory, mem_scope)
-
-        # Workspace tools
-        self._workspace: Any = None
-        self._workspace_tools: list[Any] = []
-        if workspace is not None:
-            from coactra.workspace import open_workspace  # noqa: PLC0415
-            from coactra.workspace.scope import Scope as WsScope  # noqa: PLC0415
-            from coactra.agent.workspace_tools import workspace_tools as _ws_tools  # noqa: PLC0415
-            ws_scope = WsScope(tenant_id=_tenant_name, agent_id=_agent_name)
-            self._workspace = open_workspace(scope=ws_scope, base_dir=workspace)
-            self._workspace_tools = _ws_tools(self._workspace)
-
-    def _build(self, output_type: type | None) -> PydAgent:
-        all_tools = self._tools + self._workspace_tools
-        kwargs: dict[str, Any] = {"instructions": self._instructions, "tools": all_tools}
+    def _build(self, output_type: type | None):
+        toolsets = []
+        if self._gateway_toolset is not None:
+            toolsets.append(self._gateway_toolset)
+        toolsets.extend(self._mcp_toolsets)
+        kwargs: dict[str, Any] = {
+            "instructions": self._instructions,
+            "tools": [*self._tools, *self._workspace_tools],
+        }
         if output_type is not None:
             kwargs["output_type"] = output_type
-        if self._gateway_toolset is not None:
-            kwargs["toolsets"] = [self._gateway_toolset]
+        if toolsets:
+            kwargs["toolsets"] = toolsets
         return PydAgent(self._model, **kwargs)
 
     async def aclose(self) -> None:
-        """Close workspace if present; gateway toolset manages its own lifecycle."""
-        if self._workspace is not None:
-            close = getattr(self._workspace, "close", None)
-            if close is not None:
-                import inspect  # noqa: PLC0415
-                result = close()
-                if inspect.isawaitable(result):
-                    await result
+        """Close runtime-owned resources."""
+        await close_workspace(self._workspace)
 
-    def _usage(self, result: Any, run_id: str, *, seq: int = 0) -> Usage | None:
-        # pydantic-ai 1.105: `result.usage` is a property (the callable form is deprecated).
-        # RunUsage has no `total_tokens` field, so fall back to input + output.
-        try:
-            u = result.usage
-            tokens = getattr(u, "total_tokens", 0) or (
-                (getattr(u, "input_tokens", 0) or 0) + (getattr(u, "output_tokens", 0) or 0)
-            )
-            return Usage(run_id=run_id, seq=seq, tokens=tokens)
-        except Exception:
-            return None
+    def _usage(self, result: Any, run_id: str, *, seq: int = 0):
+        return _usage(result, run_id, seq=seq)
+
+    def _span(self, name: str, run_id: str):
+        if self._tracer is None:
+            return nullcontext(None)
+        return self._tracer.start_as_current_span(
+            name,
+            attributes={
+                "coactra.run_id": run_id,
+                "coactra.agent.name": self._agent_name,
+                "coactra.tenant_id": self._tenant_name,
+            },
+        )
+
+    async def _recall(self, prompt: str) -> str:
+        if self._memory is None:
+            return prompt
+        recalled = await self._memory.recall(prompt)
+        if not recalled:
+            return prompt
+        return f"Relevant context:\n{recalled}\n\n{prompt}"
+
+    async def _remember(self, prompt: str, text: str) -> None:
+        if self._memory is not None:
+            await self._memory.remember(f"user: {prompt}\nassistant: {text}")
+
+    @staticmethod
+    def _public_output(output: Any, output_type: type | None) -> tuple[str, Any]:
+        text = output if isinstance(output, str) else ""
+        public_output = output if output_type is not None else (None if isinstance(output, str) else output)
+        return text, public_output
 
     async def run(self, prompt: str, *, run_id: str, output_type: type | None = None,
                   message_history: list[Any] | None = None) -> RunResult:
-        span_cm = (
-            self._tracer.start_as_current_span(
-                "coactra.agent.run",
-                attributes={
-                    "coactra.run_id": run_id,
-                    "coactra.agent.name": self._agent_name,
-                    "coactra.tenant_id": self._tenant_name,
-                },
-            )
-            if self._tracer is not None
-            else nullcontext(None)
-        )
-        with span_cm as span:
+        with self._span("coactra.agent.run", run_id) as span:
             original_prompt = prompt
-            if self._memory is not None:
-                recalled = await self._memory.recall(prompt)
-                if recalled:
-                    prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
+            prompt = await self._recall(prompt)
             if span is not None:
                 span.add_event(
                     "coactra.model.request",
                     attributes={"coactra.prompt.length": len(prompt)},
                 )
-            agent = self._build(output_type)
-            result = await agent.run(prompt, message_history=message_history)
+            result = await self._build(output_type).run(
+                prompt,
+                message_history=message_history,
+            )
             output = result.output
-            text = output if isinstance(output, str) else ""
+            text, public_output = self._public_output(output, output_type)
             if span is not None:
                 span.add_event(
                     "coactra.model.response",
@@ -174,122 +173,72 @@ class PydanticAIRuntime:
                         "coactra.output.length": len(text),
                     },
                 )
-            if self._memory is not None:
-                await self._memory.remember(f"user: {original_prompt}\nassistant: {text}")
+            await self._remember(original_prompt, text)
             return RunResult.finished(
                 text=text,
-                output=None if isinstance(output, str) else output,
+                output=public_output,
                 usage=self._usage(result, run_id),
                 messages=tuple(result.all_messages()),
             )
 
     async def stream(self, prompt: str, *, run_id: str, output_type: type | None = None,
                      message_history: list[Any] | None = None,
-                     on_result: Callable[[RunResult], None] | None = None) -> AsyncIterator[Event]:
-        """Drive the pydantic-ai agent graph and yield coactra event DTOs.
-
-        Maps pydantic-ai 1.105 graph nodes/events to the coactra event contract:
-        - a completed model text part      → ``Assistant``
-        - a completed model thinking part  → ``Thinking``
-        - a function tool-call request     → ``ToolCall``  (from CallToolsNode.stream)
-        - a function tool return           → ``ToolResult``(from CallToolsNode.stream)
-        - the run's token usage             → ``Usage``
-        and a single terminal ``Status`` ("finished" on success, "error" on failure).
-
-        Tool call/result events come only from ``CallToolsNode.stream`` so they are not
-        double-emitted alongside the response parts. Model parts are read from the
-        already-resolved ``model_response`` (not streamed) so this works with offline
-        ``FunctionModel``s that have no ``stream_function``.
-
-        ``on_result`` (when given) receives the full ``RunResult`` derived from the same
-        iteration — output, usage, tool calls, and message history — so a caller that
-        streams and then awaits the result gets the rich result, not a text-only digest.
-        """
-        from pydantic_ai.messages import (
-            FunctionToolCallEvent,
-            FunctionToolResultEvent,
-            TextPart,
-            ThinkingPart,
-            ToolCallPart,
-            ToolReturnPart,
-        )
-
-        original_prompt = prompt
-        if self._memory is not None:
-            recalled = await self._memory.recall(prompt)
-            if recalled:
-                prompt = f"Relevant context:\n{recalled}\n\n{prompt}"
-        agent = self._build(output_type)
+                     on_result: Callable[[RunResult], None] | None = None):
+        """Drive the pydantic-ai agent graph and yield coactra event DTOs."""
         seq = 0
-        tool_calls: list[ToolCall] = []
-        try:
-            async with agent.iter(
-                prompt, output_type=output_type, message_history=message_history,
-            ) as run:
-                async for node in run:
-                    if PydAgent.is_call_tools_node(node):
-                        # Completed model response parts (text / thinking). Tool-call
-                        # parts here are intentionally skipped — they surface via the
-                        # tool-execution stream below as ToolCall/ToolResult pairs.
-                        for part in node.model_response.parts:
-                            if isinstance(part, TextPart):
-                                if part.content:
-                                    yield Assistant(run_id=run_id, seq=seq, text=part.content)
-                                    seq += 1
-                            elif isinstance(part, ThinkingPart):
-                                if part.content:
-                                    yield Thinking(run_id=run_id, seq=seq, text=part.content)
-                                    seq += 1
-                        # Stream tool execution: call request, then tool return.
-                        async with node.stream(run.ctx) as tool_stream:
-                            async for ev in tool_stream:
-                                if isinstance(ev, FunctionToolCallEvent):
-                                    call = ev.part
-                                    tc = ToolCall(
-                                        run_id=run_id, seq=seq,
-                                        id=getattr(call, "tool_call_id", "") or "",
-                                        name=getattr(call, "tool_name", "") or "",
-                                        args=call.args_as_dict() if isinstance(call, ToolCallPart) else {},
-                                    )
-                                    tool_calls.append(tc)
-                                    yield tc
-                                    seq += 1
-                                elif isinstance(ev, FunctionToolResultEvent):
-                                    part = ev.part
-                                    is_return = isinstance(part, ToolReturnPart)
-                                    yield ToolResult(
-                                        run_id=run_id, seq=seq,
-                                        id=getattr(part, "tool_call_id", "") or "",
-                                        name=getattr(part, "tool_name", "") or "",
-                                        result=getattr(part, "content", None) if is_return else None,
-                                        error=None if is_return else str(getattr(part, "content", "")),
-                                    )
-                                    seq += 1
-                # All nodes consumed: the rich result is now available.
-                result = run.result
-                usage = self._usage(result, run_id, seq=seq) if result is not None else None
-                if usage is not None:
-                    yield usage
-                    seq += 1
-                if result is not None and self._memory is not None:
-                    _stream_output = result.output
-                    _stream_text = _stream_output if isinstance(_stream_output, str) else ""
-                    await self._memory.remember(
-                        f"user: {original_prompt}\nassistant: {_stream_text}"
-                    )
-                if on_result is not None and result is not None:
-                    output = result.output
-                    text = output if isinstance(output, str) else ""
-                    on_result(RunResult.finished(
-                        text=text,
-                        output=None if isinstance(output, str) else output,
-                        usage=usage,
-                        tool_calls=tuple(tool_calls),
-                        messages=tuple(result.all_messages()),
-                    ))
-        except Exception:  # noqa: BLE001 - terminal error event is the contract
-            yield Status(run_id=run_id, seq=seq, state="error")
-            if on_result is not None:
-                on_result(RunResult.failed("stream error"))
-            return
-        yield Status(run_id=run_id, seq=seq, state="finished")
+        with self._span("coactra.agent.stream", run_id) as span:
+            original_prompt = prompt
+            prompt = await self._recall(prompt)
+            if span is not None:
+                span.add_event(
+                    "coactra.model.request",
+                    attributes={"coactra.prompt.length": len(prompt)},
+                )
+            tool_calls: list[ToolCall] = []
+            try:
+                async with self._build(output_type).iter(
+                    prompt, message_history=message_history,
+                ) as run:
+                    async for node in run:
+                        if PydAgent.is_call_tools_node(node):
+                            async for event, next_seq in iter_call_tools_node_events(
+                                node,
+                                run.ctx,
+                                run_id=run_id,
+                                seq=seq,
+                                tool_calls=tool_calls,
+                            ):
+                                yield event
+                                seq = next_seq
+                    result = run.result
+                    usage = self._usage(result, run_id, seq=seq) if result is not None else None
+                    if usage is not None:
+                        yield usage
+                        seq += 1
+                    if result is not None:
+                        output = result.output
+                        text, public_output = self._public_output(output, output_type)
+                        if span is not None:
+                            span.add_event(
+                                "coactra.model.response",
+                                attributes={
+                                    "coactra.output.type": type(output).__name__,
+                                    "coactra.output.length": len(text),
+                                },
+                            )
+                        await self._remember(original_prompt, text)
+                        if on_result is not None:
+                            on_result(RunResult.finished(
+                                text=text,
+                                output=public_output,
+                                usage=usage,
+                                tool_calls=tuple(tool_calls),
+                                messages=tuple(result.all_messages()),
+                            ))
+            except Exception:  # noqa: BLE001 - terminal error event is the contract
+                logger.exception("agent stream failed", extra={"coactra_run_id": run_id})
+                yield Status(run_id=run_id, seq=seq, state="error")
+                if on_result is not None:
+                    on_result(RunResult.failed("stream error"))
+                return
+            yield Status(run_id=run_id, seq=seq, state="finished")

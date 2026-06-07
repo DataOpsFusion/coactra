@@ -26,20 +26,37 @@ def _slug(name: str) -> str:
     return slug or "procedure"
 
 
-def _as_procedure(item: Any) -> Any:
-    procedure = getattr(item, "procedure", None)
-    return procedure if procedure is not None else item
+def _is_promoted_version(item: Any) -> bool:
+    return (
+        hasattr(item, "procedure")
+        and hasattr(item, "version")
+        and hasattr(item, "promoted_by")
+    )
 
 
-def normalize_learned_procedures(learned: Any) -> list[Any]:
-    """Normalize Agent.create(learned=...) values to Procedure-like objects."""
+def _as_procedure(item: Any, *, allow_unreviewed: bool) -> Any:
+    if _is_promoted_version(item):
+        return item.procedure
+    if allow_unreviewed:
+        procedure = getattr(item, "procedure", None)
+        return procedure if procedure is not None else item
+    raise ValueError(
+        "learned procedures must be promoted ProcedureVersion objects; "
+        "pass allow_unreviewed_learned=True for explicit local experiments"
+    )
+
+
+def normalize_learned_procedures(
+    learned: Any, *, allow_unreviewed: bool = False
+) -> list[Any]:
+    """Normalize Agent.create(learned=...) values to promoted Procedure objects."""
     if learned is None:
         return []
-    if hasattr(learned, "procedure"):
-        return [_as_procedure(learned)]
+    if _is_promoted_version(learned):
+        return [_as_procedure(learned, allow_unreviewed=allow_unreviewed)]
     if isinstance(learned, Iterable) and not isinstance(learned, (str, bytes, dict)):
-        return [_as_procedure(item) for item in learned]
-    return [_as_procedure(learned)]
+        return [_as_procedure(item, allow_unreviewed=allow_unreviewed) for item in learned]
+    return [_as_procedure(learned, allow_unreviewed=allow_unreviewed)]
 
 
 def learned_procedure_skills(procedures: list[Any]) -> list[Skill]:

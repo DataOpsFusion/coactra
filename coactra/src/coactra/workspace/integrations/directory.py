@@ -11,15 +11,15 @@ class ScopeViolation(PermissionError):
 
 
 def write_action(tenant: str, agent: str) -> str:
-    """Return the legacy directory permission token for an agent memory write."""
+    """Return the directory permission token for an agent-owned memory write."""
     return f"memory:write:{tenant}:{agent}"
 
 
 def scope_write_action(scope: Any) -> str:
     """Return the directory permission token for an exact memory scope.
 
-    Preserve legacy per-agent permission tokens for callers that have not adopted
-    namespaces. New shared scopes use the full collision-resistant key.
+    Agent-owned scopes use the concise per-agent permission token. Shared scopes
+    use the full collision-resistant key.
     """
     if scope.namespace is None and scope.agent is not None and scope.session is None:
         return write_action(scope.tenant, scope.agent)
@@ -61,7 +61,7 @@ class MemoryAcl:
         org_name: str = "homelab",
     ) -> MemoryAcl:
         """Seed a minimal directory granting an agent an explicit scope allowlist."""
-        from coactra.directory import Organization
+        from coactra.team.directory import Organization
 
         scopes = list(writable_scopes)
         if any(scope.tenant != tenant for scope in scopes):
@@ -81,7 +81,7 @@ class MemoryAcl:
         agent_name: str,
         org_name: str = "homelab",
     ) -> MemoryAcl:
-        """Seed a minimal directory granting only the agent's legacy own scope."""
+        """Seed a minimal directory granting only the agent-owned memory scope."""
         from coactra.memory import Scope
 
         return cls.for_scopes(

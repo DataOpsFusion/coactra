@@ -11,7 +11,7 @@ Design notes
 ``plan_playbook`` is intentionally a thin connector: it builds a roster description
 from ``team.roster()``, constructs a prompt, and delegates all planning logic to the
 LLM via ``client.structured()``.  The LLM decides the step decomposition; we just map
-the response onto :class:`~coactra.agent.workflow.Step` / :class:`~coactra.agent.workflow.Playbook`.
+the response onto :class:`~coactra.workflow.playbook.Step` / :class:`~coactra.workflow.playbook.Playbook`.
 
 ``client`` is injectable (any object exposing ``.structured(schema, prompt)``).
 When omitted, a :class:`coactra.ai.Client` is built lazily inside the function so
@@ -23,7 +23,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from coactra.agent.workflow import Playbook, step as make_step
+from coactra.workflow.playbook import Playbook, step as make_step
 
 __all__ = ["PlannedStep", "PlannedPlan", "plan_playbook"]
 
@@ -114,7 +114,7 @@ def plan_playbook(
     goal:
         Plain-language description of what needs to be accomplished.
     team:
-        A :class:`~coactra.agent.team.Team` (duck-typed: needs ``.roster() -> list[dict]``).
+        A :class:`~coactra.team.Team` (duck-typed: needs ``.roster() -> list[dict]``).
         ``roster()`` is called to build the agent/skill description for the LLM prompt.
     client:
         Injectable LLM client exposing ``.structured(schema, prompt) -> PlannedPlan``.
