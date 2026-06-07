@@ -15,7 +15,7 @@ from coactra.agent.skills import Skill
 # Helpers — build agents synchronously for the tests
 # ---------------------------------------------------------------------------
 
-async def _make_agent(name: str, tenant: str, skills: list[Skill]) -> Agent:
+async def _create_agent(name: str, tenant: str, skills: list[Skill]) -> Agent:
     return await Agent.create(
         model=TestModel(),
         name=name,
@@ -27,7 +27,7 @@ async def _make_agent(name: str, tenant: str, skills: list[Skill]) -> Agent:
 
 @pytest.fixture
 async def sre_agent():
-    return await _make_agent(
+    return await _create_agent(
         name="sre-agent",
         tenant="acme",
         skills=[
@@ -39,7 +39,7 @@ async def sre_agent():
 
 @pytest.fixture
 async def security_agent():
-    return await _make_agent(
+    return await _create_agent(
         name="security-agent",
         tenant="acme",
         skills=[
@@ -51,7 +51,7 @@ async def security_agent():
 
 @pytest.fixture
 async def network_agent():
-    return await _make_agent(
+    return await _create_agent(
         name="network-agent",
         tenant="acme",
         skills=[
@@ -64,7 +64,7 @@ async def network_agent():
 @pytest.fixture
 async def external_agent():
     """Agent from a different tenant."""
-    return await _make_agent(
+    return await _create_agent(
         name="external-agent",
         tenant="external-corp",
         skills=[
@@ -75,7 +75,7 @@ async def external_agent():
 
 @pytest.fixture
 async def team(sre_agent, security_agent, network_agent):
-    from coactra.agent.team import Team
+    from coactra.team import Team
     return Team([sre_agent, security_agent, network_agent])
 
 
@@ -109,7 +109,7 @@ async def test_match_tag_overlap(team, sre_agent):
 
 async def test_match_first_wins_on_tie(sre_agent, security_agent):
     """When both agents have overlapping keyword, first match wins."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
     # Both agents have their name as the most precise match
     # "audit" only matches security-agent
     team = Team([sre_agent, security_agent])
@@ -157,14 +157,14 @@ async def test_can_talk_unknown_dst(team):
 
 async def test_can_talk_cross_tenant(sre_agent, security_agent, external_agent):
     """Cross-tenant → denied by default."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
     team = Team([sre_agent, security_agent, external_agent])
     assert team.can_talk("sre-agent", "external-agent") is False
 
 
 async def test_can_talk_custom_policy(sre_agent, security_agent, external_agent):
     """Custom policy callable can override default same-tenant rule."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
     # Policy that allows everything
     allow_all = lambda src, dst: True
     team = Team([sre_agent, security_agent, external_agent], policy=allow_all)
@@ -173,7 +173,7 @@ async def test_can_talk_custom_policy(sre_agent, security_agent, external_agent)
 
 async def test_can_talk_custom_policy_deny(sre_agent, security_agent):
     """Custom policy can deny same-tenant too."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
     deny_all = lambda src, dst: False
     team = Team([sre_agent, security_agent], policy=deny_all)
     assert team.can_talk("sre-agent", "security-agent") is False
@@ -237,7 +237,7 @@ async def test_roster_agent_names_present(team):
 async def test_semantic_raises_or_works_without_network(sre_agent, security_agent, monkeypatch):
     """Semantic mode either raises a clean ImportError (if ai unavailable) or
     we monkeypatch the embedder so no real network call happens."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
 
     # Simulate embeddings being unavailable by patching LiteLLMEmbedding to raise
     import coactra.agent.matcher as matcher_mod
@@ -262,7 +262,7 @@ async def test_semantic_raises_or_works_without_network(sre_agent, security_agen
 
 async def test_semantic_unavailable_raises_clear_error(sre_agent, security_agent, monkeypatch):
     """If the embedder raises ImportError, match_agent re-raises with a clear message."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
     import coactra.agent.matcher as matcher_mod
 
     def _raise_import(*args, **kwargs):
@@ -279,7 +279,7 @@ async def test_semantic_unavailable_raises_clear_error(sre_agent, security_agent
 
 async def test_semantic_match_uses_injected_embedder(sre_agent, security_agent):
     """Semantic matching can use a deployment-configured embedder directly."""
-    from coactra.agent.team import Team
+    from coactra.team import Team
 
     class RoutingEmbedder:
         def __init__(self) -> None:
@@ -315,7 +315,7 @@ def test_team_import_light():
     """Importing coactra.Team must NOT pull pydantic_ai into sys.modules."""
     # Remove coactra from modules to test fresh import path
     # (can't truly do that in-process, but we verify pydantic_ai isn't pulled by team.py alone)
-    import coactra.agent.team as team_mod
+    import coactra.team as team_mod
     assert hasattr(team_mod, "Team")
     # The team module itself must not import pydantic_ai at top level
     # We just confirm the module file doesn't have a top-level pydantic_ai import
@@ -323,3 +323,11 @@ def test_team_import_light():
         source = f.read()
     assert "from pydantic_ai" not in source
     assert "import pydantic_ai" not in source
+
+
+def test_canonical_team_module_exports_team_facade():
+    """New code can import the Team facade from coactra.team."""
+    from coactra import Team as TopLevelTeam
+    from coactra.team import Team as ModuleTeam
+
+    assert ModuleTeam is TopLevelTeam

@@ -17,7 +17,7 @@ import json
 
 import pytest
 
-from coactra.agent.workflow import Approval, StepResult, WorkflowRun
+from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
 from coactra.agent.checkpoint import (
     InMemoryCheckpointStore,
     LangGraphCheckpointStore,

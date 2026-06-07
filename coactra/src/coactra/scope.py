@@ -90,7 +90,7 @@ class CoactraScope:
         return {"tenant_id": self.tenant_id, "namespace": self.namespace}
 
     def to_work_kwargs(self) -> dict[str, str]:
-        """Keyword arguments for ``coactra.jobs.Scope``."""
+        """Keyword arguments for ``coactra.workflow.WorkScope``."""
         return {"tenant_id": self.tenant_id, "namespace": self.namespace}
 
     def to_workflow_kwargs(self) -> dict[str, str]:

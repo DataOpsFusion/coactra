@@ -39,6 +39,13 @@ async def test_run_structured():
     await agent.aclose()
 
 
+async def test_run_output_type_str_returns_text():
+    agent = await Agent.create(model=FunctionModel(_final))
+    text = await agent.run("hi", output_type=str)
+    assert text == "hello from the agent"
+    await agent.aclose()
+
+
 async def test_async_context_manager():
     async with await Agent.create(model=FunctionModel(_final)) as agent:
         run = await agent.send("hi")

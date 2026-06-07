@@ -51,6 +51,7 @@ async def test_agent_create_learned_procedure_publishes_skill_and_replay_tool():
         tenant="acme",
         learned=[_procedure()],
         procedure_engine=engine,
+        allow_unreviewed_learned=True,
     )
 
     card = agent.card
@@ -83,3 +84,18 @@ async def test_agent_create_learned_accepts_promoted_procedure_version():
 
     assert agent.card["skills"][0]["id"] == "procedure.deploy_service"
     assert any(t.__name__ == "replay_deploy_service" for t in agent._tools)
+
+
+async def test_agent_create_learned_rejects_unreviewed_procedure_by_default():
+    try:
+        await Agent.create(
+            model=_echo_model(),
+            name="sre-agent",
+            tenant="acme",
+            learned=[_procedure()],
+            procedure_engine=RecordingWorkflowEngine(),
+        )
+    except ValueError as exc:
+        assert "promoted" in str(exc).lower()
+    else:
+        raise AssertionError("unreviewed learned procedure was accepted")

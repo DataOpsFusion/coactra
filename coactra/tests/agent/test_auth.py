@@ -5,7 +5,6 @@ All HTTP is faked — no network calls.
 """
 from __future__ import annotations
 
-import pytest
 
 from coactra.agent.auth import StaticToken, oidc
 

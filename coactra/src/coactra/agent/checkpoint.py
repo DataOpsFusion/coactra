@@ -27,7 +27,7 @@ from typing import Protocol, runtime_checkable
 
 from typing_extensions import TypedDict
 
-from coactra.agent.workflow import Approval, StepResult, WorkflowRun
+from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
 
 
 # ---------------------------------------------------------------------------

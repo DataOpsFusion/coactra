@@ -1,8 +1,7 @@
 """Optional protocol adapters.
 
-Implemented adapters are exported here, not from the package root. MCP remains an explicit
-stub. Root-level A2A server helper imports are deprecated; import them from this package or
-``coactra.agent.adapters.a2a_server`` instead.
+Implemented adapters are exported here, not from the package root. Import A2A server
+helpers from this package or ``coactra.agent.adapters.a2a_server``.
 """
 
 from coactra.agent.adapters.a2a import (

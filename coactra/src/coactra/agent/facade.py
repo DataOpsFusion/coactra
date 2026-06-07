@@ -2,52 +2,14 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, AsyncIterator
+from typing import Any
 
-from coactra.agent.events import Event, RunResult
-from coactra.agent.learned import (
-    learned_procedure_skills,
-    learned_procedure_tools,
-    normalize_learned_procedures,
-)
-from coactra.agent.domain import AgentRef
-from coactra.agent.peers import RemotePeer, peer_tools
-from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
+from coactra.agent.bindings import build_agent_bindings, normalize_agent_skills
+from coactra.agent.ports import AgentRuntimePort
+from coactra.agent.run import Run
+from coactra.agent.runtime import PydanticAIRuntime
 from coactra.agent.serve import serve_agent
-from coactra.agent.skills import Skill, build_agent_card, normalize_skills
-
-
-class Run:
-    """A handle to one send(). Stream events OR await the final result (not both-consuming:
-    wait() runs to completion; stream() yields events and also captures the final result)."""
-
-    def __init__(self, runtime: AgentRuntimePort, prompt: str, *, run_id: str,
-                 output_type: type | None, message_history: list[Any] | None) -> None:
-        self._runtime = runtime
-        self._prompt = prompt
-        self.id = run_id
-        self._output_type = output_type
-        self._history = message_history
-        self._result: RunResult | None = None
-
-    async def stream(self) -> AsyncIterator[Event]:
-        def _capture(result: RunResult) -> None:
-            if self._result is None:
-                self._result = result
-
-        async for ev in self._runtime.stream(
-            self._prompt, run_id=self.id, output_type=self._output_type,
-            message_history=self._history, on_result=_capture,
-        ):
-            yield ev
-
-    async def wait(self) -> RunResult:
-        if self._result is None:
-            self._result = await self._runtime.run(
-                self._prompt, run_id=self.id, output_type=self._output_type,
-                message_history=self._history,
-            )
-        return self._result
+from coactra.agent.skills import Skill, build_agent_card
 
 
 class Agent:
@@ -85,57 +47,45 @@ class Agent:
                      skills: Any = None,
                      expose: bool = False,
                      peers: list | None = None,
+                     registry: Any | None = None,
                      learned: Any = None,
                      procedure_engine: Any | None = None,
                      procedure_scope: Any | None = None,
+                     allow_unreviewed_learned: bool = False,
                      tracer: Any | None = None,
                      **defaults: Any) -> "Agent":
-        learned_procedures = normalize_learned_procedures(learned)
-        learned_skills = learned_procedure_skills(learned_procedures)
-        normalised_skills = normalize_skills(skills) + learned_skills
-        combined_tools: list[Any] = list(tools) if tools is not None else []
-        if learned_procedures:
-            combined_tools = combined_tools + learned_procedure_tools(
-                learned_procedures,
-                engine=procedure_engine,
-                tenant=tenant,
-                scope=procedure_scope,
-            )
-        if peers:
-            local_peers = [p for p in peers if not isinstance(p, RemotePeer)]
-            if local_peers:
-                _resolver = {p._name: p for p in local_peers}.get
-                combined_tools = combined_tools + peer_tools(
-                    [p._name for p in local_peers],
-                    resolve=_resolver,
-                    me=name,
-                    tenant=tenant,
-                )
-            for remote in (p for p in peers if isinstance(p, RemotePeer)):
-                combined_tools = combined_tools + peer_tools(
-                    [AgentRef(
-                        tenant_id=remote.tenant or tenant or "default",
-                        agent_id=remote.name,
-                    )],
-                    resolve=lambda _name: None,
-                    transport=remote.transport(),
-                    me=name,
-                    tenant=tenant,
-                )
         if runtime is not None:
-            rt = runtime
-        else:
-            rt = PydanticAIRuntime(
-                model=model, instructions=instructions, tools=combined_tools,
-                api_base=api_base, api_key=api_key,
-                gateway=gateway, auth=auth,
-                name=name, tenant=tenant,
-                memory=memory, workspace=workspace,
-                skills=normalised_skills, expose=expose, tracer=tracer,
-                **defaults,
+            skills_for_card = normalize_agent_skills(
+                skills,
+                learned=learned,
+                allow_unreviewed_learned=allow_unreviewed_learned,
             )
-        return cls(rt, name=name, tenant=tenant, skills=normalised_skills, expose=expose,
-                   tools=combined_tools)
+            return cls(runtime, name=name, tenant=tenant, skills=skills_for_card, expose=expose)
+
+        bindings = build_agent_bindings(
+            tools=tools,
+            skills=skills,
+            learned=learned,
+            allow_unreviewed_learned=allow_unreviewed_learned,
+            procedure_engine=procedure_engine,
+            procedure_scope=procedure_scope,
+            peers=peers,
+            registry=registry,
+            name=name,
+            tenant=tenant,
+        )
+        rt = PydanticAIRuntime(
+            model=model, instructions=instructions, tools=bindings.tools,
+            api_base=api_base, api_key=api_key,
+            gateway=gateway, auth=auth,
+            name=name, tenant=tenant,
+            memory=memory, workspace=workspace,
+            tracer=tracer,
+            mcp_servers=bindings.mcp_servers,
+            **defaults,
+        )
+        return cls(rt, name=name, tenant=tenant, skills=bindings.skills, expose=expose,
+                   tools=bindings.tools)
 
     @property
     def card(self) -> dict | None:

@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "coactra"
 dynamic = ["version"]
-description = "Composable libraries for AI agent fleets — model calls, memory, workspace, jobs, directory, and agent composition in one package."
+description = "Composable libraries for AI agent fleets — model calls, memory, workspace, workflow, team, and agent composition in one package."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "coactra authors" }]
-keywords = ["llm", "agents", "orchestration", "agent-framework", "multi-agent"]
+keywords = ["llm", "agents", "workflow", "agent-framework", "multi-agent"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -27,11 +27,8 @@ dependencies = ["pydantic>=2.7"]
 ai = ["instructor>=1.0", "litellm>=1.40", "numpy>=1.26"]
 memory = []
 workspace = []
-work = []
 workflow = []
-# Deprecated install alias retained for transition: orchestration spans work + workflow.
-orchestration = ["coactra[work]", "coactra[workflow]"]
-organization = ["sqlmodel>=0.0.21"]
+team = ["sqlmodel>=0.0.21"]
 agent = ["pydantic-ai-slim>=1.0"]
 agent-gateway = ["pydantic-ai-slim[mcp]>=1.0", "httpx>=0.27"]
 
@@ -63,7 +60,7 @@ postgres = ["psycopg[binary]>=3"]
 openfga = ["openfga_sdk>=0.9,<1"]
 integrations = [
     "coactra[ai]",
-    "coactra[organization]",
+    "coactra[team]",
     "structlog>=24.0",
     "pyyaml>=6.0",
     "tiktoken>=0.7",
@@ -134,8 +131,6 @@ select = ["F"]
 [tool.ruff.lint.per-file-ignores]
 # Lazy PEP 562 exports: names resolve via __getattr__, not module-level defs.
 "**/ai/embedding.py" = ["F822"]
-# Deprecation shim re-exports after warnings.warn().
-"**/jobs/adapters/__init__.py" = ["E402"]
 
 [tool.pyright]
 include = [

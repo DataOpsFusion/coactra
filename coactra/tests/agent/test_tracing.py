@@ -61,6 +61,29 @@ async def test_agent_run_emits_model_trace_span():
     ]
 
 
+
+async def test_agent_stream_emits_model_trace_span():
+    tracer = RecordingTracer()
+    agent = await Agent.create(
+        model=_echo_model(),
+        name="sre-agent",
+        tenant="acme",
+        tracer=tracer,
+    )
+
+    run = await agent.send("hello")
+    async for _event in run.stream():
+        pass
+
+    span = tracer.spans[0]
+    assert span.name == "coactra.agent.stream"
+    assert span.attributes["coactra.agent.name"] == "sre-agent"
+    assert [event[0] for event in span.events] == [
+        "coactra.model.request",
+        "coactra.model.response",
+    ]
+
+
 class TracedAgent:
     _name = "worker"
 
@@ -91,4 +114,30 @@ async def test_workflow_run_emits_workflow_and_step_trace_events():
         "coactra.workflow.step.start",
         "coactra.workflow.step.complete",
         "coactra.workflow.complete",
+    ]
+
+
+class RecordingEngine:
+    async def start(self, procedure, state, ctx, *, thread_id=None):
+        class Run:
+            status = "completed"
+            thread_id = "engine-run"
+            state = {"step_0_result": "engine done"}
+
+        return Run()
+
+
+async def test_workflow_engine_run_emits_trace_span():
+    tracer = RecordingTracer()
+    wf = Workflow("engine-workflow", steps=[step("inspect", agent="worker")])
+
+    run = await wf.run(TracedTeam(), run_id="wf-engine", engine=RecordingEngine(), tracer=tracer)
+
+    assert run.status == "completed"
+    span = tracer.spans[0]
+    assert span.name == "coactra.workflow.run"
+    assert span.attributes["coactra.workflow.name"] == "engine-workflow"
+    assert [event[0] for event in span.events] == [
+        "coactra.workflow.engine.start",
+        "coactra.workflow.engine.complete",
     ]

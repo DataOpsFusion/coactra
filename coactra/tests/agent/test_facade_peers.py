@@ -173,3 +173,18 @@ async def test_agent_create_remote_peer_wires_official_a2a_transport():
         "message": "triage incident",
         "delegation_chain": [],
     }]
+
+
+async def test_agent_create_peer_name_does_not_crash_and_reports_unavailable():
+    """The documented peers=["name"] shape should create an ask tool, not crash."""
+    main = await Agent.create(
+        model=_echo_model("sre-1"),
+        name="sre-1",
+        tenant="acme",
+        peers=["security-agent"],
+    )
+
+    ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
+    result = await ask("triage incident")
+
+    assert "unavailable" in result.lower()

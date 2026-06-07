@@ -154,3 +154,20 @@ async def test_agent_aclose_without_gateway_is_harmless() -> None:
 
     agent = await Agent.create(model=FunctionModel(_final))
     await agent.aclose()  # should not raise
+
+
+def test_build_mcp_toolsets_returns_gateway_and_additive_servers() -> None:
+    """Toolset construction is isolated from the runtime constructor."""
+    from pydantic_ai.mcp import MCPToolset
+    from coactra.agent.domain.tools import mcp
+    from coactra.agent.toolsets import build_mcp_toolsets
+
+    gateway_toolset, additive = build_mcp_toolsets(
+        gateway="https://gw/mcp",
+        auth="token",
+        mcp_servers=[mcp("https://extra/mcp", name="extra")],
+    )
+
+    assert isinstance(gateway_toolset, MCPToolset)
+    assert len(additive) == 1
+    assert isinstance(additive[0], MCPToolset)

@@ -1,27 +1,30 @@
-"""Ticket triage with agent, memory, and durable work.
-
-This is the copyable project example. It keeps app behavior in plain functions and
-puts persistence behind Memory and WorkManager.
-"""
+"""Ticket triage with Agent, Memory, and durable work."""
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from pprint import pprint
 
-from coactra.agent import Scope as AgentScope, make_agent
-from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
-from coactra.jobs.work import Artifact, ArtifactPart
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
+
+from coactra import Agent, Skill
+from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import Artifact, ArtifactPart
 from coactra.memory import Memory, Scope as MemoryScope, make_backend
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="support-tickets")
-AGENT_SCOPE = AgentScope(tenant_id="acme", namespace="agent:support")
 MEMORY_SCOPE = MemoryScope(tenant="acme", namespace="support", agent="helpdesk")
 
 
 def ticket_key(ticket_id: str) -> str:
     digest = hashlib.sha256(ticket_id.encode("utf-8")).hexdigest()[:12]
     return f"ticket:{digest}"
+
+
+def triage_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
+    return ModelResponse(parts=[TextPart("Rotate the API key, restart the worker, and verify auth logs.")])
 
 
 def build_memory() -> Memory:
@@ -47,7 +50,7 @@ def open_ticket(work: WorkManager, ticket_id: str, issue: str) -> WorkOrder:
     )
 
 
-def triage_ticket(
+async def triage_ticket(
     ticket_id: str,
     issue: str,
     *,
@@ -56,10 +59,17 @@ def triage_ticket(
 ) -> dict[str, object]:
     memory = memory or build_memory()
     work = work or WorkManager()
-    agent = make_agent(scope=AGENT_SCOPE)
+    agent = await Agent.create(
+        model=FunctionModel(triage_model),
+        name="helpdesk-agent",
+        tenant="acme",
+        auth="dev-token",
+        skills=[Skill(id="support.triage", description="Triage support tickets")],
+    )
 
     prior = recall_fix(memory, issue)
-    draft = agent.think(f"Triage {ticket_id}: {issue}. Prior fix: {prior or 'none'}")
+    prior_text = prior or "none"
+    draft = await agent.run(f"Triage {ticket_id}: {issue}. Prior fix: {prior_text}")
 
     order = open_ticket(work, ticket_id, issue)
     lease = work.claim(order.id, WORK_SCOPE, worker="agent:support", lease_seconds=120)
@@ -82,11 +92,11 @@ def triage_ticket(
     }
 
 
-def main() -> None:
+async def main() -> None:
     memory = build_memory()
     remember_fix(memory, "T-050", "rotate API key and restart billing worker")
-    pprint(triage_ticket("T-1842", "API key worker failing after deploy", memory=memory))
+    pprint(await triage_ticket("T-1842", "API key worker failing after deploy", memory=memory))
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

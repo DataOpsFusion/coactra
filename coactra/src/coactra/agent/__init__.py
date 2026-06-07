@@ -7,7 +7,6 @@ live in their concrete submodules.
 
 from __future__ import annotations
 
-import warnings
 from importlib import import_module
 from typing import Any
 
@@ -47,9 +46,18 @@ from coactra.agent.events import (
     ToolResult,
     Usage,
 )
-from coactra.agent.facade import Agent, Run
-from coactra.agent.peers import RemotePeer
-from coactra.agent.runtime import AgentRuntimePort, PydanticAIRuntime
+
+_LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    "Agent": ("coactra.agent.facade", "Agent"),
+    "Run": ("coactra.agent.run", "Run"),
+    "RemotePeer": ("coactra.agent.peers", "RemotePeer"),
+    "FleetEntry": ("coactra.agent.registry", "FleetEntry"),
+    "FleetRegistry": ("coactra.agent.registry", "FleetRegistry"),
+    "InMemoryFleetRegistry": ("coactra.agent.registry", "InMemoryFleetRegistry"),
+    "AgentRuntimePort": ("coactra.agent.ports", "AgentRuntimePort"),
+    "PydanticAIRuntime": ("coactra.agent.runtime", "PydanticAIRuntime"),
+    "mcp": ("coactra.agent.domain.tools", "mcp"),
+}
 
 __all__ = [
     "__version__",
@@ -78,6 +86,9 @@ __all__ = [
     "AsyncPolicyGatedCollaborator",
     "CollaborationDenied",
     "RemotePeer",
+    "FleetEntry",
+    "FleetRegistry",
+    "InMemoryFleetRegistry",
     # agent SDK
     "Agent",
     "Run",
@@ -91,26 +102,15 @@ __all__ = [
     "Status",
     "AgentRuntimePort",
     "PydanticAIRuntime",
+    "mcp",
 ]
 
 __version__ = distribution_version()
 
-_COMPAT_EXPORTS: dict[str, tuple[str, str]] = {
-    "build_a2a_app": ("coactra.agent.adapters.a2a_server", "build_a2a_app"),
-    "make_a2a_executor": ("coactra.agent.adapters.a2a_server", "make_a2a_executor"),
-    "A2AInboundRequest": ("coactra.agent.adapters.a2a_server", "A2AInboundRequest"),
-    "A2ARequestVerifier": ("coactra.agent.adapters.a2a_server", "A2ARequestVerifier"),
-}
-
 
 def __getattr__(name: str) -> Any:
-    target = _COMPAT_EXPORTS.get(name)
+    target = _LAZY_EXPORTS.get(name)
     if target is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     module_name, attr_name = target
-    warnings.warn(
-        f"coactra.agent.{name} is deprecated; import {attr_name} from {module_name} instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return getattr(import_module(module_name), attr_name)
