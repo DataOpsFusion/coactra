@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("langgraph")
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     LangGraphEngine,
     Procedure,
     ReasoningTrace,

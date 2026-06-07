@@ -1,6 +1,6 @@
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     InMemoryApprovalStore,
     PendingApproval,
@@ -72,7 +72,7 @@ def test_make_default_workflow_engine_names_langgraph_as_default(monkeypatch):
         calls.append((runtime, kwargs))
         return FakeDurableLangGraphEngine()
 
-    import coactra.jobs.workflow.runtime.defaults as defaults
+    import coactra.workflow.runtime.defaults as defaults
 
     monkeypatch.setattr(defaults, "make_workflow_engine", fake_make)
 

@@ -19,7 +19,7 @@
 2. **`git mv`** the packages (preserve history): `jobs`→`workflow`, `directory`→`team`. Update internal imports (`rg` + `sed`), extras names in `pyproject.toml`, and tests.
 3. **Drop the shim packages** (`orchestration`/`organization`/`work`) — alpha, no back-compat.
 4. **Verify** — full suite green via the repo `.venv`; `ruff check src` clean; `twine check` the built dist.
-5. **homelab sync (SEPARATE repo + commit).** Update homelab imports `coactra.jobs.workflow`→`coactra.workflow`, `coactra.directory`→`coactra.team` (`coactra.ai` unchanged); run homelab tests. **Touches the production consumer — confirm with the user before editing homelab.**
+5. **homelab sync (SEPARATE repo + commit).** Update homelab imports `coactra.workflow`→`coactra.workflow`, `coactra.directory`→`coactra.team` (`coactra.ai` unchanged); run homelab tests. **Touches the production consumer — confirm with the user before editing homelab.**
 
 ## Guardrails
 - Renames are **mechanical, isolated commits** — never mixed with behavior changes, so review is trivial.

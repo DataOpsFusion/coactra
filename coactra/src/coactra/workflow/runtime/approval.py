@@ -8,7 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from coactra.jobs.workflow.domain.scope import Scope
+from coactra.workflow.domain.scope import Scope
 
 
 def _utc_now() -> datetime:

@@ -437,7 +437,7 @@ class _BridgeTeam:
 async def test_public_workflow_runs_and_resumes_with_durable_langgraph_engine():
     pytest.importorskip("langgraph")
     from langgraph.checkpoint.memory import MemorySaver
-    from coactra.jobs.workflow import DurableLangGraphEngine
+    from coactra.workflow import DurableLangGraphEngine
 
     engine = DurableLangGraphEngine(checkpointer=MemorySaver())
     team = _BridgeTeam()

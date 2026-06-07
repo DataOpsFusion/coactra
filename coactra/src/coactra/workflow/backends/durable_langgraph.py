@@ -23,22 +23,22 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, Send, interrupt
 from typing_extensions import TypedDict
 
-from coactra.jobs.workflow.domain.models import Procedure, RunResult
-from coactra.jobs.workflow.runtime.durable import (
+from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.runtime.durable import (
     WorkflowInterrupt,
     WorkflowNotResumableError,
     WorkflowRun,
     WorkflowRunStatus,
 )
-from coactra.jobs.workflow.runtime.engine import RunContext
-from coactra.jobs.workflow.runtime.handlers import Escalation
-from coactra.jobs.workflow.runtime.capabilities import (
+from coactra.workflow.runtime.engine import RunContext
+from coactra.workflow.runtime.handlers import Escalation
+from coactra.workflow.runtime.capabilities import (
     CapabilityRegistry,
     validate_tool_call,
     validate_workflow_capabilities,
 )
-from coactra.jobs.workflow.runtime.tools import ToolInvoker
-from coactra.jobs.workflow.runtime.verification import (
+from coactra.workflow.runtime.tools import ToolInvoker
+from coactra.workflow.runtime.verification import (
     VerificationResult,
     is_error_like,
     is_missing,

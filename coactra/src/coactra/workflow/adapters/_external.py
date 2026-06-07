@@ -6,9 +6,9 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
-from coactra.jobs.workflow.domain.models import Procedure, RunResult
-from coactra.jobs.workflow.runtime.engine import RunContext
-from coactra.jobs.workflow.runtime.durable import (
+from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.runtime.engine import RunContext
+from coactra.workflow.runtime.durable import (
     WorkflowInterrupt,
     WorkflowRun,
     WorkflowRunStatus,

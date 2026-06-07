@@ -4,7 +4,7 @@ pytest.importorskip("langgraph")
 
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     EscalationUnresolved,
     LangGraphEngine,
     Procedure,

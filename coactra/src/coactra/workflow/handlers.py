@@ -1,6 +1,6 @@
 """Compatibility imports for workflow runtime handlers."""
 
-from coactra.jobs.workflow.runtime.handlers import (
+from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
     Collaborator,

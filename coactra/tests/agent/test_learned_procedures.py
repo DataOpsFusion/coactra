@@ -4,7 +4,7 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent import Agent
-from coactra.jobs.workflow import Procedure, ProcedureVersion, Scope, Step
+from coactra.workflow import Procedure, ProcedureVersion, Scope, Step
 
 
 def _echo_model() -> FunctionModel:

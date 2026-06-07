@@ -1,6 +1,6 @@
 import pytest
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     CandidateStatus,
     InMemoryProcedurePromotionStore,
     ReasoningTrace,

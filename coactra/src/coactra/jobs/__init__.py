@@ -18,7 +18,7 @@ from coactra.jobs.work import (
     WorkOrder,
 )
 from coactra.jobs.work.domain.scope import Scope as WorkScope
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     DurableLangGraphEngine,
     Capability,
     CapabilityRegistry,
@@ -34,7 +34,7 @@ from coactra.jobs.workflow import (
     run_workflow,
     verify_done_criteria,
 )
-from coactra.jobs.workflow.domain.scope import Scope as WorkflowScope
+from coactra.workflow.domain.scope import Scope as WorkflowScope
 
 Scope = WorkScope
 

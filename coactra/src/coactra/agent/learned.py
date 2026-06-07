@@ -1,6 +1,6 @@
 """Bridge promoted workflow Procedures into the Agent Skill/tool surface.
 
-This module is intentionally adapter-shaped: old coactra.jobs.workflow
+This module is intentionally adapter-shaped: old coactra.workflow
 Procedures stay the source of truth, while agents publish curated Skills and
 get replay tools that can call an injected WorkflowEngine.
 """
@@ -113,7 +113,7 @@ def learned_procedure_tools(
                     "pass procedure_engine= to Agent.create"
                 )
 
-            from coactra.jobs.workflow import RunContext, Scope  # noqa: PLC0415
+            from coactra.workflow import RunContext, Scope  # noqa: PLC0415
 
             run_scope = scope if scope is not None else Scope(tenant_id=tenant or "default")
             ctx = RunContext(scope=run_scope)

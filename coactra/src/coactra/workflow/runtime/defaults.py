@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from coactra.jobs.workflow.runtime.durable import (
+from coactra.workflow.runtime.durable import (
     AsyncProcedureRunnerAdapter,
     WorkflowEngine,
 )
-from coactra.jobs.workflow.runtime.engine import ProcedureRunner
+from coactra.workflow.runtime.engine import ProcedureRunner
 
 WorkflowRuntime = Literal["default", "langgraph", "local", "temporal", "prefect"]
 
@@ -45,7 +45,7 @@ def make_workflow_engine(
     selected = "langgraph" if runtime == "default" else runtime
     if selected == "langgraph":
         try:
-            from coactra.jobs.workflow.backends.durable_langgraph import (
+            from coactra.workflow.backends.durable_langgraph import (
                 DurableLangGraphEngine,
             )
         except ImportError as exc:  # pragma: no cover - depends on optional extra
@@ -64,12 +64,12 @@ def make_workflow_engine(
         return AsyncProcedureRunnerAdapter(runner)
 
     if selected == "temporal":
-        from coactra.jobs.workflow.adapters.temporal import TemporalEngine
+        from coactra.workflow.adapters.temporal import TemporalEngine
 
         return TemporalEngine(**kwargs)
 
     if selected == "prefect":
-        from coactra.jobs.workflow.adapters.prefect import PrefectEngine
+        from coactra.workflow.adapters.prefect import PrefectEngine
 
         return PrefectEngine(**kwargs)
 

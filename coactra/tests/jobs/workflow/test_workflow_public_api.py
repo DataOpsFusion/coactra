@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("langgraph")
 
-import coactra.jobs.workflow as w
+import coactra.workflow as w
 
 
 def test_public_surface_is_complete():

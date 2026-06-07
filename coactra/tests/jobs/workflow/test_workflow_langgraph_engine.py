@@ -4,7 +4,7 @@ pytest.importorskip("langgraph")
 
 from langgraph.graph.state import CompiledStateGraph
 
-from coactra.jobs.workflow import (
+from coactra.workflow import (
     LangGraphEngine,
     Procedure,
     RunContext,

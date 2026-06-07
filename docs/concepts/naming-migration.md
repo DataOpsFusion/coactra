@@ -9,7 +9,7 @@ paths remain as compatibility shims; new code should use the canonical names bel
 |---|---|---|
 | `coactra.orchestration` | `coactra.jobs` | base package |
 | `coactra.work` | `coactra.jobs.work` | base package |
-| `coactra.workflow` | `coactra.jobs.workflow` | base package |
+| `coactra.workflow` | `coactra.workflow` | base package |
 | `coactra.organization` | `coactra.directory` | base package |
 
 ```python

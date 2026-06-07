@@ -1,5 +1,5 @@
 from coactra.jobs import Orchestrator, Procedure, Step, WorkOrder, WorkScope
-from coactra.jobs.workflow import RunResult
+from coactra.workflow import RunResult
 
 
 class Engine:
@@ -24,9 +24,9 @@ def test_orchestrator_runs_registered_procedure_and_completes_work_order():
 
 def test_legacy_namespaces_alias_the_canonical_implementations():
     from coactra.jobs import WorkOrder as CanonicalWorkOrder
-    from coactra.jobs.workflow import Procedure as CanonicalProcedure
+    from coactra.workflow import Procedure as CanonicalProcedure
     from coactra.jobs import WorkOrder as LegacyWorkOrder
-    from coactra.jobs.workflow import Procedure as LegacyProcedure
+    from coactra.workflow import Procedure as LegacyProcedure
 
     assert LegacyWorkOrder is CanonicalWorkOrder
     assert LegacyProcedure is CanonicalProcedure

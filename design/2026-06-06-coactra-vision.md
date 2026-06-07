@@ -45,7 +45,7 @@ A goal arrives → **Workflow** plans or picks a playbook → assigns each step 
 
 ## Brownfield note
 
-The renames (`directory`→`team`, `jobs`/`work`/`orchestration`→`workflow`) touch homelab, which imports `coactra.directory` and `coactra.jobs.workflow`. Alpha = we don't keep deprecated shims, but homelab needs a sync pass — mechanics in `design/2026-06-06-rename-migration.md`.
+The renames (`directory`→`team`, `jobs`/`work`/`orchestration`→`workflow`) touch homelab, which imports `coactra.directory` and `coactra.workflow`. Alpha = we don't keep deprecated shims, but homelab needs a sync pass — mechanics in `design/2026-06-06-rename-migration.md`.
 
 ## Additional specs
 - `2026-06-06-auth-design.md` — auth/identity: OAuth 2.1 client + gateway tool-slicing + A2A Agent Cards

@@ -10,7 +10,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
-from coactra.jobs.workflow.runtime.handlers import (
+from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
     Collaborator,
@@ -18,8 +18,8 @@ from coactra.jobs.workflow.runtime.handlers import (
     NullCollaborator,
     TerminalHumanRouter,
 )
-from coactra.jobs.workflow.domain.models import Procedure, RunResult
-from coactra.jobs.workflow.domain.scope import Scope
+from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.domain.scope import Scope
 
 
 class RunContext(BaseModel):

@@ -17,9 +17,9 @@ from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
-from coactra.jobs.workflow.runtime.engine import RunContext
-from coactra.jobs.workflow.runtime.handlers import Escalation
-from coactra.jobs.workflow.domain.models import Procedure, RunResult, Step
+from coactra.workflow.runtime.engine import RunContext
+from coactra.workflow.runtime.handlers import Escalation
+from coactra.workflow.domain.models import Procedure, RunResult, Step
 
 TaskFn = Callable[[dict[str, Any]], dict[str, Any]]
 _PATH = "__path__"
