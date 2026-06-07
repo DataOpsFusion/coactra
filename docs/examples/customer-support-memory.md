@@ -23,7 +23,7 @@ async def handle_ticket(ticket_text: str, customer_id: str) -> str:
         model="claude-sonnet-4-5",
         name="support-agent",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         memory="inprocess",     # swap to "graphiti" or "mem0" in production
         instructions=(
             "You are a helpful support agent. Use past interactions to give "

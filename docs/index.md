@@ -1,7 +1,7 @@
 # Coactra Docs
 
 Coactra is a Python library for agent applications that need durable work,
-memory, workspace state, organization policy, and agent-to-agent collaboration.
+memory, workspace state, team policy, and agent-to-agent collaboration.
 
 Start with the [Quickstart](getting-started/quickstart.md), then use the example
 and production guides when you are ready to wire real backends.

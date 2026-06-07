@@ -7,13 +7,15 @@ as a minor version increment.
 
 ## Alpha Surface (0.0.x)
 
-The deprecated layer (`make_agent`, ports-based Agent, sync collaboration stack)
-has been deleted in the alpha redesign. No compat shims during alpha.
+The removed layer (ports-based factory, ports-based Agent, sync collaboration stack)
+has been deleted in the alpha redesign. Compatibility-only import shims are not
+part of the alpha API; move implementation and tests to the current package names
+instead of preserving old paths.
 
 Public exports:
 
 ```python
-from coactra import Agent, Team, Skill, oidc, mcp
+from coactra import Agent, RemotePeer, Skill, Team, Workflow, mcp, oidc, serve_agent, step
 ```
 
 Anything not exported from `coactra` directly is internal and may change at any time.
@@ -25,18 +27,15 @@ Anything not exported from `coactra` directly is internal and may change at any 
 | `stable` | Preferred public API | No breaking change without deprecation window |
 | `beta` | Public but may change before v1 | Changes allowed with changelog + migration note |
 | `experimental` | Useful but not compatibility-promised | May change between minor releases |
-| `compatibility` | Old import path / migration alias | Keep until removal window closes |
 | `internal` | Implementation detail | Can change anytime |
 
 ## Preferred Import Root (v1 target)
 
 ```
-from coactra import Agent, Team, Workflow, Skill, step, oidc, mcp
+from coactra import Agent, RemotePeer, Skill, Team, Workflow, mcp, oidc, serve_agent, step
 ```
 
-Old paths (`coactra.jobs`, `coactra.directory`, `coactra.orchestration`) will be
-kept as compatibility aliases during the migration window and removed in a later
-release per the rename migration plan.
+Use the top-level `coactra` imports for application code. Lower-level roots such as `coactra.workflow.ledger` and `coactra.team.directory` are implementation surfaces and may change during alpha. Do not reintroduce alias packages for removed roots.
 
 ## Adapter Maturity vs API Stability
 
@@ -56,13 +55,6 @@ Every workflow engine adapter declares one of:
 | `unsupported` | Adapter can start but cannot resume |
 | `host-owned` | Coactra passes through; host code owns real resume behavior |
 
-## Rename Migration
+## Cleanup Status
 
-The authoritative source for rename mechanics (`jobs`/`work`/`orchestration` →
-`workflow`; `directory`/`organization` → `team`):
-
-**[design/2026-06-06-rename-migration.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-rename-migration.md)**
-
-System vision and build order:
-
-**[design/2026-06-06-coactra-vision.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-coactra-vision.md)**
+See `design/IMPLEMENTATION_STATUS.md` for the current cleanup status.

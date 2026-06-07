@@ -1,8 +1,6 @@
 # Examples
 
-These examples show the Coactra **Agent · Team · Workflow** model. Runnable examples
-use only features that are built and ship today. Pages marked **Designed — coming**
-describe the Workflow layer that is designed but not yet shipped.
+These examples show the current Coactra **Agent · Team · Workflow** model. Runnable examples use features that are built and ship today.
 
 ## Runnable Today
 
@@ -15,14 +13,6 @@ describe the Workflow layer that is designed but not yet shipped.
 | Agent + memory + tools | [Support Desk](support-desk.md) |
 | Team routing + same-tenant policy | [Multi-Agent Policy](multi-agent-policy.md) |
 | Agent composition with skills | [Composed Support Agent](composed-support-agent.md) |
-
-## Designed — Coming
-
-These pages describe the **Workflow** layer (durable playbooks, approval pauses,
-triage/planner). The data model and decisions are finalized; implementation follows.
-
-| Goal | Example |
-|---|---|
 | Durable work with approval | [Work Order Lifecycle](work-order-lifecycle.md) |
 | Procedure-backed steps | [Procedure-Backed Work](procedure-backed-work.md) |
 | Release pipeline with checkpoints | [Release Runner](release-runner.md) |
@@ -30,14 +20,13 @@ triage/planner). The data model and decisions are finalized; implementation foll
 ## Local Setup
 
 ```bash
-pip install coactra
+pip install coactra[agent]
 ```
 
 For a development checkout:
 
 ```bash
-pip install -e ".[all,dev]"
+pip install -e "./coactra[all,dev]"
 ```
 
-Pass `token="dev-token"` or `auth=oidc(...)` in every `Agent.create()` call. See
-[Getting Started](../getting-started/quickstart.md) for the full quickstart.
+Pass `auth="dev-token"` or `auth=oidc(...)` in every `Agent.create()` call. See [Getting Started](../getting-started/quickstart.md) for the full quickstart.

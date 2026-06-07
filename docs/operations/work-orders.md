@@ -1,4 +1,4 @@
-# coactra.jobs work orders
+# coactra.workflow work orders
 
 Durable, tenant-scoped work orders for agent systems. A workflow describes a procedure;
 a `WorkOrder` tracks one real unit of work across assignment, attempts, pauses, retries,
@@ -22,9 +22,9 @@ pip install 'coactra[integrations]'
 ## Quick Start
 
 ```python
-from coactra.jobs import Artifact, ArtifactPart, Scope, WorkManager, WorkOrder
+from coactra.workflow import Artifact, ArtifactPart, WorkScope, WorkManager, WorkOrder
 
-scope = Scope(tenant_id="acme", namespace="support")
+scope = WorkScope(tenant_id="acme", namespace="support")
 work = WorkManager()
 order = work.submit(WorkOrder(scope=scope, title="Prepare incident report"))
 lease = work.claim(order.id, scope, worker="agent:analyst")
@@ -63,7 +63,7 @@ It does not attempt to become a message broker, scheduler, or workflow engine.
 Example DBOS submission:
 
 ```python
-from coactra.jobs.adapters import DBOSDispatcher
+from coactra.workflow.ledger.adapters import DBOSDispatcher
 
 dispatcher = DBOSDispatcher.connect(
     system_database_url="postgresql://localhost/app",
@@ -77,7 +77,7 @@ external_id = dispatcher.submit(order)
 Example Temporal submission:
 
 ```python
-from coactra.jobs.adapters import TemporalDispatcher
+from coactra.workflow.ledger.adapters import TemporalDispatcher
 
 dispatcher = await TemporalDispatcher.connect(
     "localhost:7233",
@@ -93,7 +93,7 @@ A2A already standardizes agent cards, skills, tasks, lifecycle states, and artif
 Coactra converts into the official SDK rather than forking the wire protocol.
 
 MCP tasks were introduced in specification version `2025-11-25` and remain experimental.
-The stable `coactra.jobs` vocabulary is suitable for a future MCP task adapter, but the
+The stable `coactra.workflow` vocabulary is suitable for a future MCP task adapter, but the
 package does not freeze a pre-release Python SDK API into its public surface yet.
 
 ## Durable SQL WorkStore
@@ -106,11 +106,11 @@ For backend services, long-running workers, serverless resume/checkpoint flows, 
 multi-process execution, use `SqlWorkStore`:
 
 ```python
-from coactra.jobs import Scope, SqlWorkStore, WorkManager, WorkOrder
+from coactra.workflow import Scope, SqlWorkStore, WorkManager, WorkOrder
 
-store = SqlWorkStore.from_url("sqlite:///coactra-jobs.db")
+store = SqlWorkStore.from_url("sqlite:///coactra[workflow].db")
 manager = WorkManager(store=store)
-scope = Scope(tenant_id="acme", namespace="agent:builder")
+scope = WorkScope(tenant_id="acme", namespace="agent:builder")
 
 order = manager.submit(WorkOrder(scope=scope, title="Build release"))
 lease = manager.claim(order.id, scope, worker="worker-1", lease_seconds=300)
@@ -127,7 +127,7 @@ pip install 'coactra[sql]'
 ```
 
 ```python
-store = SqlWorkStore.from_url("sqlite:///./coactra-jobs.db")
+store = SqlWorkStore.from_url("sqlite:///./coactra[workflow].db")
 manager = WorkManager(store=store)
 ```
 

@@ -54,7 +54,7 @@ goal
 
 **Today (`coactra.workflow`):** `Procedure`/`Step`, durable engines (LangGraph/Temporal/Prefect), approval interrupts (`WorkflowInterrupt`), trace→procedure induction, capability registry.
 
-**Target (to build):** `run_goal` triage (reuse/plan/save); capability routing via the Team roster; the data-core playbook + `step()` helper + YAML loader; a **Planner** (goal→playbook) over `ai`; a **playbook store + matcher** for triage; rename `coactra.jobs`/`work`/`orchestration` → `coactra.workflow`.
+**Target (to build):** `run_goal` triage (reuse/plan/save); capability routing via the Team roster; the data-core playbook + `step()` helper + YAML loader; a **Planner** (goal→playbook) over `ai`; a **playbook store + matcher** for triage; completed package move to `coactra.workflow.ledger`.
 
 ## Out of scope (this spec)
 

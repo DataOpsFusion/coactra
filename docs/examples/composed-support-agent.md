@@ -43,7 +43,7 @@ async def build_support_agent() -> "Agent":
         model="claude-sonnet-4-5",
         name="tier1-support",
         tenant="acme",
-        token="dev-token",
+        auth="dev-token",
         tools=[search_knowledge_base, escalate_ticket, update_ticket_status],
         memory="inprocess",
         skills=[
@@ -87,6 +87,6 @@ print(agent.card)
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
 | MCP tools | local functions | `gateway="https://gateway/mcp"` + `auth=` |
 | Memory | `"inprocess"` | `"graphiti"` or `"mem0"` |

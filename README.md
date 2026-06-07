@@ -1,88 +1,96 @@
 # Coactra
 
-Coactra is a Python library for building AI applications that need more than one model call: durable work, memory, workspace state, organization policy, and agent-to-agent collaboration.
+Coactra is an alpha Python library for people who already have models, tools, MCP servers, memory stores, workflow engines, and agent adapters, but want a small composition layer to steer them together.
 
-Install one distribution and opt into capabilities with extras:
+The preferred application surface is intentionally small:
 
-```bash
-pip install "coactra[agent]"      # agent facade (WorkManager is in the base package)
-pip install "coactra[sql]"          # durable SQL work store
-pip install "coactra[all,dev]"      # from source: all capability extras + pytest
+```python
+from coactra import Agent, Skill, Team, Workflow, mcp, step
 ```
 
-From this repo, run the test suite with:
+Use lower-level modules only when wiring a backend adapter, persistence store, event stream, or host runtime.
+
+## Install
+
+```bash
+pip install "coactra[agent]"
+```
+
+Add backend extras only when you use that backend:
+
+```bash
+pip install "coactra[agent-gateway,oauth]"  # MCP gateway and OAuth
+pip install "coactra[graphiti]"
+pip install "coactra[mem0]"
+pip install "coactra[langgraph]"
+pip install "coactra[sql]"
+```
+
+## Bring Your Own Model
+
+```python
+import asyncio
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import FunctionModel
+from coactra import Agent
+
+
+def existing_model(messages, info):
+    return ModelResponse(parts=[TextPart("handled by my model")])
+
+
+async def main():
+    agent = await Agent.create(model=FunctionModel(existing_model), instructions="Use host policy.")
+    print(await agent.run("can I keep my own model?"))
+    await agent.aclose()
+
+
+asyncio.run(main())
+```
+
+## Add MCP Tools Without Owning The Gateway
+
+```python
+agent = await Agent.create(
+    model="anthropic/claude-haiku-4-5",
+    tools=[mcp("https://gateway.example.com/mcp", name="gateway")],
+)
+```
+
+## Compose Agents When You Need Routing
+
+```python
+security = await Agent.create(name="security", skills=[Skill("cert.rotate")], model=model)
+sre = await Agent.create(name="sre", skills=[Skill("deploy")], model=model)
+team = Team([security, sre])
+```
+
+## Add Workflow Only When The Task Has Shape
+
+```python
+workflow = Workflow("release", steps=[
+    step("Run checks", needs="test"),
+    step("Approve deployment", needs="deploy", approve=True),
+])
+```
+
+## Development
 
 ```bash
 make test
+make release-check
 ```
 
-## When to use Coactra
-
-Use Coactra when you want:
-
-- **Plain functions first** — application behavior as normal Python, with small facades for state and backends.
-- **Durable work orders** — ids, lifecycle, retries, leases, audit trails, and SQL persistence via `WorkManager`.
-- **Composable agent runtime** — one `make_agent(...)` facade over AI, memory, workspace, workflow, organization, and work ports.
-- **Tenant-scoped isolation** — explicit `Scope` / `CoactraScope` at every boundary instead of global tenant state.
-- **Swappable backends** — memory (mem0, Graphiti), workspace (local desk, future sandboxes), workflow (LangGraph, Temporal), org (SQLModel, OpenFGA).
-
-## When not to use Coactra
-
-Coactra is not a fit when you need:
-
-- A batteries-included agent framework with opinionated tool loops and UI (consider PydanticAI, LangGraph apps, or similar directly).
-- A general-purpose workflow engine — Coactra wraps LangGraph/Temporal/Prefect; it does not replace them.
-- Production-ready defaults out of the box — reference backends (in-memory stores, `FakeAI`, local filesystem) are for development and tests.
-- Stable v1 semantics today — see [Maturity](#maturity) below.
-
-## Quick Example
-
-```python
-from coactra.agent import Scope as AgentScope, make_agent
-from coactra.jobs import Scope as WorkScope, WorkManager, WorkOrder
-from coactra.jobs.work import Artifact, ArtifactPart
-
-work_scope = WorkScope(tenant_id="acme", namespace="incident-response")
-agent = make_agent(scope=AgentScope(tenant_id="acme", namespace="agent:oncall"))
-work = WorkManager()
-
-order = work.submit(
-    WorkOrder(scope=work_scope, title="Triage checkout latency")
-)
-draft = agent.think("Draft the first on-call handoff for checkout latency")
-
-lease = work.claim(order.id, work_scope, worker="agent:oncall")
-work.start(lease, work_scope)
-work.checkpoint(lease, work_scope, {"draft_handoff": draft})
-completed = work.complete(
-    lease,
-    work_scope,
-    artifacts=[Artifact(name="handoff", parts=[ArtifactPart(kind="text", text=draft)])],
-)
-
-print(completed.id, completed.status.value, draft)
-```
-
-> **Default agent uses a fake model.** `make_agent(...)` with no `ai=` port wired in
-> uses an in-process fake AI port that echoes the prompt. Pass a real AI port or
-> integration adapter in production.
-
-See [docs/getting-started/quickstart.md](docs/getting-started/quickstart.md) for the walkthrough, [docs/getting-started/examples.md](docs/getting-started/examples.md) for the sample catalog, and [docs/examples/incident-response-handoff.md](docs/examples/incident-response-handoff.md) for the smallest runnable app.
+`make release-check` runs lint, compile, tests, docs, examples, clean wheel install validation, live-backend inventory, and whitespace checks.
 
 ## Documentation
 
-- [Docs site](docs/index.md): the public documentation entrypoint.
-- [API index](docs/API_INDEX.md): stable, beta, experimental, and compatibility imports.
-- [Quickstart](docs/getting-started/quickstart.md): build a small incident-triage app with plain functions.
-- [Examples](docs/examples/index.md): runnable scripts and sample projects for memory, durable work, workspace, and multi-agent policy.
-- [Interface map](docs/concepts/interfaces.md): package roots, stable API surfaces, and where A2A fits.
-- [Production guide](docs/operations/production.md): SQL work store, scope consistency, auth, and deployment posture.
-- [Library map](docs/concepts/library-map.md): capability boundaries and adapters.
+- [API index](docs/API_INDEX.md): current import contract.
+- [Quickstart](docs/getting-started/quickstart.md): Agent-first app flow.
+- [Examples](docs/examples/index.md): runnable examples and projects.
+- [Production guide](docs/operations/production.md): deployment posture and backend seams.
+- [Alpha release checklist](docs/maintainers/alpha-release-checklist.md): release gates.
 
 ## Maturity
 
-Coactra is **alpha-quality** library infrastructure (PyPI classifier: Development Status :: Alpha). That reflects adapter maturity, default backends, and operational gaps — not permission to rename stable facades casually.
-
-The **intended stable surface** for application code is documented in [docs/API_INDEX.md](docs/API_INDEX.md): `CoactraScope`, `Memory`, `WorkManager`, `open_workspace`, `make_agent`, and shared errors. Those facades and their Protocols should change only with changelog and migration notes until v1.
-
-Experimental areas — `Kernel`, workflow DSL helpers, `DurableLangGraphEngine`, and most `*.adapters` modules — may change without a deprecation window. Prefer reference backends documented in [docs/operations/production.md](docs/operations/production.md) for anything beyond local prototypes.
+Coactra is alpha. Breaking import moves are allowed before publishing stable releases, but the current contract is tested: removed alpha roots stay removed, and application code should start from the root package.

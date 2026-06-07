@@ -1,12 +1,5 @@
 # Work Order Lifecycle
 
-!!! warning "Designed — not yet shipped"
-    This page describes the **Workflow** layer of Coactra. The data model and
-    decisions are finalized in
-    [design/2026-06-06-workflow-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md).
-    Implementation follows the Agent core milestone. Code shown here is the
-    **intended API** — it will not run against the current release.
-
 A **Workflow run** is the durable unit of work: it survives restarts, pauses for
 approvals, retries failed steps, and stores its full audit trail. "Work order /
 job / orchestration" are properties of a Workflow running — not separate things.
@@ -20,10 +13,9 @@ job / orchestration" are properties of a Workflow running — not separate thing
 - Approval pauses: run halts until a human resolves, then resumes
 - Internal run ledger: `WorkflowRun`, `Checkpoint`, `Approval`
 
-## Intended API (designed)
+## Code
 
 ```python
-# designed — not yet runnable
 import asyncio
 from coactra import Agent, Team, Workflow, step
 
@@ -33,7 +25,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="sre-agent",
         tenant="acme",
-        auth=oidc(issuer, client_id, client_secret),
+        auth=oidc(token_url, client_id, client_secret),
         gateway="https://gateway/mcp",
         skills=["infra restart", "deployment"],
     )
@@ -68,7 +60,6 @@ submitted → running → [paused for approval] → resumed → done
 ## Run Goal (triage mode)
 
 ```python
-# designed — not yet runnable
 # triage: runs saved playbook if goal is known; plans + saves candidate if new
 run = await Workflow.run_goal(
     "rotate prod cert and redeploy web tier",

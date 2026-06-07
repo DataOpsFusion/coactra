@@ -8,9 +8,9 @@ The whole library is **three nouns**, plus an internal engine and two agent capa
 
 | Noun | What it is | Today's code → rename | Status |
 |------|-----------|----------------------|--------|
-| **Team** | Who exists & how they relate — agents, hierarchy, who-may-talk, tenant, the capability roster | `coactra.directory` (+ drop `organization`) → `coactra.team` | ✅ `design/2026-06-06-team-design.md` |
+| **Team** | Who exists & how they relate — agents, hierarchy, who-may-talk, tenant, the capability roster | `coactra.team.directory` (+ drop `organization`) → `coactra.team` | ✅ `design/2026-06-06-team-design.md` |
 | **Agent** | One worker — thinks, uses tools + MCP, has memory; exposed via A2A | `coactra.agent` (the SDK `Agent`) | ✅ `design/2026-06-06-agent-api-design.md` |
-| **Workflow** | A playbook + the manager running it — steps, assign to agents, track to done, retries, approvals | `coactra.jobs` = `work` + `workflow` (+ drop `orchestration`) → `coactra.workflow` | ✅ `design/2026-06-06-workflow-design.md` |
+| **Workflow** | A playbook + the manager running it — steps, assign to agents, track to done, retries, approvals | `coactra.workflow` = `work` + `workflow` (+ drop `orchestration`) → `coactra.workflow` | ✅ `design/2026-06-06-workflow-design.md` |
 
 Collapsed away: `work`, `jobs`, `orchestration`, `organization` were extra names for the above. "Durable / retries / approvals / a work order" = **properties of a Workflow run**, not separate domains.
 
@@ -45,10 +45,10 @@ A goal arrives → **Workflow** plans or picks a playbook → assigns each step 
 
 ## Brownfield note
 
-The renames (`directory`→`team`, `jobs`/`work`/`orchestration`→`workflow`) touch homelab, which imports `coactra.directory` and `coactra.workflow`. Alpha = we don't keep deprecated shims, but homelab needs a sync pass — mechanics in `design/2026-06-06-rename-migration.md`.
+The remaining package vocabulary cleanup is tracked in `design/IMPLEMENTATION_STATUS.md`. Alpha code should prefer the current root `Agent` / `Team` / `Workflow` API and avoid adding compatibility shims for removed paths.
 
 ## Additional specs
 - `2026-06-06-auth-design.md` — auth/identity: OAuth 2.1 client + gateway tool-slicing + A2A Agent Cards
 - `2026-06-06-operations-design.md` — observability/tracing (OpenTelemetry) + error handling
-- `2026-06-06-rename-migration.md` — `jobs`→`workflow` / `directory`→`team` mechanics
+- `IMPLEMENTATION_STATUS.md` — current implementation status and remaining cleanup
 - `2026-06-06-review-refinements.md` — v2 tightening from external review (lean Team · gateway-primary · structured skills · internal run-ledger · **candidate** playbooks not auto-save · memory guardrails · workspace gating)

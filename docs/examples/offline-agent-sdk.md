@@ -31,7 +31,7 @@ async def main() -> None:
     agent = await Agent.create(
         model="claude-haiku-4-5",   # fast/cheap; swap to your offline model id
         name="sre-agent",
-        token="dev-token",
+        auth="dev-token",
         tools=[check_disk, restart_service],
         instructions="You are an SRE agent. Check before you act.",
     )
@@ -60,6 +60,6 @@ if __name__ == "__main__":
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `token="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
 | Tools via gateway | — | `gateway="https://gateway/mcp"` + `auth=` |
 | Model | local id | any litellm-compatible provider id |

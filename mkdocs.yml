@@ -38,7 +38,6 @@ nav:
   - Concepts:
       - Architecture: concepts/architecture.md
       - Library Map: concepts/library-map.md
-      - Naming Migration: concepts/naming-migration.md
       - State and Storage: concepts/state-and-storage.md
       - Tenant Isolation: concepts/tenant-isolation.md
       - Security: concepts/security.md
@@ -50,15 +49,11 @@ nav:
       - Target Architecture: maintainers/target-architecture.md
       - Roadmap: maintainers/roadmap.md
       - Release Policy: maintainers/release-policy.md
+      - Alpha Release Checklist: maintainers/alpha-release-checklist.md
       - Improvement Backlog: maintainers/improvement-backlog.md
-      - Workflow Design: maintainers/jobs-procedures.md
       - Agent Design: maintainers/agent-design.md
-      - Team Design: maintainers/directory-design.md
       - Memory Design: maintainers/memory-design.md
       - AI Library Design: maintainers/ai-library-design.md
-      - Planning:
-          - Single Package Plan: maintainers/plans/single-package-consolidation-plan.md
-          - Single Package Design: maintainers/plans/single-package-consolidation-design.md
 
 markdown_extensions:
   - admonition
