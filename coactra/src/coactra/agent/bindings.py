@@ -3,6 +3,7 @@
 These helpers keep Agent.create focused on composition. They normalize user-facing
 Agent.create inputs into runtime-ready skills, local tools, and additive MCP servers.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -66,9 +67,7 @@ def normalize_agent_skills(
     learned: Any,
     allow_unreviewed_learned: bool,
 ) -> list[Skill]:
-    procedures = normalize_learned_procedures(
-        learned, allow_unreviewed=allow_unreviewed_learned
-    )
+    procedures = normalize_learned_procedures(learned, allow_unreviewed=allow_unreviewed_learned)
     return agent_skills(skills, procedures)
 
 
@@ -127,10 +126,12 @@ def bind_peer_tools(
     for remote in [*direct_remotes, *registry_remotes]:
         tools.extend(
             peer_tools(
-                [AgentRef(
-                    tenant_id=remote.tenant or tenant or "default",
-                    agent_id=remote.name,
-                )],
+                [
+                    AgentRef(
+                        tenant_id=remote.tenant or tenant or "default",
+                        agent_id=remote.name,
+                    )
+                ],
                 resolve=lambda _name: None,
                 transport=remote.transport(),
                 me=name,

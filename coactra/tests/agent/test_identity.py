@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from coactra.agent import (
     DelegationGrant,
@@ -63,9 +64,7 @@ def test_exchanged_identity_is_tenant_scoped():
 def test_multi_hop_flattens_to_the_full_delegation_path():
     # human -> platform -> security : the chain records the full delegation path oldest-first
     ex = InProcessExchanger()
-    first = ex.exchange(
-        DelegationGrant(subject_token="human-tok", actor="agent:platform"), ACME
-    )
+    first = ex.exchange(DelegationGrant(subject_token="human-tok", actor="agent:platform"), ACME)
     second = ex.exchange_from(first, actor="agent:security", scope=ACME)
     assert second.act_chain == ["agent:platform", "agent:security"]
     assert "human-tok" not in second.token
@@ -75,9 +74,7 @@ def test_keystone_chain_is_immutable_prior_identity_unchanged_after_further_hop(
     # Extending a chain allocates a NEW head sharing the tail; the prior identity's chain
     # is structurally untouched. A mutation that appended in place would fail this.
     ex = InProcessExchanger()
-    first = ex.exchange(
-        DelegationGrant(subject_token="human-tok", actor="agent:platform"), ACME
-    )
+    first = ex.exchange(DelegationGrant(subject_token="human-tok", actor="agent:platform"), ACME)
     assert first.act_chain == ["agent:platform"]
     assert first.chain.depth == 1
 
@@ -95,7 +92,7 @@ def test_keystone_chain_is_immutable_prior_identity_unchanged_after_further_hop(
     # structural sharing: third's tail IS second's chain head (cons sharing, not a copy)
     assert third.chain.prev == second.chain
     # frozen cells: a hop cannot be mutated in place
-    with pytest.raises(Exception):
+    with pytest.raises((AttributeError, TypeError, ValidationError)):
         first.chain.subject = "tampered"
 
 

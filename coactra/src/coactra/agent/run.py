@@ -1,7 +1,9 @@
 """Run handle returned by Agent.send()."""
+
 from __future__ import annotations
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from coactra.agent.events import Event, RunResult
 from coactra.agent.ports import AgentRuntimePort

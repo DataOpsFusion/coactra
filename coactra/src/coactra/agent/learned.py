@@ -4,6 +4,7 @@ This module is intentionally adapter-shaped: old coactra.workflow
 Procedures stay the source of truth, while agents publish curated Skills and
 get replay tools that can call an injected WorkflowEngine.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -27,11 +28,7 @@ def _slug(name: str) -> str:
 
 
 def _is_promoted_version(item: Any) -> bool:
-    return (
-        hasattr(item, "procedure")
-        and hasattr(item, "version")
-        and hasattr(item, "promoted_by")
-    )
+    return hasattr(item, "procedure") and hasattr(item, "version") and hasattr(item, "promoted_by")
 
 
 def _as_procedure(item: Any, *, allow_unreviewed: bool) -> Any:
@@ -46,9 +43,7 @@ def _as_procedure(item: Any, *, allow_unreviewed: bool) -> Any:
     )
 
 
-def normalize_learned_procedures(
-    learned: Any, *, allow_unreviewed: bool = False
-) -> list[Any]:
+def normalize_learned_procedures(learned: Any, *, allow_unreviewed: bool = False) -> list[Any]:
     """Normalize Agent.create(learned=...) values to promoted Procedure objects."""
     if learned is None:
         return []

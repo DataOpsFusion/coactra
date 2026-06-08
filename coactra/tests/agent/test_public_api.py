@@ -55,6 +55,7 @@ def test_public_surface_is_stable_root_api():
         "Status",
         "AgentRuntimePort",
         "PydanticAIRuntime",
+        "MCPServer",
         "mcp",
     }
     assert set(a.__all__) == expected

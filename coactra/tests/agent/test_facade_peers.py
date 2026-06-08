@@ -1,19 +1,14 @@
-"""TDD tests — peers= outbound delegation + agent.serve() via Agent facade.
-
-RED first: run before wiring peers=/serve into facade → tests fail.
-GREEN: wire peers= on Agent.create, Agent.serve(), and serve_agent export.
+"""Tests for peers= outbound delegation via the Agent facade.
 
 Offline: all model interactions use FunctionModel (no network).
 """
+
 from __future__ import annotations
 
-import pytest
-
-from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent import Agent
-from coactra.agent.skills import Skill
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -98,42 +93,9 @@ async def test_peers_cross_tenant_denied():
 
 
 # ---------------------------------------------------------------------------
-# Test 3 — Agent.serve() and top-level serve_agent export
+# Test 3 — Agent.create remote peers wire OfficialA2ATransport ergonomically
 # ---------------------------------------------------------------------------
 
-a2a = pytest.importorskip("a2a")
-starlette = pytest.importorskip("starlette")
-
-
-async def test_agent_serve_returns_app():
-    """agent.serve() returns a non-None Starlette app; top-level import works."""
-    from coactra import serve_agent as top_level_serve_agent  # noqa: PLC0415
-    from starlette.applications import Starlette  # noqa: PLC0415
-
-    agent = await Agent.create(
-        model=_echo_model("helper"),
-        name="helper",
-        tenant="acme",
-        skills=[Skill(id="general", description="general purpose agent")],
-    )
-
-    # agent.card must be non-None before we serve
-    assert agent.card is not None
-
-    # Method on the facade
-    app = agent.serve()
-    assert app is not None
-    assert isinstance(app, Starlette)
-
-    # Top-level export must resolve to the same underlying function
-    app2 = top_level_serve_agent(agent)
-    assert app2 is not None
-    assert isinstance(app2, Starlette)
-
-
-# ---------------------------------------------------------------------------
-# Test 4 — Agent.create remote peers wire OfficialA2ATransport ergonomically
-# ---------------------------------------------------------------------------
 
 class RecordingA2AClient:
     def __init__(self) -> None:
@@ -166,13 +128,15 @@ async def test_agent_create_remote_peer_wires_official_a2a_transport():
     result = await ask("triage incident")
 
     assert result == "remote:security-agent:triage incident"
-    assert client.calls == [{
-        "agent_id": "security-agent",
-        "endpoint": "http://127.0.0.1:9999/a2a",
-        "audience": "security-audience",
-        "message": "triage incident",
-        "delegation_chain": [],
-    }]
+    assert client.calls == [
+        {
+            "agent_id": "security-agent",
+            "endpoint": "http://127.0.0.1:9999/a2a",
+            "audience": "security-audience",
+            "message": "triage incident",
+            "delegation_chain": [],
+        }
+    ]
 
 
 async def test_agent_create_peer_name_does_not_crash_and_reports_unavailable():

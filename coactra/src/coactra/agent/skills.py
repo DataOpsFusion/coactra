@@ -8,6 +8,7 @@ Public API
 - ``normalize_skills``  — accepts None / str / Skill / list[Skill|dict] → list[Skill].
 - ``build_agent_card``  — produce an A2A-shaped Agent Card dict (curated, no creds).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -18,6 +19,7 @@ __all__ = ["Skill", "normalize_skills", "build_agent_card"]
 # ---------------------------------------------------------------------------
 # Skill dataclass
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class Skill:
@@ -52,6 +54,7 @@ class Skill:
 # ---------------------------------------------------------------------------
 # normalize_skills
 # ---------------------------------------------------------------------------
+
 
 def normalize_skills(
     skills: None | str | Skill | list[Skill | dict],
@@ -92,9 +95,7 @@ def normalize_skills(
                 )
             )
         else:
-            raise TypeError(
-                f"normalize_skills: expected Skill or dict, got {type(item)!r}"
-            )
+            raise TypeError(f"normalize_skills: expected Skill or dict, got {type(item)!r}")
     return result
 
 

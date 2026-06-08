@@ -3,10 +3,11 @@
 Frozen, discriminated dataclasses. Every event carries run identity (run_id, seq)
 so streams can be correlated, replayed, or traced.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,7 +52,7 @@ class Status(_Base):
     state: Literal["running", "finished", "error", "cancelled"] = "running"
 
 
-Event = Union[Assistant, Thinking, ToolCall, ToolResult, Usage, Status]
+Event = Assistant | Thinking | ToolCall | ToolResult | Usage | Status
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,11 +66,24 @@ class RunResult:
     error: str | None = None
 
     @classmethod
-    def finished(cls, *, text: str = "", output: Any = None, usage: Usage | None = None,
-                 tool_calls: tuple[ToolCall, ...] = (), messages: tuple[Any, ...] = ()) -> "RunResult":
-        return cls(status="finished", text=text, output=output, usage=usage,
-                   tool_calls=tool_calls, messages=messages)
+    def finished(
+        cls,
+        *,
+        text: str = "",
+        output: Any = None,
+        usage: Usage | None = None,
+        tool_calls: tuple[ToolCall, ...] = (),
+        messages: tuple[Any, ...] = (),
+    ) -> RunResult:
+        return cls(
+            status="finished",
+            text=text,
+            output=output,
+            usage=usage,
+            tool_calls=tool_calls,
+            messages=messages,
+        )
 
     @classmethod
-    def failed(cls, error: str) -> "RunResult":
+    def failed(cls, error: str) -> RunResult:
         return cls(status="error", error=error)

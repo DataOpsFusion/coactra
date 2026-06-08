@@ -3,6 +3,7 @@
 Keeps optional MCP and auth dependencies out of the runtime constructor until a
 gateway or additive mcp() tag is actually used.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -50,6 +51,6 @@ def build_mcp_toolsets(
         server_auth = _token_auth(getattr(server, "auth", None))
         if server_auth is not None:
             kwargs["auth"] = server_auth
-        additive.append(MCPToolset(getattr(server, "url"), **kwargs))
+        additive.append(MCPToolset(server.url, **kwargs))
 
     return gateway_toolset, additive

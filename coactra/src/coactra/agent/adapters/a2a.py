@@ -1,9 +1,7 @@
-"""Official A2A SDK adapter for policy-gated collaboration.
+"""Minimal outbound A2A transport over the official a2a-sdk.
 
-The agent core owns collaboration policy. This adapter owns only the wire:
-token lookup, official SDK client construction, send_message, and reply-text
-collection. Hosts provide endpoint/audience resolution because those are
-deployment concerns.
+Hosts supply endpoint/audience resolution and optional token providers.
+For inbound A2A serving, use the a2a-sdk server APIs directly.
 """
 
 from __future__ import annotations
@@ -27,9 +25,7 @@ def _require_a2a_sdk() -> dict[str, Any]:
         from a2a.helpers import get_message_text, new_text_message
         from a2a.types import SendMessageRequest
     except ImportError as exc:  # pragma: no cover - environment dependent
-        raise RuntimeError(
-            "coactra[a2a] is required for OfficialA2AClient"
-        ) from exc
+        raise RuntimeError("coactra[a2a] is required for OfficialA2AClient") from exc
     return {
         "httpx": httpx,
         "ClientConfig": ClientConfig,
@@ -40,69 +36,18 @@ def _require_a2a_sdk() -> dict[str, Any]:
     }
 
 
-def _part_text(part: Any) -> str:
-    # Pydantic Part wraps the variant in `.root`; proto Part exposes `.text` directly.
-    root = getattr(part, "root", part)
-    return getattr(root, "text", "") or ""
-
-
-def _parts_text(obj: Any) -> str:
-    return "".join(_part_text(part) for part in (getattr(obj, "parts", None) or []))
-
-
-def _text_from(obj: Any) -> str:
-    """Extract text from common a2a-sdk response shapes.
-
-    The SDK can yield a Message, Task, StreamResponse-like wrapper, or a
-    ``(Task, UpdateEvent)`` tuple. Text may live directly on message parts,
-    ``task.status.message``, artifacts, or history.
-    """
-    if obj is None:
-        return ""
-
-    inner = getattr(obj, "message", None)
-    if inner is not None and inner is not obj:
-        text = _text_from(inner)
-        if text:
-            return text
-
-    task = getattr(obj, "task", None)
-    if task is not None and task is not obj:
-        text = _text_from(task)
-        if text:
-            return text
-
-    try:
-        text = _require_a2a_sdk()["get_message_text"](obj)
-        if text:
-            return text
-    except Exception:  # noqa: BLE001 - not every SDK shape is a pydantic Message.
-        pass
-
-    text = _parts_text(obj)
-    if text:
-        return text
-
-    out: list[str] = []
-    status = getattr(obj, "status", None)
-    status_message = getattr(status, "message", None) if status is not None else None
-    if status_message is not None:
-        out.append(_text_from(status_message))
-    for artifact in getattr(obj, "artifacts", None) or []:
-        out.append(_parts_text(artifact))
-    if not any(out):
-        for message in getattr(obj, "history", None) or []:
-            out.append(_text_from(message))
-    return "\n".join(text for text in out if text)
-
-
 async def collect_text(responses: AsyncIterator[Any]) -> str:
     """Collect SDK send_message responses into a single de-duplicated string."""
+    sdk = _require_a2a_sdk()
+    get_text = sdk["get_message_text"]
     seen: list[str] = []
     async for item in responses:
         candidates = list(item) if isinstance(item, tuple) else [item]
         for candidate in candidates:
-            text = _text_from(candidate)
+            try:
+                text = get_text(candidate)
+            except Exception:  # noqa: BLE001 - not every SDK shape is a Message.
+                text = ""
             if text and text not in seen:
                 seen.append(text)
     return "\n".join(seen)
@@ -115,12 +60,7 @@ def _message_text(message: str | Mapping[str, Any]) -> str:
 
 
 class OfficialA2AClient:
-    """Small official-SDK outbound caller.
-
-    It deliberately does not know how to find agents. Callers pass endpoint and
-    audience explicitly so hosts can use env vars, registries, service discovery,
-    or static config without changing the adapter.
-    """
+    """Small official-SDK outbound caller."""
 
     def __init__(
         self,
@@ -134,7 +74,7 @@ class OfficialA2AClient:
     async def call(
         self,
         *,
-        agent_id: str,  # noqa: ARG002 - useful to test/fake clients and logs.
+        agent_id: str,  # noqa: ARG002 - useful for fakes and logs.
         endpoint: str,
         audience: str,
         message: str | Mapping[str, Any],
@@ -196,5 +136,4 @@ class OfficialA2ATransport:
         )
 
 
-# Backwards-compatible adapter name for callers that imported the old stub.
 A2ATransport = OfficialA2ATransport

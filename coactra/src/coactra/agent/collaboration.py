@@ -16,9 +16,10 @@ from __future__ import annotations
 from typing import Any, Protocol, runtime_checkable
 
 from coactra.agent.domain import AgentRef, Scope, as_ref
+from coactra.errors import PermissionDeniedError
 
 
-class CollaborationDenied(RuntimeError):
+class CollaborationDenied(PermissionDeniedError):
     """Raised when policy refuses a talk request before it reaches the transport."""
 
 
@@ -115,9 +116,7 @@ class AsyncPolicyGatedCollaborator:
         self._me = me
 
     async def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:
-        dst_ref = _allowed_target(
-            policy=self._policy, scope=self._scope, me=self._me, agent=agent
-        )
+        dst_ref = _allowed_target(policy=self._policy, scope=self._scope, me=self._me, agent=agent)
         return await self._transport.send(dst_ref, question, self._scope)
 
     def route(self, escalation: Any, chain: list[str]) -> str:

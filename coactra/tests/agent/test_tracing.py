@@ -61,7 +61,6 @@ async def test_agent_run_emits_model_trace_span():
     ]
 
 
-
 async def test_agent_stream_emits_model_trace_span():
     tracer = RecordingTracer()
     agent = await Agent.create(

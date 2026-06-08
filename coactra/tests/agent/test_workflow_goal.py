@@ -12,28 +12,30 @@ Covers:
 4. resume_from: interrupted checkpoint + resume_from(store, run_id, team, decision=True)
    reconstructs from store and completes the run.
 """
+
 from __future__ import annotations
 
 import pytest
-from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent import Agent
 from coactra.agent.checkpoint import InMemoryCheckpointStore, run_from_state
-from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.agent.planner import PlannedPlan, PlannedStep
+from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.agent.skills import Skill
-from coactra.team import Team
 from coactra.agent.workflow import Workflow
+from coactra.team import Team
 from coactra.workflow.playbook import Playbook, step
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_echo_model(label: str):
     """Return a FunctionModel that echoes '<label>: <prompt>'."""
+
     def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         last_text = ""
         for msg in reversed(messages):
@@ -44,17 +46,20 @@ def _make_echo_model(label: str):
             if last_text:
                 break
         return ModelResponse(parts=[TextPart(f"{label}: {last_text}")])
+
     return FunctionModel(_fn)
 
 
 class _RaisingClient:
     """A fake LLM client that raises if called — used to assert no planning happens."""
+
     def structured(self, schema, prompt, **kwargs):
         raise AssertionError("plan_playbook should NOT have been called (store hit expected)")
 
 
 class _FakeClient:
     """A fake LLM client returning a fixed PlannedPlan."""
+
     def __init__(self, plan: PlannedPlan) -> None:
         self._plan = plan
 
@@ -65,6 +70,7 @@ class _FakeClient:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 async def cert_agent():
@@ -93,14 +99,18 @@ def team(cert_agent, deploy_agent):
 # 1. run_goal — store hit uses the promoted playbook, no planning
 # ---------------------------------------------------------------------------
 
+
 async def test_run_goal_store_hit_uses_promoted_playbook(team):
     """If store.find(goal) returns a playbook, run_goal runs it without planning."""
     store = InMemoryPlaybookStore()
 
     # Pre-build and promote a playbook
-    pb = Playbook(name="rotate cert", steps=[
-        step("rotate the cert", needs="cert rotation"),
-    ])
+    pb = Playbook(
+        name="rotate cert",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+        ],
+    )
     store.save_candidate(pb)
     store.promote("rotate cert")
 
@@ -122,9 +132,12 @@ async def test_run_goal_store_hit_returns_workflow_run(team):
     from coactra.workflow.playbook import WorkflowRun
 
     store = InMemoryPlaybookStore()
-    pb = Playbook(name="deploy service", steps=[
-        step("deploy the service", needs="infra.deploy"),
-    ])
+    pb = Playbook(
+        name="deploy service",
+        steps=[
+            step("deploy the service", needs="infra.deploy"),
+        ],
+    )
     store.save_candidate(pb)
     store.promote("deploy service")
 
@@ -142,15 +155,18 @@ async def test_run_goal_store_hit_returns_workflow_run(team):
 # 2. run_goal — miss → plan → candidate saved (not promoted)
 # ---------------------------------------------------------------------------
 
+
 async def test_run_goal_miss_calls_planner_and_saves_candidate(team):
     """run_goal on an empty store plans and saves a CANDIDATE (not promoted)."""
     store = InMemoryPlaybookStore()
     goal = "rotate cert and redeploy"
 
-    fixed_plan = PlannedPlan(steps=[
-        PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
-        PlannedStep(instruction="Redeploy the service", needs="infra.deploy"),
-    ])
+    fixed_plan = PlannedPlan(
+        steps=[
+            PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
+            PlannedStep(instruction="Redeploy the service", needs="infra.deploy"),
+        ]
+    )
     fake_client = _FakeClient(fixed_plan)
 
     run = await Workflow.run_goal(goal, team, store=store, client=fake_client)
@@ -170,9 +186,11 @@ async def test_run_goal_miss_calls_planner_and_saves_candidate(team):
 async def test_run_goal_miss_no_store_still_runs(team):
     """run_goal with store=None runs the planned playbook without storing it."""
     goal = "rotate cert"
-    fixed_plan = PlannedPlan(steps=[
-        PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
-    ])
+    fixed_plan = PlannedPlan(
+        steps=[
+            PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
+        ]
+    )
     fake_client = _FakeClient(fixed_plan)
 
     run = await Workflow.run_goal(goal, team, store=None, client=fake_client)
@@ -212,21 +230,25 @@ async def test_run_goal_without_client_derives_planner_client_from_team_model_co
             captured.append(kwargs)
 
         def structured(self, schema, prompt, **kwargs):
-            return PlannedPlan(steps=[
-                PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
-                PlannedStep(instruction="Redeploy the service", needs="infra.deploy"),
-            ])
+            return PlannedPlan(
+                steps=[
+                    PlannedStep(instruction="Rotate the TLS certificate", needs="cert.rotate"),
+                    PlannedStep(instruction="Redeploy the service", needs="infra.deploy"),
+                ]
+            )
 
     monkeypatch.setattr("coactra.ai.Client", CapturingClient)
 
     run = await Workflow.run_goal("rotate cert and redeploy", team)
 
     assert run.status == "completed"
-    assert captured == [{
-        "model": "openai/qwen3.6-plus",
-        "api_base": "https://opencode.ai/zen/go/v1",
-        "api_key": "oc-test-key",
-    }]
+    assert captured == [
+        {
+            "model": "openai/qwen3.6-plus",
+            "api_base": "https://opencode.ai/zen/go/v1",
+            "api_key": "oc-test-key",
+        }
+    ]
 
 
 async def test_run_goal_failed_run_does_not_save_candidate(team):
@@ -235,9 +257,11 @@ async def test_run_goal_failed_run_does_not_save_candidate(team):
     goal = "do quantum stuff"
 
     # Plan returns a needs that no agent can match
-    fixed_plan = PlannedPlan(steps=[
-        PlannedStep(instruction="Entangle qubits", needs="quantum.entanglement"),
-    ])
+    fixed_plan = PlannedPlan(
+        steps=[
+            PlannedStep(instruction="Entangle qubits", needs="quantum.entanglement"),
+        ]
+    )
     fake_client = _FakeClient(fixed_plan)
 
     run = await Workflow.run_goal(goal, team, store=store, client=fake_client)
@@ -251,15 +275,19 @@ async def test_run_goal_failed_run_does_not_save_candidate(team):
 # 3. Checkpoint after each step and at interrupt
 # ---------------------------------------------------------------------------
 
+
 async def test_checkpoint_saved_after_each_step(team):
     """run() with a CheckpointStore saves state after every completed step."""
     cp_store = InMemoryCheckpointStore()
     run_id = "chk-test-1"
 
-    wf = Workflow("two-step", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("deploy the service", needs="infra.deploy"),
-    ])
+    wf = Workflow(
+        "two-step",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("deploy the service", needs="infra.deploy"),
+        ],
+    )
     run = await wf.run(team, checkpoint=cp_store, run_id=run_id)
 
     assert run.status == "completed"
@@ -279,10 +307,13 @@ async def test_checkpoint_saved_at_interrupt(team):
     cp_store = InMemoryCheckpointStore()
     run_id = "chk-test-interrupt"
 
-    wf = Workflow("approval-wf", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("deploy the service", needs="infra.deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approval-wf",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("deploy the service", needs="infra.deploy", approve=True),
+        ],
+    )
     interrupted = await wf.run(team, checkpoint=cp_store, run_id=run_id)
 
     assert interrupted.status == "interrupted"
@@ -301,9 +332,12 @@ async def test_checkpoint_saved_at_interrupt(team):
 
 async def test_no_checkpoint_store_run_still_works(team):
     """run() without a CheckpointStore behaves exactly as before (no regression)."""
-    wf = Workflow("plain", steps=[
-        step("rotate the cert", needs="cert rotation"),
-    ])
+    wf = Workflow(
+        "plain",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+        ],
+    )
     run = await wf.run(team)
     assert run.status == "completed"
 
@@ -312,15 +346,19 @@ async def test_no_checkpoint_store_run_still_works(team):
 # 4. resume_from — reconstruct from checkpoint and complete
 # ---------------------------------------------------------------------------
 
+
 async def test_resume_from_interrupted_approval_completes(team):
     """resume_from reconstructs from checkpoint and completes after approval."""
     cp_store = InMemoryCheckpointStore()
     run_id = "resume-test-1"
 
-    wf = Workflow("approval-wf", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("deploy the service", needs="infra.deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approval-wf",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("deploy the service", needs="infra.deploy", approve=True),
+        ],
+    )
 
     # Run until interrupted
     interrupted = await wf.run(team, checkpoint=cp_store, run_id=run_id)
@@ -343,10 +381,13 @@ async def test_resume_from_interrupted_approval_denied(team):
     cp_store = InMemoryCheckpointStore()
     run_id = "resume-denied"
 
-    wf = Workflow("approval-wf", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("deploy the service", needs="infra.deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approval-wf",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("deploy the service", needs="infra.deploy", approve=True),
+        ],
+    )
 
     interrupted = await wf.run(team, checkpoint=cp_store, run_id=run_id)
     assert interrupted.status == "interrupted"
@@ -371,8 +412,8 @@ async def test_resume_from_non_approval_run_continues(team):
     run_id = "resume-mid"
 
     # Manually simulate a mid-run state (e.g. one step done, one remaining)
-    from coactra.workflow.playbook import StepResult, WorkflowRun
     from coactra.agent.checkpoint import run_to_state
+    from coactra.workflow.playbook import StepResult, WorkflowRun
 
     mid_run = WorkflowRun(
         name="two-step",
@@ -391,16 +432,19 @@ async def test_resume_from_non_approval_run_continues(team):
     cp_store.save(run_id, run_to_state(mid_run))
 
     # Create matching workflow
-    wf = Workflow("two-step", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("deploy the service", needs="infra.deploy"),
-    ])
+    wf = Workflow(
+        "two-step",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("deploy the service", needs="infra.deploy"),
+        ],
+    )
 
     final = await wf.resume_from(cp_store, run_id, team)
     assert final.status == "completed"
     assert len(final.results) == 2
-    assert final.results[0].status == "done"   # pre-existing
-    assert final.results[1].status == "done"   # newly run
+    assert final.results[0].status == "done"  # pre-existing
+    assert final.results[1].status == "done"  # newly run
 
 
 async def test_resume_from_missing_checkpoint_raises(team):
@@ -416,6 +460,7 @@ async def test_resume_from_missing_checkpoint_raises(team):
 # ---------------------------------------------------------------------------
 # 5. Durable engine bridge — public Workflow delegates to old WorkflowEngine
 # ---------------------------------------------------------------------------
+
 
 class _BridgeAgent:
     def __init__(self, name: str, tenant: str = "acme") -> None:
@@ -443,14 +488,18 @@ class _BridgeTeam:
 async def test_public_workflow_runs_and_resumes_with_durable_langgraph_engine():
     pytest.importorskip("langgraph")
     from langgraph.checkpoint.memory import MemorySaver
+
     from coactra.workflow import DurableLangGraphEngine
 
     engine = DurableLangGraphEngine(checkpointer=MemorySaver())
     team = _BridgeTeam()
-    wf = Workflow("public-durable", steps=[
-        step("collect evidence", agent="alpha-agent"),
-        step("apply change", agent="beta-agent", approve=True),
-    ])
+    wf = Workflow(
+        "public-durable",
+        steps=[
+            step("collect evidence", agent="alpha-agent"),
+            step("apply change", agent="beta-agent", approve=True),
+        ],
+    )
 
     paused = await wf.run(team, engine=engine, run_id="durable-bridge")
 

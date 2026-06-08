@@ -1,7 +1,7 @@
 """coactra.agent — scoped agent composition and policy facade.
 
 The stable root API exposes local domain types, policy/identity protocols, and the async
-collaboration stack. Adapters (a2a/a2a_server/keycloak), SDK, and internal data structures
+collaboration stack. Adapters (outbound a2a/keycloak), SDK, and internal data structures
 live in their concrete submodules.
 """
 
@@ -13,10 +13,10 @@ from typing import Any
 from coactra._version import distribution_version
 from coactra.agent.collaboration import (
     AgentRef,
+    AllowSameTenant,
     AsyncA2ATransportPort,
     AsyncNullTransport,
     AsyncPolicyGatedCollaborator,
-    AllowSameTenant,
     CollaborationDenied,
     CollaborationPolicy,
 )
@@ -28,14 +28,8 @@ from coactra.agent.domain import (
     Scope,
     TokenPassthroughError,
 )
+from coactra.agent.domain.tools import MCPServer, mcp
 from coactra.agent.errors import AgentError
-from coactra.agent.identity import (
-    AsyncTokenExchanger,
-    AsyncTokenExchangerAdapter,
-    CachedAsyncTokenExchanger,
-    InProcessExchanger,
-    TokenExchanger,
-)
 from coactra.agent.events import (
     Assistant,
     Event,
@@ -45,6 +39,13 @@ from coactra.agent.events import (
     ToolCall,
     ToolResult,
     Usage,
+)
+from coactra.agent.identity import (
+    AsyncTokenExchanger,
+    AsyncTokenExchangerAdapter,
+    CachedAsyncTokenExchanger,
+    InProcessExchanger,
+    TokenExchanger,
 )
 
 _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
@@ -56,7 +57,6 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     "InMemoryFleetRegistry": ("coactra.agent.registry", "InMemoryFleetRegistry"),
     "AgentRuntimePort": ("coactra.agent.ports", "AgentRuntimePort"),
     "PydanticAIRuntime": ("coactra.agent.runtime", "PydanticAIRuntime"),
-    "mcp": ("coactra.agent.domain.tools", "mcp"),
 }
 
 __all__ = [
@@ -102,6 +102,7 @@ __all__ = [
     "Status",
     "AgentRuntimePort",
     "PydanticAIRuntime",
+    "MCPServer",
     "mcp",
 ]
 

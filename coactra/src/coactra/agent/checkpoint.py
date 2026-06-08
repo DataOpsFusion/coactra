@@ -20,6 +20,7 @@ The actual ``Workflow.run(checkpoint=…)`` / resume wiring lives in an
 integration pass that imports these helpers.  This module has no dependency on
 ``Workflow`` itself — only on the run-ledger dataclasses.
 """
+
 from __future__ import annotations
 
 from os import PathLike
@@ -29,10 +30,10 @@ from typing_extensions import TypedDict
 
 from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
 
-
 # ---------------------------------------------------------------------------
 # Protocol
 # ---------------------------------------------------------------------------
+
 
 @runtime_checkable
 class CheckpointStore(Protocol):
@@ -50,6 +51,7 @@ class CheckpointStore(Protocol):
 # ---------------------------------------------------------------------------
 # In-memory implementation
 # ---------------------------------------------------------------------------
+
 
 class _LangGraphState(TypedDict):
     state: dict
@@ -88,7 +90,7 @@ class LangGraphCheckpointStore:
         self._conn_string = str(path)
 
     @classmethod
-    def from_conn_string(cls, conn_string: str) -> "LangGraphCheckpointStore":
+    def from_conn_string(cls, conn_string: str) -> LangGraphCheckpointStore:
         """Build a store from a LangGraph sqlite connection string/path."""
         return cls(conn_string)
 
@@ -132,6 +134,7 @@ class LangGraphCheckpointStore:
 # ---------------------------------------------------------------------------
 # (De)serialization helpers
 # ---------------------------------------------------------------------------
+
 
 def run_to_state(run: WorkflowRun) -> dict:
     """Serialize *run* to a plain, JSON-serializable dict.

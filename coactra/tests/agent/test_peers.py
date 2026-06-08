@@ -3,14 +3,15 @@
 RED first: run with no implementation → import error / AttributeError.
 GREEN: implement coactra/src/coactra/agent/peers.py.
 """
+
 from __future__ import annotations
 
-from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent import Agent
-from coactra.team import Team
 from coactra.agent.domain import AgentRef
+from coactra.team import Team
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -190,6 +191,7 @@ async def test_peer_tools_multiple_peers():
 # ---------------------------------------------------------------------------
 # Test 6 — remote A2A delegation uses the provided transport
 # ---------------------------------------------------------------------------
+
 
 class RecordingTransport:
     def __init__(self) -> None:

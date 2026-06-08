@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 
 from coactra.agent.adapters.a2a import A2ATransport, OfficialA2ATransport
-from coactra.agent.domain import AgentRef, Scope
 from coactra.agent.collaboration import AsyncA2ATransportPort
+from coactra.agent.domain import AgentRef, Scope
 
 
 class RecordingClient:
@@ -43,7 +43,10 @@ def test_official_a2a_transport_sends_resolved_message() -> None:
         endpoint_for=lambda ref: f"https://{ref.agent_id}.example/a2a",
         audience_for=lambda ref: f"a2a://{ref.agent_id}",
         delegation_chain=[{"agent_id": "manager"}],
-        message_builder=lambda question: {"capability": "consult", "params": {"question": question}},
+        message_builder=lambda question: {
+            "capability": "consult",
+            "params": {"question": question},
+        },
     )
 
     result = asyncio.run(

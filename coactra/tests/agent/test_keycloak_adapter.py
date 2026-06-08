@@ -47,11 +47,28 @@ def test_keycloak_exchanger_posts_rfc8693_form_and_returns_only_fresh_token():
     assert "human-secret" not in identity.model_dump_json()
 
 
+def test_keycloak_exchanger_requires_actor_in_delegation_grant():
+    exchanger = KeycloakExchanger(
+        token_endpoint="https://id.example/token",
+        client_id="x",
+        transport=lambda *_: {"access_token": "fresh"},
+    )
+    with pytest.raises(TokenExchangeError, match="must include an actor"):
+        exchanger.exchange(
+            DelegationGrant.model_construct(
+                subject_token="subject", actor=None, delegation_chain=[]
+            ),
+            Scope(tenant_id="acme"),
+        )
+
+
 def test_keycloak_exchanger_rejects_as_passthrough_and_malformed_response():
     scope = Scope(tenant_id="acme")
     grant = DelegationGrant(subject_token="subject", actor="agent:x")
     passthrough = KeycloakExchanger(
-        token_endpoint="https://id.example/token", client_id="x", transport=lambda *_: {"access_token": "subject"}
+        token_endpoint="https://id.example/token",
+        client_id="x",
+        transport=lambda *_: {"access_token": "subject"},
     )
     malformed = KeycloakExchanger(
         token_endpoint="https://id.example/token", client_id="x", transport=lambda *_: {}
@@ -69,7 +86,9 @@ def test_keycloak_exchange_from_reexchanges_prior_identity_and_extends_chain():
         seen.append(form["subject_token"])
         return {"access_token": f"fresh-{len(seen)}"}
 
-    exchanger = KeycloakExchanger(token_endpoint="https://id.example/token", client_id="x", transport=transport)
+    exchanger = KeycloakExchanger(
+        token_endpoint="https://id.example/token", client_id="x", transport=transport
+    )
     scope = Scope(tenant_id="acme")
     first = exchanger.exchange(DelegationGrant(subject_token="human", actor="agent:a"), scope)
     second = exchanger.exchange_from(first, actor="agent:b", scope=scope)

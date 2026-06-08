@@ -19,12 +19,14 @@ class RecordingWorkflowEngine:
         self.calls = []
 
     async def start(self, procedure, state, ctx, *, thread_id=None):
-        self.calls.append({
-            "procedure": procedure,
-            "state": state,
-            "scope": ctx.scope,
-            "thread_id": thread_id,
-        })
+        self.calls.append(
+            {
+                "procedure": procedure,
+                "state": state,
+                "scope": ctx.scope,
+                "thread_id": thread_id,
+            }
+        )
 
         class Run:
             status = "completed"

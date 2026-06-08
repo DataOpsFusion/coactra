@@ -11,19 +11,22 @@ Design notes
 ``plan_playbook`` is intentionally a thin connector: it builds a roster description
 from ``team.roster()``, constructs a prompt, and delegates all planning logic to the
 LLM via ``client.structured()``.  The LLM decides the step decomposition; we just map
-the response onto :class:`~coactra.workflow.playbook.Step` / :class:`~coactra.workflow.playbook.Playbook`.
+the response onto :class:`~coactra.workflow.playbook.Step` and
+:class:`~coactra.workflow.playbook.Playbook`.
 
 ``client`` is injectable (any object exposing ``.structured(schema, prompt)``).
 When omitted, a :class:`coactra.ai.Client` is built lazily inside the function so
 no network call happens in tests that supply a fake client.
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel
 
-from coactra.workflow.playbook import Playbook, step as make_step
+from coactra.workflow.playbook import Playbook
+from coactra.workflow.playbook import step as make_step
 
 __all__ = ["PlannedStep", "PlannedPlan", "plan_playbook"]
 
@@ -31,6 +34,7 @@ __all__ = ["PlannedStep", "PlannedPlan", "plan_playbook"]
 # ---------------------------------------------------------------------------
 # Pydantic schemas for structured LLM output
 # ---------------------------------------------------------------------------
+
 
 class PlannedStep(BaseModel):
     """One step produced by the planner LLM."""
@@ -51,6 +55,7 @@ class PlannedPlan(BaseModel):
 # ---------------------------------------------------------------------------
 # Prompt builder
 # ---------------------------------------------------------------------------
+
 
 def _build_prompt(goal: str, cards: list[dict]) -> str:
     """Construct the planning prompt from the goal and team roster cards.
@@ -77,7 +82,7 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
         f"Goal: {goal}\n\n"
         f"Available agents and skills:\n{roster_text}\n\n"
         f"Return a JSON object matching the PlannedPlan schema: "
-        f'{{\"steps\": [{{\"instruction\": \"...\", \"needs\": \"skill_id\"}}]}}'
+        f'{{"steps": [{{"instruction": "...", "needs": "skill_id"}}]}}'
     )
 
 
@@ -85,18 +90,18 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
 # plan_playbook
 # ---------------------------------------------------------------------------
 
+
 def _planner_client_from_team(team: Any) -> Any:
     """Build the default planner client from the first team agent model config."""
     from coactra.ai import Client  # lazy import — keeps top-level coactra import light
 
     for member in getattr(team, "_members", []):
         runtime = getattr(member, "_runtime", None)
-        model = getattr(runtime, "_model", None)
-        model_id = getattr(model, "_model_id", None)
+        config = dict(getattr(runtime, "_model_config", None) or {})
+        model_id = config.pop("model", None)
         if not isinstance(model_id, str) or not model_id:
             continue
-        kwargs = dict(getattr(model, "_call_kwargs", {}) or {})
-        return Client(model=model_id, **kwargs)
+        return Client(model=model_id, **config)
 
     return Client(model="gpt-4o-mini")
 
@@ -135,9 +140,6 @@ def plan_playbook(
 
     planned: PlannedPlan = client.structured(PlannedPlan, prompt)
 
-    steps = [
-        make_step(s.instruction, needs=s.needs)
-        for s in planned.steps
-    ]
+    steps = [make_step(s.instruction, needs=s.needs) for s in planned.steps]
 
     return Playbook(name=goal, steps=steps)
