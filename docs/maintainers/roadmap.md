@@ -6,7 +6,7 @@ incrementally as each layer is built.
 
 **Build order:**
 
-1. **Agent core** — `from coactra import Agent`; `Agent.create(model, tools, memory, workspace, skills, peers, instructions)`; `run / send().stream()`; `agent.card`; litellm routing + thinking-model handling. *(built)*
+1. **Agent core** — `from coactra import Agent`; thin pydantic-ai facade with memory/workspace/MCP/peer wiring; `run / send().stream()`; `agent.card`. *(built)*
 2. **workspace** — `Agent.create(workspace=)` surfaces as `read_file`/`write_file`/`list_files`/`run` tools; allow-list gating for `run`.
 3. **Team** — `Team([...])` registry; keyword matcher; same-tenant policy; `match="semantic"` via ai embeddings; `peers=` outbound A2A delegation.
 4. **Workflow** — `Workflow(steps=[...])` + `step()`; triage (`run_goal`); durable engine (LangGraph default); approval pauses; planner + candidate playbooks.
@@ -15,10 +15,17 @@ incrementally as each layer is built.
 
 - `Agent.create(model, name, tenant, gateway, auth, tools, memory, workspace, skills, peers, learned, instructions, output)`
 - `run / send().stream()`
-- `agent.card` and `serve_agent` / `agent.serve()`
+- `agent.card` (curated discovery metadata)
 - `Team` (registry + keyword matcher + same-tenant policy)
 - `peers=` with local Agent objects, string placeholders, and `RemotePeer(...)`
 - `Workflow` / `step()` / `Workflow.run_goal()` with approval pause/resume and checkpoint-store resume
+- Outbound A2A via `coactra.agent.adapters.OfficialA2ATransport`
+
+**Delegated to host / external libraries:**
+
+- pydantic-ai `Model` instances and provider strings (no bundled LiteLLM adapter)
+- OAuth client-credentials fetch/refresh (`authlib`, `httpx-oauth`)
+- Inbound A2A Starlette apps (`a2a-sdk` server APIs)
 
 **Still directional:**
 

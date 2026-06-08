@@ -17,36 +17,19 @@ Status of built features (0.0.x):
 | `Team` (registry + keyword matcher + same-tenant policy) | Built |
 | `memory="inprocess\|mem0\|graphiti"` | Built |
 | `workspace=` (file tools) | Built |
-| `gateway=` + `auth=oidc(...)` primary MCP path | Built |
+| `gateway=` + `auth=StaticToken` / custom `TokenSource` MCP path | Built |
 | `skills=[Skill(...)]` structured roster | Built |
+| `peers=` outbound A2A delegation (`RemotePeer`, `OfficialA2ATransport`) | Built |
 
 ## Outstanding: Agent Core
 
-- `peers=` outbound A2A delegation targets
-- Full A2A serving (`expose=True` beyond card publish)
-- `match="semantic"` embedding-based Team matcher
+- Semantic matcher embedding cache (perf)
 - Memory guardrails: injection cap, deletion/export (GDPR), write policy
 - Workspace `run` allow-list configuration surface
+- Documented recipes for BYO pydantic-ai model, OAuth, and inbound A2A serving
 
 ## Outstanding: Workflow Layer
 
 - `Workflow(steps=[...])` authored playbook
 - `step()` helper + YAML loader
 - `Workflow.run_goal()` triage (reuse / plan / candidate)
-- Planner (`ai.structured` goal → playbook)
-- Playbook store + similarity matcher for triage
-- Durable engine wiring (LangGraph default; Temporal/Prefect adapters)
-- Approval pause/resume (`approve=True` step property)
-- Internal run ledger: `WorkflowRun`, `Checkpoint`, `Approval`
-
-## Authoritative Design Sources
-
-| Area | Spec |
-|---|---|
-| Agent API | [design/2026-06-06-agent-api-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-agent-api-design.md) |
-| Auth / identity | [design/2026-06-06-auth-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-auth-design.md) |
-| Team | [design/2026-06-06-team-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-team-design.md) |
-| Workflow | [design/2026-06-06-workflow-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md) |
-| Review refinements | [design/2026-06-06-review-refinements.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-review-refinements.md) |
-| Vision / build order | [design/2026-06-06-coactra-vision.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-coactra-vision.md) |
-| Implementation plan | [design/2026-06-06-implementation-plan-agent-core.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-implementation-plan-agent-core.md) |

@@ -66,7 +66,7 @@ Capability advertisement is separate from authorization. The only thing discover
 **Today (in `coactra.agent.sdk`):** `Agent.create(model, tools=[functions], instructions, output_type)`, `run` / `send().stream()` / `wait()`, litellm routing + thinking-model handling via `LiteLLMModel`, rich streamed result.
 
 **Target (to build):**
-- top-level `from coactra import Agent, mcp`
+- top-level `from coactra import Agent`; additive MCP via `from coactra.agent import MCPServer`
 - `mcp()` tag + `tools=` expanding MCP servers into tools
 - `memory=` automatic connector (auto-recall + auto-remember)
 - `workspace=`, `peers=`, `name=`, `tenant=`, `skills=`, `expose=`

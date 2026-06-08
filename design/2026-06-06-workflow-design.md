@@ -9,7 +9,8 @@ A **Workflow** is a playbook of steps plus the manager that runs it across the *
 ## Public surface
 
 ```python
-from coactra import Workflow, step
+from coactra import Workflow
+from coactra.workflow import step
 
 # authored playbook (the step() helper just builds the data core)
 play = Workflow("rotate-cert", steps=[

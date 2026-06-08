@@ -15,10 +15,17 @@ instead of preserving old paths.
 Public exports:
 
 ```python
-from coactra import Agent, RemotePeer, Skill, Team, Workflow, mcp, oidc, serve_agent, step
+from coactra import Agent, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
 ```
 
 Anything not exported from `coactra` directly is internal and may change at any time.
+
+Advanced seams (not root exports):
+
+- `coactra.team.directory` — **beta** org/member/seat persistence and authorization helpers
+- `coactra.agent.adapters` — outbound A2A transport (`OfficialA2ATransport`), Keycloak token exchange
+- Inbound A2A serving — use the official `a2a-sdk` server APIs directly
+- OAuth client-credentials — use `authlib` or `httpx-oauth`; pass result to `auth=`
 
 ## Stability Tiers (target for v1)
 
@@ -32,7 +39,7 @@ Anything not exported from `coactra` directly is internal and may change at any 
 ## Preferred Import Root (v1 target)
 
 ```
-from coactra import Agent, RemotePeer, Skill, Team, Workflow, mcp, oidc, serve_agent, step
+from coactra import Agent, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
 ```
 
 Use the top-level `coactra` imports for application code. Lower-level roots such as `coactra.workflow.ledger` and `coactra.team.directory` are implementation surfaces and may change during alpha. Do not reintroduce alias packages for removed roots.

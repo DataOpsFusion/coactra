@@ -6,7 +6,7 @@ This project has several kinds of state. Do not call something durable unless it
 
 | State | Location / owner | Default | Durable option | Notes |
 |---|---|---|---|---|
-| Canonical scope metadata | `coactra.scope.CoactraScope` | in memory | host-owned | Converts tenant/namespace/agent/session to package scopes. |
+| Canonical scope metadata | `coactra.Scope` | in memory | host-owned | Converts tenant/namespace/agent/session to package scopes. |
 | AI reasoning traces | `coactra[ai]` replay store | in-process dict | Chroma or custom store | Separate from long-term memory unless bridged intentionally. |
 | Memory events/facts | `coactra[memory]` | in-process dict | mem0 or Graphiti/Neo4j | Export is lossy; Graphiti dump is approximate. |
 | Workspace files | `coactra[workspace]` | local filesystem | future sandbox provider | Local backend confines paths under tenant/agent root. |

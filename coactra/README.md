@@ -1,6 +1,6 @@
 # coactra
 
-Single-distribution package for composing existing AI application pieces: Agent, Team, Workflow, MCP toolsets, memory, workspace, and optional backend adapters.
+Composition and persistence library for multi-agent workflows. `Agent` is a thin shell over pydantic-ai; `Team`, `Workflow`, and `WorkManager` are the core. Bring your own pydantic-ai `Model`, OAuth token source, and inbound A2A server (via a2a-sdk).
 
 ```bash
 pip install "coactra[agent]"
@@ -19,12 +19,19 @@ pip install "coactra[sql]"
 ## Small Surface
 
 ```python
-from coactra import Agent, Skill, Team, Workflow, mcp, step
+from coactra import Agent, Scope, Skill, Team, Workflow
+```
+
+Submodule helpers when wiring adapters:
+
+```python
+from coactra.agent import MCPServer
+from coactra.workflow import step
 ```
 
 Use this root surface for application code. Use lower-level modules only for adapters and host runtime wiring:
 
-- `coactra.agent` for event/runtime types and A2A adapter helpers
+- `coactra.agent` for event/runtime types and outbound A2A transport (`coactra.agent.adapters`)
 - `coactra.workflow` and `coactra.workflow.ledger` for workflow engines and durable work storage
 - `coactra.team.directory` for org/member/seat persistence
 - `coactra.memory` and `coactra.workspace` for backend integration
@@ -35,7 +42,8 @@ Use this root surface for application code. Use lower-level modules only for ada
 import asyncio
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import FunctionModel
-from coactra import Agent, mcp
+from coactra import Agent
+from coactra.agent import MCPServer
 
 
 def existing_model(messages, info):
@@ -45,7 +53,7 @@ def existing_model(messages, info):
 async def main() -> None:
     agent = await Agent.create(
         model=FunctionModel(existing_model),
-        tools=[mcp("https://tools.example/mcp", name="tools")],
+        tools=[MCPServer(url="https://tools.example/mcp", name="tools")],
         memory="inprocess",
         workspace="./desk",
     )
