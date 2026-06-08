@@ -37,10 +37,17 @@ that triggers publishing must carry a new version.
 Run this before opening the release pull request:
 
 ```bash
+make type
+make release-check
 rm -rf dist-all
 (cd coactra && uv build --out-dir ../dist-all)
 uvx twine check dist-all/*
 ```
+
+`make release-check` covers lint, compile, the default non-live test suite, docs,
+examples, clean wheel/sdist install validation, stale-path scanning, live-backend
+inventory, and whitespace checks. `make type` is separate and must run from an
+environment with the development extra installed.
 
 ## Documentation Release
 

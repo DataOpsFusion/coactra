@@ -5,10 +5,15 @@ Coactra is an alpha Python library for people who already have models, tools, MC
 The preferred application surface is intentionally small:
 
 ```python
-from coactra import Agent, Skill, Team, Workflow, mcp, step
+from coactra import Agent, Scope, Skill, Team, Workflow
 ```
 
-Use lower-level modules only when wiring a backend adapter, persistence store, event stream, or host runtime.
+Use lower-level modules only when wiring a backend adapter, persistence store, event stream, or host runtime:
+
+```python
+from coactra.agent import MCPServer
+from coactra.workflow import step
+```
 
 ## Install
 
@@ -51,11 +56,16 @@ asyncio.run(main())
 ## Add MCP Tools Without Owning The Gateway
 
 ```python
+from coactra import Agent
+from coactra.agent import MCPServer
+
 agent = await Agent.create(
-    model="anthropic/claude-haiku-4-5",
-    tools=[mcp("https://gateway.example.com/mcp", name="gateway")],
+    model="anthropic:claude-haiku-4-5",
+    tools=[MCPServer(url="https://gateway.example.com/mcp", name="gateway")],
 )
 ```
+
+For the primary MCP path, use `gateway=` + `auth=` on `Agent.create()` instead.
 
 ## Compose Agents When You Need Routing
 
@@ -68,6 +78,8 @@ team = Team([security, sre])
 ## Add Workflow Only When The Task Has Shape
 
 ```python
+from coactra.workflow import step
+
 workflow = Workflow("release", steps=[
     step("Run checks", needs="test"),
     step("Approve deployment", needs="deploy", approve=True),
@@ -77,20 +89,53 @@ workflow = Workflow("release", steps=[
 ## Development
 
 ```bash
-make test
+make test          # non-live default suite
+make type          # pyright type gate
 make release-check
 ```
 
-`make release-check` runs lint, compile, tests, docs, examples, clean wheel install validation, live-backend inventory, and whitespace checks.
+`make release-check` runs lint, compile, the non-live test suite, docs, examples,
+clean wheel/sdist install validation, live-backend inventory, and whitespace checks.
+Type checking is a separate gate (`make type`) and is also run by CI.
+
+Live backend tests are excluded from the default test run. Use `make live-check`
+for the inventory, or set `COACTRA_RUN_LIVE=1` with the required credentials to
+execute configured live checks.
 
 ## Documentation
 
 - [API index](docs/API_INDEX.md): current import contract.
 - [Quickstart](docs/getting-started/quickstart.md): Agent-first app flow.
+- [Bring your own stack](docs/getting-started/bring-your-own.md): models, OAuth, A2A.
 - [Examples](docs/examples/index.md): runnable examples and projects.
 - [Production guide](docs/operations/production.md): deployment posture and backend seams.
 - [Alpha release checklist](docs/maintainers/alpha-release-checklist.md): release gates.
 
-## Maturity
+## Maturity and API Stability
 
-Coactra is alpha. Breaking import moves are allowed before publishing stable releases, but the current contract is tested: removed alpha roots stay removed, and application code should start from the root package.
+Coactra is **alpha** (`0.0.x`). Breaking import moves are allowed before stable
+releases, but the current contract is tested: removed alpha roots stay removed,
+and application code should start from the root package.
+
+| Surface | Tier | Notes |
+|---------|------|-------|
+| `from coactra import Agent, Team, Workflow, Scope, ...` | Stable (alpha) | Preferred application entry |
+| `coactra.agent`, `coactra.workflow` playbooks | Beta | Adapter/runtime seams |
+| `coactra.team.directory`, durable ledger internals | Beta / internal | Deep imports may change |
+
+See [release policy](docs/maintainers/release-policy.md) for the full tier table.
+
+## Security
+
+- Local workspace command execution is **disabled by default**.
+- Token passthrough is **rejected**; use RFC 8693 exchange adapters.
+- Inbound A2A serving is **host-owned** (wire `a2a-sdk` yourself).
+
+Report vulnerabilities via [SECURITY.md](SECURITY.md) — do not file public issues
+for undisclosed security problems.
+
+## Support
+
+- [Documentation](https://dataopsfusion.github.io/coactra/)
+- [GitHub Issues](https://github.com/DataOpsFusion/coactra/issues) for bugs and features
+- [Changelog](CHANGELOG.md) for release notes
