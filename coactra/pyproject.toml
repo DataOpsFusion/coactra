@@ -30,7 +30,7 @@ workspace = []
 workflow = []
 team = ["sqlmodel>=0.0.21"]
 agent = ["pydantic-ai-slim>=1.0"]
-agent-gateway = ["pydantic-ai-slim[mcp]>=1.0", "httpx>=0.27"]
+agent-gateway = ["pydantic-ai-slim[mcp]>=1.0", "mcp>=1.24", "httpx>=0.27"]
 
 # --- Backend / integration extras (real, kept; intentionally OUT of `all`). ---
 chroma = ["chromadb>=0.5"]
