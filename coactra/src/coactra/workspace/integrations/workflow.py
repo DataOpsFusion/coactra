@@ -36,7 +36,7 @@ async def propose_candidate_workflow(
     name = "candidate"
     for line in yaml_text.splitlines():
         if line.strip().startswith("name:"):
-            name = line.split(":", 1)[1].strip().strip('"\'')
+            name = line.split(":", 1)[1].strip().strip("\"'")
             break
     target = candidate_dir / f"{_safe_candidate_name(name)}.yaml"
     target.write_text(

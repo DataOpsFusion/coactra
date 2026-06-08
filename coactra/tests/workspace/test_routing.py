@@ -64,4 +64,3 @@ def test_tenant_workspace_router_forwards_exec_options():
 
     assert result.ok
     assert backend.calls == [(["pwd"], scope, options)]
-

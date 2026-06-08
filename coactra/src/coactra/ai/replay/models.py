@@ -1,4 +1,5 @@
 """Procedural-memory record + decision types."""
+
 from __future__ import annotations
 
 import enum
@@ -7,7 +8,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 
-class Decision(str, enum.Enum):
+class Decision(enum.StrEnum):
     REPLAY = "replay"
     RE_REASON = "re_reason"
 

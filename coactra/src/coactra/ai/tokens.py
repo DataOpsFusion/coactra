@@ -1,4 +1,5 @@
 """Token-counting seam with a dependency-light default and optional tiktoken adapter."""
+
 from __future__ import annotations
 
 import math
@@ -26,7 +27,9 @@ class TiktokenCounter:
         try:
             import tiktoken
         except ImportError as exc:  # pragma: no cover - environment dependent
-            raise ImportError("TiktokenCounter requires: pip install coactra[ai][tiktoken]") from exc
+            raise ImportError(
+                "TiktokenCounter requires: pip install coactra[ai][tiktoken]"
+            ) from exc
         self._tiktoken = tiktoken
         self._default_model = default_model
 

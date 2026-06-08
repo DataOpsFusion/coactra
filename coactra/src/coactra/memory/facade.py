@@ -13,7 +13,8 @@ import asyncio
 from collections.abc import Sequence
 
 from coactra.memory.backends.base import MemoryBackend
-from coactra.memory.export import ExportReport, export as _export
+from coactra.memory.export import ExportReport
+from coactra.memory.export import export as _export
 from coactra.memory.types import MemoryEvent, Recollection, Scope
 
 
@@ -36,7 +37,7 @@ class _SyncBridge:
     inside a running event loop raises a clear error (use the async methods there).
     """
 
-    def __init__(self, mem: "Memory") -> None:
+    def __init__(self, mem: Memory) -> None:
         self._mem = mem
 
     def remember(self, events: Sequence[MemoryEvent], scope: Scope) -> None:

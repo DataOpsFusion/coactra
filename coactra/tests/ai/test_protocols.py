@@ -1,4 +1,4 @@
-from coactra.ai.protocols import EmbeddingFn, ReasoningStore, Completer
+from coactra.ai.protocols import Completer, EmbeddingFn, ReasoningStore
 
 
 def test_protocols_are_runtime_checkable():
@@ -20,7 +20,10 @@ def test_completer_protocol_shape():
 def test_reasoning_store_protocol_shape():
     class FakeStore:
         def put(self, tenant, trace): ...
-        def search(self, tenant, vector, k, min_quality): return []
-        def get(self, tenant, trace_id): return None
+        def search(self, tenant, vector, k, min_quality):
+            return []
+
+        def get(self, tenant, trace_id):
+            return None
 
     assert isinstance(FakeStore(), ReasoningStore)

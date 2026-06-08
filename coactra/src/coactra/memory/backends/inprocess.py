@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from coactra.memory.backends.base import event_text, normalize_events
 from coactra.memory.capabilities import Capability
@@ -53,7 +53,7 @@ class InProcessBackend:
                 Recollection(
                     text=text,
                     source_id=uuid.uuid4().hex,
-                    when=datetime.now(timezone.utc),
+                    when=datetime.now(UTC),
                     metadata={"source_backend": _SOURCE},
                 )
             )

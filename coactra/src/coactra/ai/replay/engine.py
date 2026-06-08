@@ -6,14 +6,15 @@ Guardrails (all enforced here):
   3. Explicit REPLAY vs RE-REASON fallback — three branches below.
 Multi-tenant: `tenant` threads through every call; the store partitions on it.
 """
+
 from __future__ import annotations
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
+from coactra.ai.protocols import EmbeddingFn, ReasoningStore
 from coactra.ai.replay.gate import AdaptiveGate
 from coactra.ai.replay.models import Decision, ReasoningTrace, RecallResult
-from coactra.ai.protocols import EmbeddingFn, ReasoningStore
 
 Reasoner = Callable[[str], str]
 
