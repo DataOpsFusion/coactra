@@ -10,7 +10,9 @@ for the current work list.
 ## Layout
 
 A single `coactra` distribution lives under `coactra/`, with one `pyproject.toml`,
-a `src/` tree (PEP 420 `coactra` namespace, no top-level `__init__.py`), and `tests/`.
+a `src/` tree with a lazy PEP 562 top-level `__init__.py` (heavy symbols like `Agent`,
+`Workflow`, and `Team` are resolved on first attribute access to avoid pulling optional
+dependencies at import time), and `tests/`.
 `coactra.agent` is the only module that depends on the others; the capability
 modules are independent and must not depend on each other except through their
 optional `integrations/` modules.
@@ -26,13 +28,27 @@ python -m pip install -e './coactra[all,dev]'
 ## Tests
 
 ```bash
-make test                     # the full suite
-cd coactra && python -m pytest -q
+make test                     # default non-live suite
+cd coactra && python -m pytest -q -m 'not live'
+make live-check               # inventory live checks without running them
+COACTRA_RUN_LIVE=1 make live-check
 ```
 
 The dependency-light core is offline-friendly. Tests that need optional extras or
 live services (Postgres, Neo4j, Keycloak, Temporal, Prefect) skip cleanly when the
-dependency or environment is absent.
+dependency or environment is absent. Live tests are marked `live` and excluded
+from the default pytest run; execute them through `make live-check` so the
+release timeout and credential checks stay consistent.
+
+Run type checking separately:
+
+```bash
+make type
+```
+
+`make type` requires Pyright from the development environment (`coactra[dev]`).
+The combined `make release-check` target validates packaging and runtime release
+gates, but type checking remains its own CI job.
 
 ## Branch workflow
 
@@ -75,8 +91,12 @@ already published it; PyPI rejects duplicate uploads for an existing version.
 
 ## CI guardrails
 
-`.github/workflows/ci.yml` installs `./coactra[all,dev]` and runs the test suite
-(`pytest -q` from `coactra/`). You can reproduce it locally with `make test`.
+`.github/workflows/ci.yml` installs `./coactra[all,dev,a2a,agent-gateway]` and
+runs the default non-live test suite (`pytest -q -m 'not live'` from `coactra/`).
+You can reproduce it locally with `make test`.
+
+CI also runs a separate Pyright typecheck job. Reproduce it locally with
+`make type` after installing the development extra.
 
 `.github/workflows/docs.yml` builds the MkDocs site for pushes and pull requests
 against `dev` and `main`. Only pushes to `main` deploy GitHub Pages.
