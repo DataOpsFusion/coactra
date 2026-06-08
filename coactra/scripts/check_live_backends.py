@@ -80,7 +80,7 @@ def main() -> int:
         if not RUN_LIVE:
             print(f"Configured live check not executed without COACTRA_RUN_LIVE=1: {check.name}")
             continue
-        cmd = [sys.executable, "-m", "pytest", "-q", *check.tests]
+        cmd = [sys.executable, "-m", "pytest", "-q", "-m", "live", *check.tests]
         print("+", " ".join(cmd), flush=True)
         try:
             result = subprocess.run(cmd, cwd=PACKAGE_ROOT, check=False, timeout=TIMEOUT_SECONDS)
