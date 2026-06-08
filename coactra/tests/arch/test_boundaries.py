@@ -1,4 +1,5 @@
 """Architecture guard tests for public boundaries and deleted legacy."""
+
 from __future__ import annotations
 
 import importlib
@@ -72,14 +73,16 @@ def test_top_level_public_api_stays_small():
         "Agent",
         "RemotePeer",
         "Run",
+        "Scope",
         "Skill",
         "StaticToken",
         "Team",
         "Workflow",
-        "mcp",
-        "oidc",
-        "serve_agent",
-        "step",
+        "CoactraError",
+        "ErrorCode",
+        "MissingExtraError",
+        "ValidationError",
+        "__version__",
     }
     assert set(coactra.__all__) == expected
 

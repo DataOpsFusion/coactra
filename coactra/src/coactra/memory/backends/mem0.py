@@ -77,17 +77,13 @@ class Mem0Backend:
 
     declared_capabilities = set(_CAPS)
 
-    def __init__(
-        self, *, client: Any | None = None, config: dict | None = None
-    ) -> None:
+    def __init__(self, *, client: Any | None = None, config: dict | None = None) -> None:
         if client is not None:
             self._client = client
             return
         try:
             from mem0 import Memory  # noqa: PLC0415  (lazy: optional extra)
-        except (
-            ImportError
-        ) as exc:  # pragma: no cover - exercised only without the extra
+        except ImportError as exc:  # pragma: no cover - exercised only without the extra
             raise MissingExtraError("mem0") from exc
         self._client = Memory.from_config(config) if config else Memory()
 
@@ -96,8 +92,7 @@ class Mem0Backend:
 
     async def remember(self, events: Sequence[MemoryEvent], scope: Scope) -> None:
         messages = [
-            e if isinstance(e, dict) else {"role": "user", "content": event_text(e)}
-            for e in events
+            e if isinstance(e, dict) else {"role": "user", "content": event_text(e)} for e in events
         ]
         if not messages:
             return
@@ -120,9 +115,7 @@ class Mem0Backend:
         return [_to_recollection(r) for r in _results_list(payload)]
 
     async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:
-        messages = [
-            {"role": "user", "content": item.text} for item in items if item.text
-        ]
+        messages = [{"role": "user", "content": item.text} for item in items if item.text]
         if messages:
             await asyncio.to_thread(self._client.add, messages, **_scope_kwargs(scope))
         return ExportReport.from_ingest(self, transferred=len(messages))

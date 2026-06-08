@@ -47,8 +47,7 @@ class MemoryAcl:
             )
         if not self._org.can(member, action):
             raise ScopeViolation(
-                f"agent {agent_name!r} is not permitted {action!r} "
-                "(directory can check denied)"
+                f"agent {agent_name!r} is not permitted {action!r} (directory can check denied)"
             )
 
     @classmethod
@@ -65,9 +64,7 @@ class MemoryAcl:
 
         scopes = list(writable_scopes)
         if any(scope.tenant != tenant for scope in scopes):
-            raise ValueError(
-                "every writable memory scope must belong to the ACL tenant"
-            )
+            raise ValueError("every writable memory scope must belong to the ACL tenant")
         org = Organization.root(tenant=tenant, name=org_name)
         permissions = {scope_write_action(scope) for scope in scopes}
         member = org.hire(agent_name, kind="agent", permissions=permissions)

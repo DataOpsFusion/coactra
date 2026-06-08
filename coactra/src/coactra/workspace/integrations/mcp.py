@@ -6,9 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 
-def _select_scopes(
-    bound: Mapping[str, Any], selected: list[str] | None
-) -> list[tuple[str, Any]]:
+def _select_scopes(bound: Mapping[str, Any], selected: list[str] | None) -> list[tuple[str, Any]]:
     aliases = selected or ["agent"]
     unknown = sorted(set(aliases) - set(bound))
     if unknown:
@@ -59,9 +57,7 @@ def register_recall_tool(
                 row = {
                     "fact": recollection.text,
                     "uuid": recollection.source_id,
-                    "valid_at": str(recollection.when)
-                    if recollection.when is not None
-                    else "",
+                    "valid_at": str(recollection.when) if recollection.when is not None else "",
                 }
                 if len(bound) > 1:
                     row["scope"] = alias

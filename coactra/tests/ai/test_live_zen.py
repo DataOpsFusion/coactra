@@ -8,6 +8,7 @@ These exercise the two thinking-model fixes end-to-end against the real provider
 Run with the key present at /tmp/oc.key (or OC_KEY env var):
     .venv/bin/python -m pytest tests/test_live_zen.py -q -s
 """
+
 from __future__ import annotations
 
 import os
@@ -16,7 +17,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from coactra.ai.client import ask, structured, Client
+from coactra.ai.client import Client, ask, structured
 
 ZEN_BASE = "https://opencode.ai/zen/go/v1"
 _KEY_FILE = Path("/tmp/oc.key")
@@ -30,7 +31,11 @@ def _zen_key() -> str | None:
     return None
 
 
-live = pytest.mark.skipif(_zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)")
+live = pytest.mark.live(
+    pytest.mark.skipif(
+        _zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)"
+    )
+)
 
 
 class Person(BaseModel):

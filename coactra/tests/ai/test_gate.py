@@ -3,7 +3,9 @@ from coactra.ai.models import ReasoningTrace
 
 
 def _trace(succ, fail):
-    return ReasoningTrace(id="t", problem="p", reasoning="r", embedding=[1.0], successes=succ, failures=fail)
+    return ReasoningTrace(
+        id="t", problem="p", reasoning="r", embedding=[1.0], successes=succ, failures=fail
+    )
 
 
 def test_boundary_moves_with_outcomes():

@@ -33,9 +33,7 @@ class AllowListMemoryAuthorizer:
         self,
         grants: Iterable[tuple[str, MemoryAccess, Scope]] = (),
     ) -> None:
-        self._grants = {
-            (actor, access, scope.key) for actor, access, scope in grants
-        }
+        self._grants = {(actor, access, scope.key) for actor, access, scope in grants}
 
     def grant(self, actor: str, access: MemoryAccess, scope: Scope) -> None:
         self._grants.add((actor, access, scope.key))

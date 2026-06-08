@@ -1,4 +1,5 @@
 """Swap seams: one Protocol per backend, exactly one default adapter each."""
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
@@ -16,7 +17,10 @@ class Completer(Protocol):
 
 @runtime_checkable
 class ReasoningStore(Protocol):
-    """Procedural-memory record store (cosine nearest-neighbour over embeddings), tenant-partitioned."""
+    """Procedural-memory record store (cosine nearest-neighbour over embeddings).
+
+    Tenant-partitioned.
+    """
 
     def put(self, tenant: str, trace: Any) -> None: ...
 

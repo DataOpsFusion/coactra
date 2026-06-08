@@ -14,9 +14,7 @@ SCOPE = Scope(tenant_id="acme", agent_id="planner")
 
 def _ws(tmp_path, *, allow_unsafe_exec=False, **kw):
     return Workspace(
-        backend=LocalFilesystemBackend(
-            base_dir=tmp_path, allow_unsafe_exec=allow_unsafe_exec
-        ),
+        backend=LocalFilesystemBackend(base_dir=tmp_path, allow_unsafe_exec=allow_unsafe_exec),
         scope=SCOPE,
         **kw,
     )

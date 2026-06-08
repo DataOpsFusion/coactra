@@ -62,7 +62,8 @@ class Scope(BaseModel):
             )
         if v == "*":
             raise ValueError(
-                f"Scope.{info.field_name} may not be '*' (reserved absent-field placeholder); got {v!r}."
+                f"Scope.{info.field_name} may not be '*' "
+                f"(reserved absent-field placeholder); got {v!r}."
             )
         if info.field_name != "tenant" and v == "":
             raise ValueError(

@@ -2,7 +2,8 @@
 
 A backend is DUMB on purpose: it persists files and may run commands rooted at one desk,
 and nothing more. Filesystem confinement for file operations is mandatory; secure command
-execution requires a sandbox-backed adapter. All desk features (CLI policy, handoff, compact, manifest) live in the
+execution requires a sandbox-backed adapter. Desk features (CLI policy, handoff,
+compact, manifest) live in the
 Workspace facade above it, which is what keeps the backend swappable. Every method takes a
 Scope; confinement to <root>/<tenant_id>/<agent_id> is part of the contract. The default is
 LocalFilesystemBackend; provider integrations (Daytona/E2B/OpenHands, etc.) satisfy this

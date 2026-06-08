@@ -17,7 +17,7 @@ is constructed without the extra.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from coactra.memory.backends._errors import MissingExtraError
@@ -72,10 +72,7 @@ def _normalize_extracted_entities_response(
     return the shorter ``entities`` key even when given the JSON schema. Accept that
     provider variant at the Coactra boundary instead of letting all memory writes fail.
     """
-    if (
-        response_model is None
-        or getattr(response_model, "__name__", "") != "ExtractedEntities"
-    ):
+    if response_model is None or getattr(response_model, "__name__", "") != "ExtractedEntities":
         return response
     if "extracted_entities" in response or "entities" not in response:
         return response
@@ -134,9 +131,7 @@ def _patch_generate_response(client: Any) -> Any:
         return client
     original = client.generate_response
 
-    async def _normalizing_generate_response(
-        *args: Any, **kwargs: Any
-    ) -> dict[str, Any]:
+    async def _normalizing_generate_response(*args: Any, **kwargs: Any) -> dict[str, Any]:
         response = await original(*args, **kwargs)
         response_model = kwargs.get("response_model")
         if response_model is None and len(args) > 1:
@@ -189,9 +184,7 @@ def _openai_compatible_clients(
     """Build Graphiti's official OpenAI-compatible clients when explicitly configured."""
     if llm_provider not in {"openai", "openai_generic"}:
         raise ValueError("llm_provider must be 'openai' or 'openai_generic'")
-    llm_configured = any(
-        value is not None for value in (llm_api_key, llm_model, llm_base_url)
-    )
+    llm_configured = any(value is not None for value in (llm_api_key, llm_model, llm_base_url))
     embedder_configured = any(
         value is not None
         for value in (
@@ -279,9 +272,7 @@ class GraphitiBackend:
             raise ValueError("pass either embed or embedder, not both")
         try:
             from graphiti_core import Graphiti  # noqa: PLC0415  (lazy: optional extra)
-        except (
-            ImportError
-        ) as exc:  # pragma: no cover - exercised only without the extra
+        except ImportError as exc:  # pragma: no cover - exercised only without the extra
             raise MissingExtraError("graphiti") from exc
         if ai_client is not None:
             from coactra.memory.integrations import GraphitiAIClient
@@ -295,22 +286,18 @@ class GraphitiBackend:
 
             embedder = GraphitiEmbeddingClient(embed=embed, embedding_dim=embedding_dim)
             if cross_encoder is None:
-                cross_encoder = GraphitiEmbeddingReranker(
-                    embed=embed, embedding_dim=embedding_dim
-                )
+                cross_encoder = GraphitiEmbeddingReranker(embed=embed, embedding_dim=embedding_dim)
         needs_configured_llm = llm_client is None or cross_encoder is None
         needs_configured_embedder = embedder is None
-        configured_llm, configured_embedder, configured_cross_encoder = (
-            _openai_compatible_clients(
-                llm_provider=llm_provider,
-                llm_api_key=llm_api_key if needs_configured_llm else None,
-                llm_model=llm_model if needs_configured_llm else None,
-                llm_base_url=llm_base_url if needs_configured_llm else None,
-                embedder_api_key=embedder_api_key if needs_configured_embedder else None,
-                embedder_model=embedder_model if needs_configured_embedder else None,
-                embedder_base_url=embedder_base_url if needs_configured_embedder else None,
-                embedding_dim=embedding_dim if needs_configured_embedder else None,
-            )
+        configured_llm, configured_embedder, configured_cross_encoder = _openai_compatible_clients(
+            llm_provider=llm_provider,
+            llm_api_key=llm_api_key if needs_configured_llm else None,
+            llm_model=llm_model if needs_configured_llm else None,
+            llm_base_url=llm_base_url if needs_configured_llm else None,
+            embedder_api_key=embedder_api_key if needs_configured_embedder else None,
+            embedder_model=embedder_model if needs_configured_embedder else None,
+            embedder_base_url=embedder_base_url if needs_configured_embedder else None,
+            embedding_dim=embedding_dim if needs_configured_embedder else None,
         )
         graphiti_kwargs = _graphiti_client_kwargs(
             llm_client=llm_client,
@@ -327,7 +314,7 @@ class GraphitiBackend:
 
     async def remember(self, events: Sequence[MemoryEvent], scope: Scope) -> None:
         gid = _group_id(scope)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i, event in enumerate(events):
             text = event_text(event)
             if not text:
@@ -362,7 +349,7 @@ class GraphitiBackend:
 
     async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:
         gid = _group_id(scope)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         written = 0
         for i, item in enumerate(items):
             if not item.text:

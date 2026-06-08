@@ -139,9 +139,7 @@ async def test_dump_calls_get_all_with_scope_and_maps_results():
 async def test_ingest_writes_via_add_and_reports_transferred():
     fake = FakeMem0()
     be = Mem0Backend(client=fake)
-    report = await be.ingest(
-        [Recollection(text="ported fact"), Recollection(text="")], SCOPE
-    )
+    report = await be.ingest([Recollection(text="ported fact"), Recollection(text="")], SCOPE)
     # empty-text recollection is skipped; one message written.
     messages, kwargs = fake.add_calls[0]
     assert messages == [{"role": "user", "content": "ported fact"}]
@@ -153,9 +151,7 @@ async def test_no_mem0_type_leaks_across_boundary():
     fake = FakeMem0()
     # Embed a native sentinel object inside the result; the adapter must not propagate it.
     fake._search_payload = {
-        "results": [
-            {"id": "1", "memory": "clean text", "engine_obj": _Mem0Sentinel("raw")}
-        ]
+        "results": [{"id": "1", "memory": "clean text", "engine_obj": _Mem0Sentinel("raw")}]
     }
     be = Mem0Backend(client=fake)
     out = await be.recall("q", SCOPE)

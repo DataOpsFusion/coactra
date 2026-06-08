@@ -18,7 +18,6 @@ objects; no mem0/graphiti type ever leaks across the boundary.
 """
 
 from coactra._version import distribution_version
-
 from coactra.memory.authorization import (
     AllowListMemoryAuthorizer,
     AuthorizedMemory,

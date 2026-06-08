@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -82,10 +82,8 @@ def test_recollection_is_plain_with_defaults():
 
 
 def test_recollection_carries_when_and_metadata():
-    now = datetime.now(timezone.utc)
-    r = Recollection(
-        text="x", score=0.9, source_id="abc", when=now, metadata={"k": "v"}
-    )
+    now = datetime.now(UTC)
+    r = Recollection(text="x", score=0.9, source_id="abc", when=now, metadata={"k": "v"})
     assert r.score == 0.9
     assert r.source_id == "abc"
     assert r.when is now

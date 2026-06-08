@@ -10,7 +10,6 @@ and does NOT own hierarchy/policy (organization does).
 """
 
 from coactra._version import distribution_version
-
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.backends.local import (
     LocalFilesystemBackend,

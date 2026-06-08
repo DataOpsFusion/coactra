@@ -5,6 +5,7 @@ hosts the Voyager-shaped loop as a library primitive: choose the next curriculum
 task, solve it into an executable skill, verify that skill against environment
 feedback, record the outcome, and promote only verified skills.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -76,7 +77,9 @@ class SkillLibrary:
         def _run(env: dict[str, Any]) -> Any:
             state: Any = dict(env)
             for name in steps:
-                state = self._skills[name].run(state if isinstance(state, dict) else {"input": state})
+                state = self._skills[name].run(
+                    state if isinstance(state, dict) else {"input": state}
+                )
             return state
 
         skill = ExecutableSkill(

@@ -51,6 +51,6 @@ class MemoryBackend(Protocol):
         """Read all recollections in scope (export source side)."""
         ...
 
-    async def ingest(self, items: Sequence[Recollection], scope: Scope) -> "ExportReport":
+    async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:
         """Write recollections into scope (export target side); report the result."""
         ...

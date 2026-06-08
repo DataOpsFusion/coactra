@@ -14,6 +14,7 @@ Thinking-model-safe (v0.2). Two real gaps were found live against opencode zen:
    empty/None we fall back to ``reasoning_content`` / ``reasoning`` (and
    ``model_extra``) so ``ask()`` returns non-empty text.
 """
+
 from __future__ import annotations
 
 from typing import Any, TypeVar
@@ -34,7 +35,9 @@ def _extract_text(message: Any) -> str:
     ``reasoning_content`` then ``reasoning`` (checked as attributes and inside
     ``model_extra``). Works for both plain dict messages and litellm Message objects.
     """
-    content = message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
+    content = (
+        message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
+    )
     if content:
         return content
 
@@ -144,7 +147,7 @@ def _is_tool_choice_error(exc: BaseException) -> bool:
     return False
 
 
-def structured(
+def structured[T: BaseModel](
     schema: type[T],
     prompt: str,
     *,
@@ -159,6 +162,7 @@ def structured(
     caller explicitly passes ``mode=Mode.TOOLS`` and the provider rejects
     ``tool_choice``, we transparently fall back to JSON mode.
     """
+
     def _run(active_mode: instructor.Mode, **extra: Any) -> T:
         client = instructor.from_litellm(litellm.completion, mode=active_mode)
         return client.chat.completions.create(

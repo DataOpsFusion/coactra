@@ -1,4 +1,4 @@
-from coactra.ai.models import ReasoningTrace, Decision
+from coactra.ai.models import Decision, ReasoningTrace
 
 
 def test_trace_starts_neutral_quality():

@@ -40,7 +40,7 @@ class CliPolicy(BaseModel):
     deny: list[str] = Field(default_factory=list)
 
     @classmethod
-    def safe_default(cls) -> "CliPolicy":
+    def safe_default(cls) -> CliPolicy:
         """Conservative policy used when local subprocess execution is enabled implicitly.
 
         Empty ``allow`` means allow-all for backward compatibility. This helper gives

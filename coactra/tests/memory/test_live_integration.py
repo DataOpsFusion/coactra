@@ -25,6 +25,7 @@ _mem0_ready = bool(os.getenv("OPENAI_API_KEY")) and _installed("mem0")
 _graphiti_ready = bool(os.getenv("NEO4J_URI")) and _installed("graphiti_core")
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not _mem0_ready, reason="mem0 extra + OPENAI_API_KEY not configured")
 async def test_live_mem0_remember_recall():
     mem = Memory(backend=make_backend("mem0"))
@@ -36,9 +37,8 @@ async def test_live_mem0_remember_recall():
     assert all(isinstance(h, Recollection) for h in hits)
 
 
-@pytest.mark.skipif(
-    not _graphiti_ready, reason="graphiti extra + NEO4J_URI not configured"
-)
+@pytest.mark.live
+@pytest.mark.skipif(not _graphiti_ready, reason="graphiti extra + NEO4J_URI not configured")
 async def test_live_graphiti_remember_recall():
     mem = Memory(
         backend=make_backend(
@@ -53,6 +53,7 @@ async def test_live_graphiti_remember_recall():
     assert all(isinstance(h, Recollection) for h in hits)
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not _mem0_ready, reason="mem0 extra + OPENAI_API_KEY not configured")
 async def test_live_mem0_dump_uses_current_filter_contract():
     backend = make_backend("mem0")
