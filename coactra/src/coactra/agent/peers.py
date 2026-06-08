@@ -70,7 +70,7 @@ class RemotePeer:
 
 
 def peer_tools(
-    peers: list[str | AgentRef],
+    peers: Sequence[str | AgentRef],
     resolve: Callable[[str], Any | None],
     *,
     policy: Any | None = None,
@@ -92,7 +92,7 @@ def peer_tools(
     Parameters
     ----------
     peers:
-        Ordered list of peer agent names or tenant-qualified ``AgentRef`` targets
+        Ordered sequence of peer agent names or tenant-qualified ``AgentRef`` targets
         to wrap.
     resolve:
         Callable ``resolve(name) -> Agent | None`` — looks up a peer in the
