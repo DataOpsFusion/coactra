@@ -1,7 +1,8 @@
-from pydantic_ai.models.function import FunctionModel, AgentInfo
-from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
 from pydantic import BaseModel
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
+
 from coactra.agent import Agent
 
 

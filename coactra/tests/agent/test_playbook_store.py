@@ -9,14 +9,15 @@ Covers:
 4. Protocol: InMemoryPlaybookStore satisfies PlaybookStore
 5. Multiple playbooks coexist independently
 """
+
 from __future__ import annotations
 
 from coactra.workflow.playbook import Playbook, Step
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_playbook(name: str, goal: str | None = None) -> Playbook:
     """Build a minimal Playbook. goal is ignored here; name IS the identifier."""
@@ -29,6 +30,7 @@ def _make_playbook(name: str, goal: str | None = None) -> Playbook:
 # ---------------------------------------------------------------------------
 # 1. save_candidate + get
 # ---------------------------------------------------------------------------
+
 
 def test_save_candidate_get_returns_playbook():
     """get(name) returns the playbook regardless of candidate/promoted status."""
@@ -54,6 +56,7 @@ def test_get_missing_returns_none():
 # 2. Candidate is NOT visible via find
 # ---------------------------------------------------------------------------
 
+
 def test_find_candidate_returns_none():
     """find() does not return candidate (unreviewed) playbooks."""
     from coactra.agent.playbook_store import InMemoryPlaybookStore
@@ -77,6 +80,7 @@ def test_find_returns_none_when_empty():
 # ---------------------------------------------------------------------------
 # 3. promote → find returns the playbook
 # ---------------------------------------------------------------------------
+
 
 def test_promote_makes_findable():
     """After promote(name), find(name) returns the playbook."""
@@ -135,6 +139,7 @@ def test_find_no_match_returns_none():
 # 4. Protocol structural check
 # ---------------------------------------------------------------------------
 
+
 def test_playbook_store_protocol_satisfied():
     """InMemoryPlaybookStore satisfies the PlaybookStore Protocol (runtime check)."""
     from coactra.agent.playbook_store import InMemoryPlaybookStore, PlaybookStore
@@ -155,6 +160,7 @@ def test_protocol_has_required_methods():
 # ---------------------------------------------------------------------------
 # 5. Multiple playbooks coexist
 # ---------------------------------------------------------------------------
+
 
 def test_multiple_candidates_coexist():
     """Multiple candidates can be stored independently."""

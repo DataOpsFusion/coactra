@@ -10,6 +10,7 @@ Public API
 ----------
 - ``peer_tools`` — build a list of async delegation tools from peer names.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
@@ -149,8 +150,7 @@ def _make_peer_tool(
     """Build and return a single ``ask_<name>`` async callable."""
     peer_id = name.agent_id if isinstance(name, AgentRef) else name
     remote_ref = (
-        name if isinstance(name, AgentRef)
-        else AgentRef(tenant_id=tenant, agent_id=peer_id)
+        name if isinstance(name, AgentRef) else AgentRef(tenant_id=tenant, agent_id=peer_id)
     )
     tool_name = "ask_" + peer_id.replace("-", "_")
     caller_scope = Scope(tenant_id=tenant)

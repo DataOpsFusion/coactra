@@ -8,6 +8,7 @@ Public API
   by skill overlap (keyword) or cosine similarity (semantic).
 - ``_get_embedder``                         — internal hook; monkeypatch in tests.
 """
+
 from __future__ import annotations
 
 import re
@@ -19,6 +20,7 @@ __all__ = ["match_agent"]
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _tokenize(text: str) -> set[str]:
     """Lowercase, split on whitespace and punctuation, return non-empty tokens."""
@@ -86,8 +88,7 @@ def _get_embedder():
         from coactra.ai.completion.embedding import LiteLLMEmbedding
     except ImportError as exc:
         raise ImportError(
-            "Semantic matching requires coactra[ai]; "
-            "install with: pip install coactra[ai]"
+            "Semantic matching requires coactra[ai]; install with: pip install coactra[ai]"
         ) from exc
     return LiteLLMEmbedding()
 
@@ -95,6 +96,7 @@ def _get_embedder():
 # ---------------------------------------------------------------------------
 # Keyword matcher
 # ---------------------------------------------------------------------------
+
 
 def _keyword_match(needs: str, members: list[Any]) -> Any | None:
     """Return the member with the highest token-overlap score vs *needs*.
@@ -126,6 +128,7 @@ def _keyword_match(needs: str, members: list[Any]) -> Any | None:
 # Semantic matcher
 # ---------------------------------------------------------------------------
 
+
 def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> Any | None:
     """Return the member whose skills text is nearest to *needs* by cosine sim.
 
@@ -155,6 +158,7 @@ def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def match_agent(
     needs: str,

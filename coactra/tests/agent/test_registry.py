@@ -1,8 +1,8 @@
 """Fleet registry tests for named remote peer discovery."""
+
 from __future__ import annotations
 
 import pytest
-
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
@@ -60,13 +60,15 @@ async def test_agent_create_peer_name_resolves_through_registry():
     result = await ask("triage incident")
 
     assert result == "remote:security-agent:triage incident"
-    assert client.calls == [{
-        "agent_id": "security-agent",
-        "endpoint": "http://127.0.0.1:9999/a2a",
-        "audience": "security-audience",
-        "message": "triage incident",
-        "delegation_chain": [],
-    }]
+    assert client.calls == [
+        {
+            "agent_id": "security-agent",
+            "endpoint": "http://127.0.0.1:9999/a2a",
+            "audience": "security-audience",
+            "message": "triage incident",
+            "delegation_chain": [],
+        }
+    ]
 
 
 async def test_agent_create_rejects_invalid_peer_config():

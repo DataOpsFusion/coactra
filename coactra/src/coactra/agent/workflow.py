@@ -7,6 +7,7 @@ bridging, and goal planning.
 
 No pydantic-ai imports at module level. Duck-types team and agent.
 """
+
 from __future__ import annotations
 
 from contextlib import nullcontext
@@ -49,9 +50,11 @@ class _TeamCollaborator:
             return ""
         return str(await member.run(question))
 
+
 # ---------------------------------------------------------------------------
 # Workflow — the runner
 # ---------------------------------------------------------------------------
+
 
 class Workflow:
     """Runner for a :class:`Playbook` over a :class:`Team`.
@@ -72,12 +75,12 @@ class Workflow:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_playbook(cls, pb: Playbook) -> "Workflow":
+    def from_playbook(cls, pb: Playbook) -> Workflow:
         """Wrap an existing :class:`Playbook`."""
         return cls(pb.name, pb.steps)
 
     @classmethod
-    def from_yaml(cls, text: str) -> "Workflow":
+    def from_yaml(cls, text: str) -> Workflow:
         """Parse YAML into a :class:`Playbook` and wrap it."""
         pb = Playbook.from_yaml(text)
         return cls.from_playbook(pb)
@@ -123,7 +126,8 @@ class Workflow:
         return resolved
 
     def _to_procedure(self, resolved: list[tuple[int, Step, Any]]) -> Any:
-        from coactra.workflow import Procedure, Step as ProcedureStep  # noqa: PLC0415
+        from coactra.workflow import Procedure  # noqa: PLC0415
+        from coactra.workflow import Step as ProcedureStep
 
         def node_id(i: int) -> str:
             return f"step_{i}"
@@ -140,9 +144,7 @@ class Workflow:
             )
             ask_id = node_id(i)
             if s.approve:
-                proc_steps.append(
-                    ProcedureStep(id=f"approve_{i}", kind="approve", next=ask_id)
-                )
+                proc_steps.append(ProcedureStep(id=f"approve_{i}", kind="approve", next=ask_id))
             proc_steps.append(
                 ProcedureStep(
                     id=ask_id,
@@ -253,10 +255,7 @@ class Workflow:
             scope=Scope(tenant_id=tenant),
             collaborator=_TeamCollaborator(team),
         )
-        if isinstance(decision, bool):
-            resume_decision = {"approved": decision}
-        else:
-            resume_decision = decision
+        resume_decision = {"approved": decision} if isinstance(decision, bool) else decision
         snapshot = await engine.resume(
             thread_id,
             ctx,
@@ -357,6 +356,7 @@ class Workflow:
             """Persist *run* if a checkpoint store + run_id are present."""
             if checkpoint is not None and run_id is not None:
                 from coactra.agent.checkpoint import run_to_state  # noqa: PLC0415
+
                 checkpoint.save(run_id, run_to_state(run))
 
         for i in range(start, len(steps)):
@@ -374,12 +374,14 @@ class Workflow:
             # Resolve agent first (before checking approve flag)
             agent = self._resolve_agent(s, team)
             if agent is None:
-                results.append(StepResult(
-                    instruction=s.instruction,
-                    agent="",
-                    output="",
-                    status="failed",
-                ))
+                results.append(
+                    StepResult(
+                        instruction=s.instruction,
+                        agent="",
+                        output="",
+                        status="failed",
+                    )
+                )
                 final = WorkflowRun(
                     name=self._playbook.name,
                     status="failed",
@@ -416,12 +418,14 @@ class Workflow:
 
             # Run the step
             output = await agent.run(s.instruction)
-            results.append(StepResult(
-                instruction=s.instruction,
-                agent=agent._name,
-                output=str(output),
-                status="done",
-            ))
+            results.append(
+                StepResult(
+                    instruction=s.instruction,
+                    agent=agent._name,
+                    output=str(output),
+                    status="done",
+                )
+            )
             if span is not None:
                 span.add_event(
                     "coactra.workflow.step.complete",
@@ -432,14 +436,16 @@ class Workflow:
                 )
 
             # Save an intermediate snapshot after each completed step
-            _save(WorkflowRun(
-                name=self._playbook.name,
-                status="running",
-                results=list(results),
-                pending_index=None,
-                approvals=list(approval_log),
-                _steps=steps,
-            ))
+            _save(
+                WorkflowRun(
+                    name=self._playbook.name,
+                    status="running",
+                    results=list(results),
+                    pending_index=None,
+                    approvals=list(approval_log),
+                    _steps=steps,
+                )
+            )
 
         completed = WorkflowRun(
             name=self._playbook.name,
@@ -490,15 +496,14 @@ class Workflow:
         :class:`WorkflowRun`
         """
         if run.status != "interrupted" or run.pending_index is None:
-            raise ValueError(
-                f"resume() requires an interrupted run; got status={run.status!r}"
-            )
+            raise ValueError(f"resume() requires an interrupted run; got status={run.status!r}")
 
         steps = self._playbook.steps
 
         def _save(resumed: WorkflowRun) -> None:
             if checkpoint is not None and run_id is not None:
                 from coactra.agent.checkpoint import run_to_state  # noqa: PLC0415
+
                 checkpoint.save(run_id, run_to_state(resumed))
 
         i = run.pending_index
@@ -511,12 +516,14 @@ class Workflow:
         # Resolve agent for the pending step
         agent = self._resolve_agent(s, team)
         if agent is None:
-            results.append(StepResult(
-                instruction=s.instruction,
-                agent="",
-                output="",
-                status="failed",
-            ))
+            results.append(
+                StepResult(
+                    instruction=s.instruction,
+                    agent="",
+                    output="",
+                    status="failed",
+                )
+            )
             failed = WorkflowRun(
                 name=self._playbook.name,
                 status="failed",
@@ -530,17 +537,21 @@ class Workflow:
 
         if not decision:
             # Denied — record approval and skip the step
-            approval_log.append(Approval(
-                step_index=i,
-                instruction=s.instruction,
-                decision=False,
-            ))
-            results.append(StepResult(
-                instruction=s.instruction,
-                agent=agent._name,
-                output="",
-                status="skipped",
-            ))
+            approval_log.append(
+                Approval(
+                    step_index=i,
+                    instruction=s.instruction,
+                    decision=False,
+                )
+            )
+            results.append(
+                StepResult(
+                    instruction=s.instruction,
+                    agent=agent._name,
+                    output="",
+                    status="skipped",
+                )
+            )
             denied = WorkflowRun(
                 name=self._playbook.name,
                 status="denied",
@@ -553,18 +564,22 @@ class Workflow:
             return denied
 
         # Approved — run the pending step
-        approval_log.append(Approval(
-            step_index=i,
-            instruction=s.instruction,
-            decision=True,
-        ))
+        approval_log.append(
+            Approval(
+                step_index=i,
+                instruction=s.instruction,
+                decision=True,
+            )
+        )
         output = await agent.run(s.instruction)
-        results.append(StepResult(
-            instruction=s.instruction,
-            agent=agent._name,
-            output=str(output),
-            status="done",
-        ))
+        results.append(
+            StepResult(
+                instruction=s.instruction,
+                agent=agent._name,
+                output=str(output),
+                status="done",
+            )
+        )
 
         # Continue with remaining steps (thread checkpoint through)
         return await self.run(
@@ -618,9 +633,7 @@ class Workflow:
 
         state = checkpoint.load(run_id)
         if state is None:
-            raise ValueError(
-                f"No checkpoint found for run_id={run_id!r}"
-            )
+            raise ValueError(f"No checkpoint found for run_id={run_id!r}")
 
         restored = run_from_state(state)
         # Reattach the playbook steps so pending_step works correctly
@@ -628,9 +641,7 @@ class Workflow:
 
         if restored.status == "interrupted" and restored.pending_index is not None:
             if decision is None:
-                raise ValueError(
-                    "decision= must be provided when resuming an interrupted run"
-                )
+                raise ValueError("decision= must be provided when resuming an interrupted run")
             return await self.resume(
                 restored,
                 team,

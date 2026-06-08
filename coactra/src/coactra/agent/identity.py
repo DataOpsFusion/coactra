@@ -18,7 +18,7 @@ import hashlib
 import inspect
 import time
 from collections.abc import Awaitable, Callable
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from coactra.agent.domain import Scope
 from coactra.agent.domain.identity import (
@@ -141,8 +141,8 @@ def as_async_exchanger(
     """Return ``exchanger`` unchanged if it's already async, else wrap the sync one in a
     worker-thread adapter. One place owns the sync-vs-async normalization."""
     if inspect.iscoroutinefunction(exchanger.exchange):
-        return exchanger
-    return AsyncTokenExchangerAdapter(exchanger)
+        return exchanger  # type: ignore[return-value]
+    return AsyncTokenExchangerAdapter(cast(TokenExchanger, exchanger))
 
 
 class CachedAsyncTokenExchanger:

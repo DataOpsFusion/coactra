@@ -83,9 +83,7 @@ def test_async_denied_talk_raises_and_never_hits_the_wire():
             return False
 
     t = AsyncFakeTransport()
-    c = AsyncPolicyGatedCollaborator(
-        transport=t, policy=DenyAll(), scope=ACME, me="agent:a"
-    )
+    c = AsyncPolicyGatedCollaborator(transport=t, policy=DenyAll(), scope=ACME, me="agent:a")
     with pytest.raises(CollaborationDenied):
         asyncio.run(c.ask("agent:b", "hi", {}))
     assert t.sent == []  # policy gates BEFORE the transport

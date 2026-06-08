@@ -1,14 +1,17 @@
 """Live Agent test against opencode zen — env-gated, skips cleanly without a key.
 
 Run with the key present at /tmp/oc.key (or OC_KEY env var):
-    .venv/bin/python -m pytest tests/agent/sdk/test_live_zen_agent.py -q -s
+    .venv/bin/python -m pytest tests/agent/test_live_zen_agent.py -q -s
 """
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
 import pytest
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from coactra.agent.facade import Agent
 
@@ -24,17 +27,21 @@ def _zen_key() -> str | None:
     return None
 
 
-live = pytest.mark.skipif(_zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)")
+live = pytest.mark.live(
+    pytest.mark.skipif(
+        _zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)"
+    )
+)
 
 
 @live
-async def test_agent_create_with_provider_config_runs_live():
-    """Agent.create() forwards api_base/api_key to LiteLLMModel and a real call succeeds."""
+async def test_agent_create_with_openai_provider_runs_live():
+    """Agent.create() accepts a pydantic-ai Model instance and a real call succeeds."""
     key = _zen_key()
+    provider = OpenAIProvider(base_url=ZEN_BASE, api_key=key)
+    model = OpenAIChatModel("qwen3.6-plus", provider=provider)
     agent = await Agent.create(
-        model="openai/qwen3.6-plus",
-        api_base=ZEN_BASE,
-        api_key=key,
+        model=model,
         instructions="Be brief.",
     )
     out = await agent.run("Say hi in three words.")

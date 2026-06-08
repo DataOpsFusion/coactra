@@ -2,20 +2,21 @@
 
 All tests are offline — no live network connections.
 """
+
 from __future__ import annotations
 
-import pytest
 import httpx
-from pydantic_ai.models.function import FunctionModel, AgentInfo
+import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent.auth import BearerAuth, StaticToken
 from coactra.agent.runtime import PydanticAIRuntime
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("done")])
@@ -24,6 +25,7 @@ def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
 # ---------------------------------------------------------------------------
 # 1. BearerAuth injects the correct Authorization header
 # ---------------------------------------------------------------------------
+
 
 async def test_bearer_auth_injects_static_token() -> None:
     """BearerAuth with StaticToken sets Authorization header on first yield."""
@@ -69,6 +71,7 @@ async def test_bearer_auth_refreshes_token_per_flow() -> None:
 # ---------------------------------------------------------------------------
 # 2. Gateway wiring (white-box, no connect)
 # ---------------------------------------------------------------------------
+
 
 def test_gateway_wiring_creates_mcp_server() -> None:
     """When gateway= is provided, the runtime stores an MCPToolset and records the URL."""
@@ -120,6 +123,7 @@ def test_gateway_no_auth_uses_plain_client() -> None:
 # 3. Offline agent still runs without gateway (no regression)
 # ---------------------------------------------------------------------------
 
+
 async def test_offline_agent_runs_without_gateway() -> None:
     """An agent created without gateway= still runs successfully."""
     rt = PydanticAIRuntime(model=FunctionModel(_final), instructions="be terse")
@@ -131,6 +135,7 @@ async def test_offline_agent_runs_without_gateway() -> None:
 # ---------------------------------------------------------------------------
 # 4. Facade Agent.create forwards gateway= and auth= params
 # ---------------------------------------------------------------------------
+
 
 async def test_agent_create_accepts_gateway_params() -> None:
     """Agent.create(gateway=, auth=) must not raise TypeError."""
@@ -144,6 +149,7 @@ async def test_agent_create_accepts_gateway_params() -> None:
     )
     # The internal runtime must have wired the gateway toolset
     from pydantic_ai.mcp import MCPToolset
+
     assert isinstance(agent._runtime._gateway_toolset, MCPToolset)
     await agent.aclose()
 
@@ -159,6 +165,7 @@ async def test_agent_aclose_without_gateway_is_harmless() -> None:
 def test_build_mcp_toolsets_returns_gateway_and_additive_servers() -> None:
     """Toolset construction is isolated from the runtime constructor."""
     from pydantic_ai.mcp import MCPToolset
+
     from coactra.agent.domain.tools import mcp
     from coactra.agent.toolsets import build_mcp_toolsets
 

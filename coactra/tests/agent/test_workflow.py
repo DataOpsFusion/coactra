@@ -10,23 +10,25 @@ Covers:
 4. Data core — Playbook round-trips through to_dict/from_dict; from_yaml loads
 5. Unresolvable step — failed status, ledger records failure, no crash
 """
+
 from __future__ import annotations
 
 import pytest
-from pydantic_ai.models.function import FunctionModel, AgentInfo
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra.agent import Agent
 from coactra.agent.skills import Skill
 from coactra.team import Team
 
-
 # ---------------------------------------------------------------------------
 # FunctionModel helpers — echo the instruction so we can assert routing
 # ---------------------------------------------------------------------------
 
+
 def _make_echo_model(label: str):
     """Return a FunctionModel that echoes '<label>: <prompt>'."""
+
     def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         # The last user message is the instruction
         last_text = ""
@@ -38,12 +40,14 @@ def _make_echo_model(label: str):
             if last_text:
                 break
         return ModelResponse(parts=[TextPart(f"{label}: {last_text}")])
+
     return FunctionModel(_fn)
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 async def security_agent():
@@ -72,14 +76,18 @@ def team(security_agent, sre_agent):
 # 1. Capability routing
 # ---------------------------------------------------------------------------
 
+
 async def test_capability_routing_two_steps(team, security_agent, sre_agent):
     """A 2-step playbook routes each step to the correct agent by capability."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("route-test", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("redeploy the service", needs="deploy"),
-    ])
+    wf = Workflow(
+        "route-test",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("redeploy the service", needs="deploy"),
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "completed"
@@ -98,13 +106,17 @@ async def test_capability_routing_two_steps(team, security_agent, sre_agent):
 # 2. Pin by name
 # ---------------------------------------------------------------------------
 
+
 async def test_pin_by_name(team, sre_agent):
     """step(agent='sre-agent') resolves to sre-agent regardless of needs."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("pin-test", steps=[
-        step("do it", agent="sre-agent"),
-    ])
+    wf = Workflow(
+        "pin-test",
+        steps=[
+            step("do it", agent="sre-agent"),
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "completed"
@@ -116,13 +128,17 @@ async def test_pin_by_name(team, sre_agent):
 # 3. Approval pause / resume
 # ---------------------------------------------------------------------------
 
+
 async def test_approval_pauses_before_running_step(team):
     """approve=True causes run() to return interrupted before executing the step."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("approve-test", steps=[
-        step("redeploy the service", needs="deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approve-test",
+        steps=[
+            step("redeploy the service", needs="deploy", approve=True),
+        ],
+    )
     run = await wf.run(team)
 
     # Must be interrupted — the step has NOT run yet
@@ -136,10 +152,13 @@ async def test_approval_resume_true_completes(team):
     """resume(decision=True) runs the paused step and completes the workflow."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("approve-resume-true", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("redeploy the service", needs="deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approve-resume-true",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("redeploy the service", needs="deploy", approve=True),
+        ],
+    )
     interrupted = await wf.run(team)
 
     assert interrupted.status == "interrupted"
@@ -166,10 +185,13 @@ async def test_approval_resume_false_denies(team):
     """resume(decision=False) records the step as skipped and stops (status='denied')."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("approve-resume-false", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("redeploy the service", needs="deploy", approve=True),
-    ])
+    wf = Workflow(
+        "approve-resume-false",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("redeploy the service", needs="deploy", approve=True),
+        ],
+    )
     interrupted = await wf.run(team)
     assert interrupted.status == "interrupted"
 
@@ -186,11 +208,14 @@ async def test_approval_resume_false_denies(team):
 
 async def test_approval_pending_step_accessible(team):
     """WorkflowRun.pending_step returns the Step that is awaiting approval."""
-    from coactra.agent.workflow import Workflow, step, Step
+    from coactra.agent.workflow import Step, Workflow, step
 
-    wf = Workflow("pending-step-test", steps=[
-        step("redeploy the service", needs="deploy", approve=True),
-    ])
+    wf = Workflow(
+        "pending-step-test",
+        steps=[
+            step("redeploy the service", needs="deploy", approve=True),
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "interrupted"
@@ -204,14 +229,18 @@ async def test_approval_pending_step_accessible(team):
 # 4. Data core — Playbook round-trip + YAML load
 # ---------------------------------------------------------------------------
 
+
 def test_playbook_to_dict_from_dict_round_trip():
     """Playbook round-trips through to_dict/from_dict without data loss."""
     from coactra.workflow.playbook import Playbook, step
 
-    pb = Playbook(name="cert-rotation", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("redeploy", agent="sre-agent", approve=True),
-    ])
+    pb = Playbook(
+        name="cert-rotation",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("redeploy", agent="sre-agent", approve=True),
+        ],
+    )
     d = pb.to_dict()
 
     # Canonical dict is plain data
@@ -276,14 +305,18 @@ steps:
 # 5. Unresolvable step
 # ---------------------------------------------------------------------------
 
+
 async def test_unresolvable_needs_fails(team):
     """A needs= that no agent matches → status='failed', ledger records failure."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("unresolvable", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("do quantum stuff", needs="quantum entanglement"),
-    ])
+    wf = Workflow(
+        "unresolvable",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("do quantum stuff", needs="quantum entanglement"),
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "failed"
@@ -297,9 +330,12 @@ async def test_unresolvable_agent_name_fails(team):
     """An agent= name that doesn't exist → status='failed'."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("bad-name", steps=[
-        step("do it", agent="nonexistent-agent"),
-    ])
+    wf = Workflow(
+        "bad-name",
+        steps=[
+            step("do it", agent="nonexistent-agent"),
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "failed"
@@ -310,18 +346,20 @@ async def test_unresolvable_agent_name_fails(team):
 # 6. Top-level import gate
 # ---------------------------------------------------------------------------
 
-def test_workflow_and_step_importable_from_coactra():
-    """from coactra import Workflow, step must work at the top level."""
-    import coactra
-    W = coactra.Workflow
-    s = coactra.step
-    assert W is not None
-    assert s is not None
+
+def test_workflow_and_step_importable_from_workflow_package():
+    """Playbook helpers live on coactra.workflow, not the root package."""
+    from coactra import Workflow
+    from coactra.workflow import step
+
+    assert Workflow is not None
+    assert step is not None
 
 
 def test_workflow_import_does_not_pull_pydantic_ai():
     """Importing coactra.agent.workflow must NOT pull pydantic_ai."""
     import coactra.agent.workflow as wf_mod
+
     with open(wf_mod.__file__) as f:
         source = f.read()
     assert "from pydantic_ai" not in source
@@ -332,14 +370,18 @@ def test_workflow_import_does_not_pull_pydantic_ai():
 # 7. WorkflowRun ledger accessor
 # ---------------------------------------------------------------------------
 
+
 async def test_workflow_run_output_texts(team):
     """WorkflowRun provides a clean accessor for all output texts."""
     from coactra.agent.workflow import Workflow, step
 
-    wf = Workflow("ledger-test", steps=[
-        step("rotate the cert", needs="cert rotation"),
-        step("redeploy the service", needs="deploy"),
-    ])
+    wf = Workflow(
+        "ledger-test",
+        steps=[
+            step("rotate the cert", needs="cert rotation"),
+            step("redeploy the service", needs="deploy"),
+        ],
+    )
     run = await wf.run(team)
 
     texts = run.output_texts()

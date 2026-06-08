@@ -3,44 +3,55 @@
 Lazy PEP 562 exports so that ``import coactra`` does NOT pull pydantic-ai.
 Heavy symbols are resolved on first attribute access.
 """
+
 from __future__ import annotations
 
 from importlib import import_module
 from typing import Any
 
+from coactra._version import distribution_version
+
+__version__ = distribution_version()
+
 __all__ = [
     "Agent",
+    "CoactraError",
+    "ErrorCode",
+    "MissingExtraError",
     "RemotePeer",
     "Run",
+    "Scope",
     "Skill",
     "StaticToken",
     "Team",
+    "ValidationError",
     "Workflow",
-    "mcp",
-    "oidc",
-    "serve_agent",
-    "step",
+    "__version__",
 ]
 
 _SDK_EXPORTS = frozenset({"Agent", "RemotePeer", "Run"})
-_AUTH_EXPORTS = frozenset({"StaticToken", "oidc"})
+_AUTH_EXPORTS = frozenset({"StaticToken"})
 _SKILLS_EXPORTS = frozenset({"Skill"})
-_MCP_EXPORTS = frozenset({"mcp"})
+_SCOPE_EXPORTS = frozenset({"Scope"})
 _TEAM_EXPORTS = frozenset({"Team"})
-_WORKFLOW_EXPORTS = frozenset({"Workflow", "step"})
-_SERVE_EXPORTS = frozenset({"serve_agent"})
+_WORKFLOW_EXPORTS = frozenset({"Workflow"})
+_ERROR_EXPORTS = frozenset({"CoactraError", "ErrorCode", "MissingExtraError", "ValidationError"})
+_VERSION_EXPORTS = frozenset({"__version__"})
 _LAZY_EXPORTS = (
     _SDK_EXPORTS
     | _AUTH_EXPORTS
     | _SKILLS_EXPORTS
-    | _MCP_EXPORTS
+    | _SCOPE_EXPORTS
     | _TEAM_EXPORTS
     | _WORKFLOW_EXPORTS
-    | _SERVE_EXPORTS
+    | _ERROR_EXPORTS
+    | _VERSION_EXPORTS
 )
 
 
 def __getattr__(name: str) -> Any:
+    if name == "__version__":
+        return __version__
     if name not in _LAZY_EXPORTS:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     if name in _AUTH_EXPORTS:
@@ -49,18 +60,17 @@ def __getattr__(name: str) -> Any:
     if name in _SKILLS_EXPORTS:
         skills = import_module("coactra.agent.skills")
         return getattr(skills, name)
-    if name in _MCP_EXPORTS:
-        tools = import_module("coactra.agent.domain.tools")
-        return getattr(tools, name)
+    if name in _SCOPE_EXPORTS:
+        scope = import_module("coactra.scope")
+        return getattr(scope, name)
     if name in _TEAM_EXPORTS:
         team = import_module("coactra.team")
         return getattr(team, name)
     if name in _WORKFLOW_EXPORTS:
-        workflow = import_module("coactra.workflow")
-        return getattr(workflow, name)
-    if name in _SERVE_EXPORTS:
-        serve = import_module("coactra.agent.serve")
-        return getattr(serve, name)
+        return getattr(import_module("coactra.agent.workflow"), name)
+    if name in _ERROR_EXPORTS:
+        errors = import_module("coactra.errors")
+        return getattr(errors, name)
     sdk = import_module("coactra.agent")
     return getattr(sdk, name)
 

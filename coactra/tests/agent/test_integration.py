@@ -2,6 +2,7 @@
 
 TDD: RED first (tests were written before the implementation), then GREEN.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -12,7 +13,6 @@ from pydantic_ai.models.test import TestModel
 
 from coactra import Agent, Skill
 from coactra.agent.skills import Skill as SkillDirect
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -151,6 +151,7 @@ async def test_agent_card_has_skill_and_no_creds():
 async def test_skill_importable_from_coactra():
     """Skill is importable from the coactra top-level namespace."""
     from coactra import Skill as SkillTop
+
     assert SkillTop is SkillDirect
 
 
