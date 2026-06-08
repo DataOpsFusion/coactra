@@ -14,7 +14,8 @@ from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import Agent, Skill
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import WorkManager, WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="support-tickets")
 

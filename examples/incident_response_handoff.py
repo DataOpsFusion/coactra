@@ -14,7 +14,8 @@ from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import Agent
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import WorkManager, WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 from coactra.workflow.ledger import Artifact, ArtifactPart
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")

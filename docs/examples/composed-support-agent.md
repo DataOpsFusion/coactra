@@ -87,6 +87,6 @@ print(agent.card)
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
 | MCP tools | local functions | `gateway="https://gateway/mcp"` + `auth=` |
 | Memory | `"inprocess"` | `"graphiti"` or `"mem0"` |

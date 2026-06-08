@@ -17,7 +17,8 @@ job / orchestration" are properties of a Workflow running — not separate thing
 
 ```python
 import asyncio
-from coactra import Agent, Team, Workflow, step
+from coactra import Agent, StaticToken, Team, Workflow
+from coactra.workflow import step
 
 
 async def main() -> None:
@@ -25,7 +26,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="sre-agent",
         tenant="acme",
-        auth=oidc(token_url, client_id, client_secret),
+        auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
         skills=["infra restart", "deployment"],
     )

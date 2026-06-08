@@ -54,7 +54,8 @@ if __name__ == "__main__":
 Use `Workflow` when ticket handling needs durable approval pause/resume:
 
 ```python
-from coactra import Workflow, step
+from coactra import Workflow
+from coactra.workflow import step
 
 play = Workflow("support-ticket", steps=[
     step("fetch and draft resolution", agent="support-desk"),
@@ -68,6 +69,6 @@ await play.run(team)
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
 | Memory backend | `"inprocess"` | `"graphiti"` or `"mem0"` |
 | Tool access | local functions | `gateway="https://gateway/mcp"` + `auth=` |

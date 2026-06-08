@@ -29,4 +29,4 @@ For a development checkout:
 pip install -e "./coactra[all,dev]"
 ```
 
-Pass `auth="dev-token"` or `auth=oidc(...)` in every `Agent.create()` call. See [Getting Started](../getting-started/quickstart.md) for the full quickstart.
+Pass `auth="dev-token"` or `auth=StaticToken(...)` in every `Agent.create()` call. For OAuth client-credentials in production, use `authlib` or `httpx-oauth` and pass the resulting `TokenSource` to `auth=`. See [Getting Started](../getting-started/quickstart.md) for the full quickstart.

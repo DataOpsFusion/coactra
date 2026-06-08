@@ -59,6 +59,6 @@ When `workspace=` is set, the agent automatically receives these tools:
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
 | Workspace backend | Local filesystem | Sandbox/remote backend |
 | `run` commands | Disabled | Explicit allow-list per tenant |

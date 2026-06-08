@@ -10,7 +10,8 @@ from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import Agent, Skill
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
+from coactra.workflow.ledger import WorkManager, WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 from coactra.workflow.ledger import Artifact, ArtifactPart
 from coactra.memory import Memory, Scope as MemoryScope, make_backend
 
