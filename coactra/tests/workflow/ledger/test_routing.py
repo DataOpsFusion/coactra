@@ -1,7 +1,5 @@
 import pytest
 
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
-from coactra.workflow.ledger import InMemoryWorkStore, TenantWorkStoreRouter, WorkStore
 from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     InMemoryProcedureStore,
@@ -15,6 +13,14 @@ from coactra.workflow import (
     TenantWorkflowEngineRouter,
     WorkflowEngine,
 )
+from coactra.workflow.ledger import (
+    InMemoryWorkStore,
+    TenantWorkStoreRouter,
+    WorkManager,
+    WorkOrder,
+    WorkStore,
+)
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 def test_work_store_router_binds_one_store_per_tenant():
@@ -49,7 +55,9 @@ def test_procedure_store_router_forwards_full_store_contract():
 
 def test_procedure_store_router_binds_one_store_per_tenant():
     built = []
-    router = TenantProcedureStoreRouter(lambda tenant: built.append(tenant) or InMemoryProcedureStore())
+    router = TenantProcedureStoreRouter(
+        lambda tenant: built.append(tenant) or InMemoryProcedureStore()
+    )
     procedure = Procedure(name="x", steps=[Step(id="a", kind="task")])
     acme = Scope(tenant_id="acme")
     globex = Scope(tenant_id="globex")
@@ -67,9 +75,13 @@ class Runner:
 @pytest.mark.asyncio
 async def test_workflow_engine_router_routes_thread_to_tenant_runtime():
     built = []
-    router = TenantWorkflowEngineRouter(lambda tenant: built.append(tenant) or AsyncProcedureRunnerAdapter(Runner()))
+    router = TenantWorkflowEngineRouter(
+        lambda tenant: built.append(tenant) or AsyncProcedureRunnerAdapter(Runner())
+    )
     assert isinstance(router, WorkflowEngine)
     ctx = RunContext(scope=Scope(tenant_id="acme"))
-    run = await router.start(Procedure(name="x", steps=[Step(id="a", kind="task")]), {}, ctx, thread_id="t-1")
+    run = await router.start(
+        Procedure(name="x", steps=[Step(id="a", kind="task")]), {}, ctx, thread_id="t-1"
+    )
     assert run.thread_id == "t-1"
     assert built == ["acme"]

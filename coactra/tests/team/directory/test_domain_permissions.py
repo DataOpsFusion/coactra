@@ -50,13 +50,13 @@ def test_can_is_node_independent_resolves_off_members_node():
 def test_block_inheritance_excludes_ancestor_grants_above_the_block():
     acme, eng, rnd = _tree()
     ada = rnd.hire(name="ada", kind="agent")
-    acme.grant("root-grant")          # above the block
-    eng.grant("eng-grant")            # AT the block node
-    rnd.grant("rnd-grant")            # below the block
-    eng.block_inheritance = True      # block at Engineering
+    acme.grant("root-grant")  # above the block
+    eng.grant("eng-grant")  # AT the block node
+    rnd.grant("rnd-grant")  # below the block
+    eng.block_inheritance = True  # block at Engineering
 
-    assert rnd.can(ada, "rnd-grant") is True    # below the block — kept
-    assert rnd.can(ada, "eng-grant") is True    # AT the block node — kept
+    assert rnd.can(ada, "rnd-grant") is True  # below the block — kept
+    assert rnd.can(ada, "eng-grant") is True  # AT the block node — kept
     assert rnd.can(ada, "root-grant") is False  # above the block — excluded
 
 

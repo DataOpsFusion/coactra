@@ -19,8 +19,10 @@ from coactra.team.directory.domain.member import Member as DomainMember
 from coactra.team.directory.domain.member import MemberKind, MemberStatus
 from coactra.team.directory.domain.organization import Organization
 from coactra.team.directory.domain.seat import Seat as DomainSeat
-from coactra.team.directory.models import Department, MemberStatus as RowStatus, PolicyRef as PolicyRefRow
+from coactra.team.directory.models import Department
 from coactra.team.directory.models import Member as MemberRow
+from coactra.team.directory.models import MemberStatus as RowStatus
+from coactra.team.directory.models import PolicyRef as PolicyRefRow
 from coactra.team.directory.models import Seat as SeatRow
 from coactra.team.directory.repository.store import OrgStore
 
@@ -138,8 +140,11 @@ def _save_member(member: DomainMember, *, node_id: int, store: OrgStore) -> None
         # reconcile mutable bits on re-save: status + placement (move)
         store.set_member_status(tenant, member.id, member.status.value)
         store.set_member_directory_fields(
-            tenant, member.id, seniority=member.seniority,
-            created_by=member.created_by, approved_by=member.approved_by,
+            tenant,
+            member.id,
+            seniority=member.seniority,
+            created_by=member.created_by,
+            approved_by=member.approved_by,
         )
         store.place_member(tenant, member.id, node_id=node_id, seat_id=seat_id)
 
@@ -158,7 +163,11 @@ def _save_directory_metadata(org: Organization, *, store: OrgStore) -> None:
     current = store.directory(root.tenant)
     reporting = {(edge.seat_id, edge.reports_to_seat_id) for edge in current.reporting_edges}
     for seat, manager in root.reporting_edges:
-        if seat.id is not None and manager.id is not None and (seat.id, manager.id) not in reporting:
+        if (
+            seat.id is not None
+            and manager.id is not None
+            and (seat.id, manager.id) not in reporting
+        ):
             store.reports_to(root.tenant, seat.id, manager.id)
     routes = {(route.from_seat_id, route.to_seat_id) for route in current.escalation_routes}
     for seat, decider in root.escalation_routes:
@@ -169,7 +178,9 @@ def _save_directory_metadata(org: Organization, *, store: OrgStore) -> None:
         if (ref.name, ref.version, ref.target) not in policies:
             store.add_policy_ref(
                 root.tenant,
-                PolicyRefRow(tenant_id=root.tenant, name=ref.name, version=ref.version, target=ref.target),
+                PolicyRefRow(
+                    tenant_id=root.tenant, name=ref.name, version=ref.version, target=ref.target
+                ),
             )
 
 

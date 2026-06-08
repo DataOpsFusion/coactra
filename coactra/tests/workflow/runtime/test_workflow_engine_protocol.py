@@ -1,4 +1,3 @@
-
 from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     AutoApprove,

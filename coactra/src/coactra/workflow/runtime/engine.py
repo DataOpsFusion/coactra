@@ -4,12 +4,15 @@
 LangGraph adapter. Durable runtimes implement the async ``WorkflowEngine`` contract from
 ``runtime.durable`` instead: start/resume with a stable thread id.
 """
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
+from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.domain.scope import Scope
 from coactra.workflow.runtime.handlers import (
     Approver,
     AutoApprove,
@@ -18,8 +21,6 @@ from coactra.workflow.runtime.handlers import (
     NullCollaborator,
     TerminalHumanRouter,
 )
-from coactra.workflow.domain.models import Procedure, RunResult
-from coactra.workflow.domain.scope import Scope
 
 
 class RunContext(BaseModel):
@@ -38,8 +39,6 @@ class RunContext(BaseModel):
 class ProcedureRunner(Protocol):
     """Synchronous local execution seam for run-to-completion engines."""
 
-    def run(
-        self, procedure: Procedure, state: dict[str, Any], ctx: RunContext
-    ) -> RunResult:
+    def run(self, procedure: Procedure, state: dict[str, Any], ctx: RunContext) -> RunResult:
         """Compile and execute a procedure within ``ctx.scope``."""
         ...

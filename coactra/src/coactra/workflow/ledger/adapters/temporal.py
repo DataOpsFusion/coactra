@@ -29,7 +29,7 @@ class TemporalDispatcher:
         workflow: Any,
         task_queue: str,
         **connect_kwargs: Any,
-    ) -> "TemporalDispatcher":
+    ) -> TemporalDispatcher:
         client_module = optional_module("temporalio.client", extra="temporal")
         client = await client_module.Client.connect(target_host, **connect_kwargs)
         return cls(client, workflow=workflow, task_queue=task_queue)

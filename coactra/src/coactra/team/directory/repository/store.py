@@ -13,7 +13,13 @@ from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 from coactra.team.directory.models import (
-    Department, EscalationRoute, Member, PolicyRef, ReportingEdge, Seat, Tenant,
+    Department,
+    EscalationRoute,
+    Member,
+    PolicyRef,
+    ReportingEdge,
+    Seat,
+    Tenant,
 )
 
 
@@ -87,9 +93,7 @@ class OrgStore(Protocol):
 
     # --- escalation ROUTING (query only — no execution) -----------------------
 
-    def set_escalation_route(
-        self, tenant_id: str, from_seat_id: int, to_seat_id: int
-    ) -> None:
+    def set_escalation_route(self, tenant_id: str, from_seat_id: int, to_seat_id: int) -> None:
         """Record an explicit override route that bypasses the reporting chain."""
         ...
 
@@ -107,9 +111,7 @@ class OrgStore(Protocol):
         """Record a versioned reference to a policy (not a policy engine)."""
         ...
 
-    def policy_ref(
-        self, tenant_id: str, name: str, version: int | None = None
-    ) -> PolicyRef | None:
+    def policy_ref(self, tenant_id: str, name: str, version: int | None = None) -> PolicyRef | None:
         """Current (highest) version, or a specific version if given."""
         ...
 
@@ -123,7 +125,7 @@ class OrgStore(Protocol):
         """The direct child OU nodes of a node."""
         ...
 
-    def node(self, tenant_id: str, id: int) -> Department | None:
+    def node(self, tenant_id: str, id: int) -> Department | None:  # noqa: A002
         """Fetch a single OU node by id (tenant-scoped), or None."""
         ...
 
@@ -131,13 +133,11 @@ class OrgStore(Protocol):
         """The seat a member currently holds, or None if unassigned."""
         ...
 
-    def memberships(
-        self, tenant_id: str, node_id: int, recursive: bool = False
-    ) -> list[Member]:
+    def memberships(self, tenant_id: str, node_id: int, recursive: bool = False) -> list[Member]:
         """Members sitting on a node; with recursive=True, the node's whole subtree."""
         ...
 
-    def directory(self, tenant_id: str) -> "Directory":
+    def directory(self, tenant_id: str) -> Directory:
         """One bulk, tenant-scoped join the consumer can rebuild the tree from."""
         ...
 
@@ -155,9 +155,7 @@ class OrgStore(Protocol):
         """The actions granted at a node."""
         ...
 
-    def set_override(
-        self, tenant_id: str, member_id: int, action: str, effect: str
-    ) -> None:
+    def set_override(self, tenant_id: str, member_id: int, action: str, effect: str) -> None:
         """Set a per-member explicit allow/deny override (upsert)."""
         ...
 
@@ -172,7 +170,13 @@ class OrgStore(Protocol):
         ...
 
     def set_member_directory_fields(
-        self, tenant_id: str, member_id: int, *, seniority: int, created_by: str | None, approved_by: str | None
+        self,
+        tenant_id: str,
+        member_id: int,
+        *,
+        seniority: int,
+        created_by: str | None,
+        approved_by: str | None,
     ) -> None:
         """Persist directory ranking and audit attribution fields."""
         ...
@@ -197,6 +201,5 @@ class OrgStore(Protocol):
 # tenant router) build their forwarders from this instead of hand-syncing a name list that
 # can silently drift from the Protocol — add a method here and both adapters pick it up.
 ORG_STORE_METHODS: tuple[str, ...] = tuple(
-    name for name, value in vars(OrgStore).items()
-    if not name.startswith("_") and callable(value)
+    name for name, value in vars(OrgStore).items() if not name.startswith("_") and callable(value)
 )

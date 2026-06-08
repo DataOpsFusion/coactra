@@ -4,6 +4,7 @@ Coactra owns the stable ``WorkflowEngine`` boundary. LangGraph is the default
 agentic runtime when installed; Temporal and Prefect are explicit named adapters
 for harder durable-execution deployments.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -60,7 +61,7 @@ def make_workflow_engine(
             raise ValueError('runtime="local" requires runner=...')
         if kwargs:
             names = ", ".join(sorted(kwargs))
-            raise TypeError(f'unsupported local runtime options: {names}')
+            raise TypeError(f"unsupported local runtime options: {names}")
         return AsyncProcedureRunnerAdapter(runner)
 
     if selected == "temporal":

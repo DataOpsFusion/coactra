@@ -55,7 +55,7 @@ class _TenantNamespaceScope(BaseModel):
 
 
 @dataclass(frozen=True, slots=True)
-class CoactraScope:
+class Scope:
     """Canonical scope DTO for apps that compose Coactra packages.
 
     Field mapping:
@@ -129,10 +129,7 @@ class CoactraScope:
         }
 
 
-Scope = CoactraScope
-
 __all__ = [
     "Scope",
-    "CoactraScope",
     "is_safe_path_component",
 ]

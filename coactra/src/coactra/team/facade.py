@@ -7,9 +7,11 @@ Public API
 ----------
 - ``Team``  — roster + match + policy.
 """
+
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from coactra.agent.matcher import match_agent
 

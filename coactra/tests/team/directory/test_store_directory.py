@@ -20,9 +20,7 @@ def _seed(store):
     eng = store.add_department(
         "acme", Department(tenant_id="acme", name="Engineering", parent_id=root.id)
     )
-    rnd = store.add_department(
-        "acme", Department(tenant_id="acme", name="R&D", parent_id=eng.id)
-    )
+    rnd = store.add_department("acme", Department(tenant_id="acme", name="R&D", parent_id=eng.id))
     seat = store.add_seat("acme", Seat(tenant_id="acme", role="lead", permissions=["deploy"]))
     ada = store.add_member("acme", Member(tenant_id="acme", name="ada", kind=MemberKind.human))
     store.assign("acme", member_id=ada.id, seat_id=seat.id, department_id=rnd.id)

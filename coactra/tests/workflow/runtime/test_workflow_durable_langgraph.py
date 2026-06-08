@@ -43,9 +43,7 @@ async def test_portable_procedure_interrupts_and_resumes_with_checkpointer():
     )
     ctx = RunContext(scope=Scope(tenant_id="acme"))
 
-    paused = await engine.start(
-        procedure, {"version": "1.2"}, ctx, thread_id="deploy-1"
-    )
+    paused = await engine.start(procedure, {"version": "1.2"}, ctx, thread_id="deploy-1")
 
     assert paused.status is WorkflowRunStatus.interrupted
     assert paused.thread_id == "acme:deploy-1"
@@ -152,9 +150,7 @@ async def test_sub_procedure_red_gate_interrupts_parent_and_resumes_idempotently
     assert tools.calls == [("infra", "snapshot", {})]  # prep ran, wipe gated
 
     # Resume the parent with approval: child advances past the gate to completion.
-    final = await engine.run_document(
-        parent_doc, params={}, thread_id="p-1", resume="approved"
-    )
+    final = await engine.run_document(parent_doc, params={}, thread_id="p-1", resume="approved")
     # prep ran EXACTLY ONCE (not re-executed on resume); wipe ran once after approval.
     assert tools.calls == [
         ("infra", "snapshot", {}),

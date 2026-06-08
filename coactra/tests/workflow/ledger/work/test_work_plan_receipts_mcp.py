@@ -1,8 +1,8 @@
 import pytest
 
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
-from coactra.workflow.ledger import AuditContext
+from coactra.workflow.ledger import AuditContext, WorkManager, WorkOrder
 from coactra.workflow.ledger.adapters import MCPTaskNotTerminalError, MCPTasksAdapter, to_mcp_task
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 def test_plan_execute_inspect_returns_stable_receipt_and_audit_context():

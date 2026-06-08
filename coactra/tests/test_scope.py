@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from coactra.scope import CoactraScope
+from coactra.scope import Scope
 
 
 def test_scope_has_stable_canonical_key() -> None:
-    scope = CoactraScope(
+    scope = Scope(
         tenant_id="tenant-a",
         namespace="support",
         agent_id="triage",
@@ -24,7 +24,7 @@ def test_scope_has_stable_canonical_key() -> None:
 
 
 def test_scope_conversion_kwargs_match_package_field_names() -> None:
-    scope = CoactraScope(
+    scope = Scope(
         tenant_id="tenant-a",
         namespace="support",
         agent_id="triage",
@@ -45,14 +45,14 @@ def test_scope_conversion_kwargs_match_package_field_names() -> None:
 
 def test_scope_rejects_reserved_memory_separator_characters() -> None:
     with pytest.raises(ValueError, match="tenant_id"):
-        CoactraScope(tenant_id="tenant:a")
+        Scope(tenant_id="tenant:a")
     with pytest.raises(ValueError, match="namespace"):
-        CoactraScope(tenant_id="tenant-a", namespace="*")
+        Scope(tenant_id="tenant-a", namespace="*")
 
 
 def test_workspace_conversion_requires_agent_and_path_safe_values() -> None:
     with pytest.raises(ValueError, match="agent_id is required"):
-        CoactraScope(tenant_id="tenant-a").to_workspace_kwargs()
+        Scope(tenant_id="tenant-a").to_workspace_kwargs()
 
     with pytest.raises(ValueError, match="agent_id"):
-        CoactraScope(tenant_id="tenant-a", agent_id="team/agent").to_workspace_kwargs()
+        Scope(tenant_id="tenant-a", agent_id="team/agent").to_workspace_kwargs()

@@ -2,23 +2,19 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("sqlalchemy")
-
-from coactra.workflow import (
-    ExecutionPlan,
-    WorkScope,
-    WorkManager,
-    WorkOrder,
-)
 from coactra.workflow.ledger import (
     ConflictError,
     Decision,
     DecisionOutcome,
     EventEnvelope,
+    ExecutionPlan,
     LeaseError,
     SqlWorkStore,
+    WorkManager,
+    WorkOrder,
     WorkStatus,
 )
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 def make_store(tmp_path):

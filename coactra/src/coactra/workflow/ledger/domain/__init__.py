@@ -27,8 +27,8 @@ from coactra.workflow.ledger.domain.models import (
     WorkOrder,
     WorkStatus,
 )
-from coactra.workflow.ledger.domain.scope import Scope
 from coactra.workflow.ledger.domain.plans import ExecutionPlan, ExecutionReceipt
+from coactra.workflow.ledger.domain.scope import Scope
 
 __all__ = [
     "AgentSpec",

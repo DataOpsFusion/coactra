@@ -1,4 +1,5 @@
 """Domain value objects for optional directory metadata."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

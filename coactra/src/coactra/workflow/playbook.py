@@ -3,6 +3,7 @@
 This module owns the pure data model used by the public Workflow facade. Agent
 runtime code consumes these types but does not define them.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -19,6 +20,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 # Step — frozen data (the definition unit)
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class Step:
@@ -59,6 +61,7 @@ def step(
 # ---------------------------------------------------------------------------
 # Playbook — the definition (pure data)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class Playbook:
@@ -114,7 +117,15 @@ class Playbook:
 
         ``pyyaml`` is imported lazily so the module stays import-light.
         """
-        import yaml  # noqa: PLC0415 — lazy import to keep module light
+        try:
+            import yaml  # noqa: PLC0415 — lazy import to keep module light
+        except ImportError:
+            from coactra.errors import MissingExtraError
+
+            raise MissingExtraError(
+                "Playbook.from_yaml() requires pyyaml; install with: pip install coactra[office]",
+                extra="office",
+            ) from None
 
         data = yaml.safe_load(text)
         return cls.from_dict(data)
@@ -124,14 +135,15 @@ class Playbook:
 # Run ledger types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class StepResult:
     """A single entry in the run ledger."""
 
     instruction: str
-    agent: str          # resolved agent name; "" if unresolved
-    output: str         # agent output; "" if not run
-    status: str         # "done" | "failed" | "skipped"
+    agent: str  # resolved agent name; "" if unresolved
+    output: str  # agent output; "" if not run
+    status: str  # "done" | "failed" | "skipped"
 
 
 @dataclass
@@ -140,7 +152,7 @@ class Approval:
 
     step_index: int
     instruction: str
-    decision: bool      # True = approved, False = denied
+    decision: bool  # True = approved, False = denied
 
 
 @dataclass

@@ -24,7 +24,9 @@ def test_domain_roundtrip_preserves_reporting_routes_policy_ownership_and_member
     assert again.owner_of("database").role == "engineer"
     assert [(a.role, b.role) for a, b in again.reporting_edges] == [("engineer", "manager")]
     assert [(a.role, b.role) for a, b in again.escalation_routes] == [("engineer", "manager")]
-    assert [(ref.name, ref.version, ref.target) for ref in again.policy_refs] == [("retention", 2, "logs")]
+    assert [(ref.name, ref.version, ref.target) for ref in again.policy_refs] == [
+        ("retention", 2, "logs")
+    ]
 
 
 def test_domain_resave_reconciles_archived_status_and_audit_fields():

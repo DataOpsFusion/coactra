@@ -17,7 +17,7 @@ Resolution never crosses the tenant boundary.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from coactra.team.directory.domain.directory import PolicyReference
 from coactra.team.directory.domain.member import Member, MemberKind, MemberStatus
@@ -34,9 +34,9 @@ class Organization:
         *,
         tenant: str,
         name: str,
-        parent: "Organization | None" = None,
+        parent: Organization | None = None,
         block_inheritance: bool = False,
-        id: int | None = None,
+        id: int | None = None,  # noqa: A002
     ) -> None:
         self.tenant = tenant
         self.name = name
@@ -54,18 +54,18 @@ class Organization:
     # --- construction / tree shape (composite) ---------------------------------
 
     @classmethod
-    def root(cls, tenant: str, name: str) -> "Organization":
+    def root(cls, tenant: str, name: str) -> Organization:
         """Create a tenant-root OU node (no parent)."""
         return cls(tenant=tenant, name=name, parent=None)
 
-    def add_child(self, name: str) -> "Organization":
+    def add_child(self, name: str) -> Organization:
         """Create and attach a child OU under this node (inherits the tenant)."""
         child = Organization(tenant=self.tenant, name=name, parent=self)
         self._children.append(child)
         return child
 
     @property
-    def children(self) -> list["Organization"]:
+    def children(self) -> list[Organization]:
         return list(self._children)
 
     @property
@@ -73,7 +73,7 @@ class Organization:
         return self.parent is None
 
     @property
-    def manager(self) -> "Organization | None":
+    def manager(self) -> Organization | None:
         """Escalation target: the parent node (the authority one tier up). None at root."""
         return self.parent
 
@@ -96,13 +96,13 @@ class Organization:
     def dn(self) -> str:
         return self.path
 
-    def root_node(self) -> "Organization":
+    def root_node(self) -> Organization:
         node: Organization = self
         while node.parent is not None:
             node = node.parent
         return node
 
-    def _path_to_root(self) -> list["Organization"]:
+    def _path_to_root(self) -> list[Organization]:
         """This node and its ancestors, nearest-first (self … root)."""
         chain: list[Organization] = []
         node: Organization | None = self
@@ -111,7 +111,7 @@ class Organization:
             node = node.parent
         return chain
 
-    def walk(self) -> Iterable["Organization"]:
+    def walk(self) -> Iterable[Organization]:
         """Yield this node and every descendant (pre-order)."""
         yield self
         for child in self._children:
@@ -173,7 +173,7 @@ class Organization:
         self._owner_node(member)
         member.status = MemberStatus.archived
 
-    def move(self, member: Member, to: "Organization") -> None:
+    def move(self, member: Member, to: Organization) -> None:
         """Reparent a principal to another node in the SAME tenant (AD move OU)."""
         if to.tenant != self.tenant:
             raise CrossTenantError(
@@ -193,7 +193,7 @@ class Organization:
             out.extend(node._members)
         return out
 
-    def _owner_node(self, member: Member) -> "Organization":
+    def _owner_node(self, member: Member) -> Organization:
         """The node that actually holds ``member`` (searched from the tree root)."""
         for node in self.root_node().walk():
             if member in node._members:

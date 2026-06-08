@@ -177,7 +177,7 @@ class WorkOrder(BaseModel):
     updated_at: datetime = Field(default_factory=utc_now)
 
     @model_validator(mode="after")
-    def _validate_terminal_state(self) -> "WorkOrder":
+    def _validate_terminal_state(self) -> WorkOrder:
         if self.status in TERMINAL_STATUSES and self.lease is not None:
             raise ValueError("terminal work order may not retain a lease")
         return self
