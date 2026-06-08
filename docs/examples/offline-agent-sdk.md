@@ -60,6 +60,6 @@ if __name__ == "__main__":
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(issuer, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
 | Tools via gateway | — | `gateway="https://gateway/mcp"` + `auth=` |
 | Model | local id | any litellm-compatible provider id |

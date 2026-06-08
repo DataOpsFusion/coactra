@@ -93,6 +93,6 @@ Custom policies such as OpenFGA or AuthZEN can plug in at the Team/policy seam w
 
 | Concern | Dev default | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(token_url, client_id, client_secret)` |
+| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
 | Policy | Same-tenant default | OpenFGA / AuthZEN adapter |
 | A2A transport | In-process Agent peer | `RemotePeer(...)` over `OfficialA2ATransport` |

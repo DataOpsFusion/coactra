@@ -15,7 +15,8 @@ runtime — keyword/tag match by default, embedding similarity on request.
 
 ```python
 import asyncio
-from coactra import Agent, Team, Workflow, step, Skill
+from coactra import Agent, StaticToken, Skill, Team, Workflow
+from coactra.workflow import step
 
 
 async def main() -> None:
@@ -23,7 +24,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="sre-agent",
         tenant="acme",
-        auth=oidc(token_url, client_id, client_secret),
+        auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
         skills=[Skill("infra.restart", description="Restart infra services",
                       tags=["sre", "infra"])],
@@ -33,7 +34,7 @@ async def main() -> None:
         model="claude-sonnet-4-5",
         name="security-agent",
         tenant="acme",
-        auth=oidc(token_url, client_id, client_secret),
+        auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
         skills=[Skill("cert.rotate", description="Rotate TLS certs",
                       tags=["security", "certs"])],

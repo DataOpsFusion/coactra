@@ -9,7 +9,8 @@ from __future__ import annotations
 import hashlib
 from pprint import pprint
 
-from coactra.workflow import WorkManager, WorkOrder, WorkScope
+from coactra.workflow.ledger import WorkManager, WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 from coactra.workflow.ledger import Artifact, ArtifactPart
 
 SCOPE = WorkScope(tenant_id="acme", namespace="release")

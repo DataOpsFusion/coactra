@@ -9,7 +9,8 @@ checkpoint after a failure.
 
 ```python
 import asyncio
-from coactra import Agent, Team, Workflow, step, Skill
+from coactra import Agent, StaticToken, Skill, Team, Workflow
+from coactra.workflow import step
 
 
 async def main(version: str) -> None:
@@ -17,7 +18,7 @@ async def main(version: str) -> None:
         model="claude-sonnet-4-5",
         name="release-eng",
         tenant="acme",
-        auth=oidc(token_url, client_id, client_secret),
+        auth=StaticToken("gateway-token"),  # or authlib TokenSource in production
         gateway="https://gateway/mcp",
         skills=[Skill("release.pipeline", description="Run release stages",
                       tags=["release", "deploy"])],
