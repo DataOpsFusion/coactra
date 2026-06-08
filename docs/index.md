@@ -1,7 +1,8 @@
 # Coactra Docs
 
-Coactra is a Python library for agent applications that need durable work,
-memory, workspace state, team policy, and agent-to-agent collaboration.
+Coactra is a composition and persistence library for multi-agent workflows:
+`Team`, `Workflow`, and `WorkManager` are the core; `Agent` is a thin shell over
+pydantic-ai with memory, workspace, MCP, and peer delegation wiring.
 
 Start with the [Quickstart](getting-started/quickstart.md), then use the example
 and production guides when you are ready to wire real backends.
@@ -23,6 +24,7 @@ pip install "coactra[langgraph]"
 ## Main Guides
 
 - [Quickstart](getting-started/quickstart.md): build a small function-first incident triage app.
+- [Bring Your Own Stack](getting-started/bring-your-own.md): pydantic-ai models, OAuth, and A2A serving without Coactra glue.
 - [Examples](examples/index.md): runnable scripts and sample projects.
 - [API Index](API_INDEX.md): the public API surface.
 - [Production](operations/production.md): SQL work store, scope consistency, auth, and deployment posture.

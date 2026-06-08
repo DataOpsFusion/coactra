@@ -61,12 +61,12 @@ except Exception as exc:
 
 ## Scope consistency
 
-Use `coactra.scope.CoactraScope` when one application composes multiple packages. It documents the conversion rules and prevents tenant, namespace, agent, and session collisions.
+Use `coactra.Scope` when one application composes multiple packages. It documents the conversion rules and prevents tenant, namespace, agent, and session collisions.
 
 ```python
-from coactra.scope import CoactraScope
+from coactra import Scope
 
-scope = CoactraScope(
+scope = Scope(
     tenant_id="tenant-a",
     namespace="support",
     agent_id="triage-agent",
@@ -98,7 +98,7 @@ Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as in
 - Use `SqlWorkStore` for durable workflows.
 - Configure database backups and retention for work-order tables.
 - Use explicit tenant and namespace values for every request path.
-- Use `CoactraScope` in composed apps to avoid scope-field drift.
+- Use `Scope` in composed apps to avoid scope-field drift.
 - Disable local exec unless the worker is isolated and trusted.
 - Set workspace exec timeouts and output limits.
 - Use async token exchange in async services.

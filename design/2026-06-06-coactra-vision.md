@@ -34,7 +34,7 @@ A goal arrives → **Workflow** plans or picks a playbook → assigns each step 
 
 ## Public surface (the one door)
 
-`from coactra import Agent` → `Agent.create(model, name, tenant, gateway=, auth=, tools=[local funcs], memory, workspace, peers, skills, instructions)` → `run / send().stream()`. **`gateway=`+`auth=` is the primary MCP path** (the token's scopes slice the tools); a bare `mcp(url)` is the exception. Full detail in `design/2026-06-06-agent-api-design.md`.
+`from coactra import Agent` → `Agent.create(model, name, tenant, gateway=, auth=, tools=[local funcs], memory, workspace, peers, skills, instructions)` → `run / send().stream()`. **`gateway=`+`auth=` is the primary MCP path** (the token's scopes slice the tools); an additive `MCPServer(url=...)` is the exception. Full detail in `design/2026-06-06-agent-api-design.md`.
 
 ## Build order
 

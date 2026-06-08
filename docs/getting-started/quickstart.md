@@ -2,6 +2,8 @@
 
 This guide builds a small incident-triage agent using the current public API. Start from the root package and add lower-level backends only when the app needs them.
 
+`Agent` is a thin composition shell over pydantic-ai. For advanced model control, pass a pydantic-ai `Model` instance directly. `Team` and `Workflow` are the multi-agent orchestration layer.
+
 ## 1. Install
 
 ```bash
@@ -40,7 +42,7 @@ def get_runbook(service: str) -> str:
 
 async def main() -> None:
     agent = await Agent.create(
-        model="claude-haiku-4-5",
+        model="anthropic:claude-haiku-4-5",
         name="triage-agent",
         tenant="acme",
         auth="dev-token",
@@ -55,27 +57,34 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Use `auth=oidc(...)` instead of `auth="dev-token"` when connecting to a real MCP gateway.
+For full provider control, pass a pydantic-ai model instance:
+
+```python
+from pydantic_ai.models.anthropic import AnthropicModel
+
+agent = await Agent.create(
+    model=AnthropicModel("claude-haiku-4-5"),
+    ...
+)
+```
 
 ## 4. Add Memory, Workspace, Or Gateway Tools
 
 ```python
-from coactra import Agent, oidc
+from coactra import Agent, StaticToken
 
 agent = await Agent.create(
-    model="anthropic/claude-sonnet-4-5",
+    model="anthropic:claude-sonnet-4-5",
     name="sre-agent",
     tenant="acme",
     gateway="https://gateway.example/mcp",
-    auth=oidc(
-        token_url="https://auth.example/realms/prod/protocol/openid-connect/token",
-        client_id="sre-agent",
-        client_secret="...",
-    ),
+    auth=StaticToken("your-gateway-token"),  # or any async TokenSource
     memory="graphiti",
     workspace="./desk",
 )
 ```
+
+For OAuth client-credentials fetch and refresh, use `authlib` or `httpx-oauth` and pass the resulting token source to `auth=`. Coactra ships `StaticToken` for dev and pre-fetched production tokens.
 
 ## 5. Route Across A Team
 
@@ -83,7 +92,7 @@ agent = await Agent.create(
 from coactra import Agent, Skill, Team
 
 security = await Agent.create(
-    model="claude-haiku-4-5",
+    model="anthropic:claude-haiku-4-5",
     name="security-agent",
     tenant="acme",
     auth="dev-token",
@@ -96,7 +105,8 @@ print(team.match("review certificate rotation risk").card)
 ## 6. Run A Workflow
 
 ```python
-from coactra import Workflow, step
+from coactra import Workflow
+from coactra.workflow import step
 
 workflow = Workflow(
     "cert rotation",
@@ -114,10 +124,12 @@ workflow = Workflow(
 
 | Concern | Development | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `auth=oidc(...)` |
+| Auth | `auth="dev-token"` | `StaticToken` or custom `TokenSource` (authlib / httpx-oauth for client-credentials) |
+| Model | provider string (`anthropic:...`) | pydantic-ai `Model` instance with explicit provider config |
 | Tools | local callables | `gateway=` plus scoped auth |
 | Memory | in-process or named local backend | Graphiti/mem0 adapter with tenant scope |
 | Workspace | local gated directory | host-controlled workspace backend |
-| Peers | local `Agent` objects | `RemotePeer(...)` over A2A |
+| Peers | local `Agent` objects | `RemotePeer(...)` over A2A (`coactra.agent.adapters`) |
+| Inbound A2A | not required for local dev | wire `a2a-sdk` server; handler calls `await agent.run(message)` |
 
 Coactra should give you stable seams. Keep business behavior in plain functions and let `Agent`, `Team`, and `Workflow` own runtime state.

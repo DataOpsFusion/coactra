@@ -6,7 +6,7 @@ Tenant isolation is a design constraint across the library. Every package should
 
 | Package | Scope shape | Purpose |
 |---|---|---|
-| `coactra` | `CoactraScope(tenant_id, namespace, agent_id, session_id)` | Canonical DTO and conversion helper. |
+| `coactra` | `Scope(tenant_id, namespace, agent_id, session_id)` | Canonical DTO and conversion helper. |
 | `coactra[agent]` | `Scope(tenant_id, namespace)` | Agent runtime and collaboration policy scope. |
 | `coactra[memory]` | `Scope(tenant, namespace, agent, session)` | Memory partitioning across tenant/shared/agent/session levels. |
 | `coactra[workspace]` | `Scope(tenant_id, agent_id)` | Path-safe filesystem/sandbox root. |
@@ -46,4 +46,4 @@ Routers are a production silo tool, so protocol conformance tests should cover e
 
 ## App-Facing Rule
 
-Application code should start with `coactra.scope.CoactraScope` and convert outward only at package boundaries. Use `to_workflow_kwargs()` for procedure/runtime state, `to_work_kwargs()` for `WorkScope`, `to_memory_kwargs()` for memory, and `to_workspace_kwargs()` for workspace desks. Do not pass package-specific `Scope` objects across package boundaries.
+Application code should start with `from coactra import Scope` and convert outward only at package boundaries. Use `to_workflow_kwargs()` for procedure/runtime state, `to_work_kwargs()` for `WorkScope`, `to_memory_kwargs()` for memory, and `to_workspace_kwargs()` for workspace desks. Do not pass package-specific `Scope` objects across package boundaries.
