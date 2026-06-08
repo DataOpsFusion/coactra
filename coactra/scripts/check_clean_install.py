@@ -24,16 +24,21 @@ expected = {
     "Agent",
     "RemotePeer",
     "Run",
+    "Scope",
     "Skill",
     "StaticToken",
     "Team",
     "Workflow",
-    "mcp",
-    "oidc",
-    "serve_agent",
-    "step",
+    "CoactraError",
+    "ErrorCode",
+    "MissingExtraError",
+    "ValidationError",
+    "__version__",
 }
 assert set(coactra.__all__) == expected, coactra.__all__
+assert coactra.__version__ != "0.0.0", (
+    "refusing hatch VCS fallback version; tag the release or fix the build context"
+)
 assert importlib.util.find_spec("coactra.jobs") is None
 assert importlib.util.find_spec("coactra.directory") is None
 for module in [
