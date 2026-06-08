@@ -8,13 +8,13 @@ the AD "Enforced"/explicit-ACE analogue.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 Action = str
 PermissionSet = set[Action]
 
 
-class Effect(str, Enum):
+class Effect(StrEnum):
     """An explicit per-member decision on one action."""
 
     allow = "allow"

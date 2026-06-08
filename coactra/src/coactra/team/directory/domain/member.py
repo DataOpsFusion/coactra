@@ -11,7 +11,7 @@ persists it — this is the deliberate domain/persistence split of the v0.2 rede
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from coactra.team.directory.domain.permission import Action, Effect
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from coactra.team.directory.domain.organization import Organization
 
 
-class MemberKind(str, Enum):
+class MemberKind(StrEnum):
     """What sort of principal this is. Mirrors models.MemberKind values."""
 
     human = "human"
@@ -29,7 +29,7 @@ class MemberKind(str, Enum):
     agent = "agent"
 
 
-class MemberStatus(str, Enum):
+class MemberStatus(StrEnum):
     """Lifecycle state. Suspended is reversible; archived retains an audit record."""
 
     active = "active"
@@ -52,7 +52,7 @@ class Member:
     seat: Seat | None = None
     status: MemberStatus = MemberStatus.active
     overrides: dict[Action, Effect] = field(default_factory=dict)
-    node: "Organization | None" = None
+    node: Organization | None = None
     id: int | None = None
     seniority: int = 0
     created_by: str | None = None

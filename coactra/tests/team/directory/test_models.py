@@ -28,7 +28,16 @@ def test_membership_department_is_optional():
 
 
 def test_entities_carry_tenant_id():
-    for cls in (Tenant, Department, Seat, Member, Membership, ReportingEdge, EscalationRoute, PolicyRef):
+    for cls in (
+        Tenant,
+        Department,
+        Seat,
+        Member,
+        Membership,
+        ReportingEdge,
+        EscalationRoute,
+        PolicyRef,
+    ):
         assert "tenant_id" in cls.model_fields
 
 

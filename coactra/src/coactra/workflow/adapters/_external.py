@@ -1,4 +1,5 @@
 """Shared helpers for external workflow runtime adapters."""
+
 from __future__ import annotations
 
 import inspect
@@ -7,12 +8,12 @@ from collections.abc import Callable
 from typing import Any
 
 from coactra.workflow.domain.models import Procedure, RunResult
-from coactra.workflow.runtime.engine import RunContext
 from coactra.workflow.runtime.durable import (
     WorkflowInterrupt,
     WorkflowRun,
     WorkflowRunStatus,
 )
+from coactra.workflow.runtime.engine import RunContext
 
 ExternalPayloadFactory = Callable[
     [Procedure | None, dict[str, Any], RunContext, dict[str, Any] | None],

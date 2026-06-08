@@ -89,22 +89,15 @@ class CompanySpec:
             if agent.department_id not in department_ids
         )
         if missing_departments:
-            raise ValueError(
-                f"agent references unknown department(s): {missing_departments}"
-            )
+            raise ValueError(f"agent references unknown department(s): {missing_departments}")
         missing_parent_ids = sorted(
             department.parent_id
             for department in self.departments
-            if department.parent_id is not None
-            and department.parent_id not in department_ids
+            if department.parent_id is not None and department.parent_id not in department_ids
         )
         if missing_parent_ids:
-            raise ValueError(
-                f"department references unknown parent(s): {missing_parent_ids}"
-            )
-        missing_roles = sorted(
-            agent.role for agent in self.agents if agent.role not in role_ids
-        )
+            raise ValueError(f"department references unknown parent(s): {missing_parent_ids}")
+        missing_roles = sorted(agent.role for agent in self.agents if agent.role not in role_ids)
         if missing_roles:
             raise ValueError(f"agent references unknown role(s): {missing_roles}")
         unknown_report_targets = sorted(
@@ -158,11 +151,7 @@ def bootstrap_company(spec: CompanySpec, *, store: OrgStore) -> CompanyBootstrap
     department_nodes: dict[str, Organization] = {}
 
     for department in department_order(spec.departments):
-        parent = (
-            org
-            if department.parent_id is None
-            else department_nodes[department.parent_id]
-        )
+        parent = org if department.parent_id is None else department_nodes[department.parent_id]
         node = nodes.get(department.name)
         if node is None:
             node = parent.add_child(department.name)
@@ -198,9 +187,7 @@ def bootstrap_company(spec: CompanySpec, *, store: OrgStore) -> CompanyBootstrap
 
     for role in spec.roles:
         for namespace in role.memory_namespaces:
-            org.add_policy_ref(
-                f"role_memory_namespace:{role.id}:{namespace}", target=role.id
-            )
+            org.add_policy_ref(f"role_memory_namespace:{role.id}:{namespace}", target=role.id)
         for rule in role.approval_rules:
             org.add_policy_ref(f"role_approval_rule:{role.id}:{rule}", target=role.id)
 

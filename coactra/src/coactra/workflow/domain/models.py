@@ -43,10 +43,11 @@ class Step(BaseModel):
     reason: str | None = None
 
     @model_validator(mode="after")
-    def _validate_kind(self) -> "Step":
-        if self.kind == "branch":
-            if not self.condition or self.if_true is None or self.if_false is None:
-                raise ValueError("branch step requires condition, if_true, if_false")
+    def _validate_kind(self) -> Step:
+        if self.kind == "branch" and (
+            not self.condition or self.if_true is None or self.if_false is None
+        ):
+            raise ValueError("branch step requires condition, if_true, if_false")
         if self.kind == "ask" and not self.agent:
             raise ValueError("ask step requires an agent")
         return self
@@ -71,7 +72,7 @@ class Procedure(BaseModel):
     is_induced: bool = False
 
     @model_validator(mode="after")
-    def _validate_steps(self) -> "Procedure":
+    def _validate_steps(self) -> Procedure:
         seen: set[str] = set()
         duplicates: set[str] = set()
         for step in self.steps:

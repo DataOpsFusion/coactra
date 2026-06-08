@@ -4,6 +4,7 @@ SQLModel's repository remains the single tenant-checked implementation. Database
 run in worker threads so async fleet services do not block their event loop. PostgreSQL
 provides the shared multi-process persistence; install ``coactra[postgres]``.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -59,6 +60,7 @@ def _async_forward(name: str):
     async def call(self, *args: Any, **kwargs: Any):
         method = getattr(self._store, name)
         return await asyncio.to_thread(partial(method, *args, **kwargs))
+
     call.__name__ = name
     return call
 

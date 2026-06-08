@@ -16,7 +16,7 @@ class DaprDispatcher:
         self.workflow = workflow
 
     @classmethod
-    def connect(cls, *, workflow: Any, **client_kwargs: Any) -> "DaprDispatcher":
+    def connect(cls, *, workflow: Any, **client_kwargs: Any) -> DaprDispatcher:
         dapr = optional_module("dapr.ext.workflow", extra="dapr")
         return cls(dapr.DaprWorkflowClient(**client_kwargs), workflow=workflow)
 

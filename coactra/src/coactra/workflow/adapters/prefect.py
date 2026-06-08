@@ -5,6 +5,7 @@ This adapter starts deployment runs with Coactra payloads. Resume is modeled as 
 Prefect deployment run carrying the previous Coactra thread id, state, and decision;
 host flow code must decide how to apply that payload.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -153,8 +154,7 @@ class PrefectEngine:
             from prefect.deployments import run_deployment
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise MissingExtraError(
-                "PrefectEngine requires coactra[prefect] or "
-                "an injected run_deployment callable"
+                "PrefectEngine requires coactra[prefect] or an injected run_deployment callable"
             ) from exc
         return run_deployment
 
@@ -171,9 +171,7 @@ class PrefectEngine:
         return result
 
 
-def _default_idempotency_key(
-    action: str, thread_id: str, payload: dict[str, Any]
-) -> str | None:
+def _default_idempotency_key(action: str, thread_id: str, payload: dict[str, Any]) -> str | None:
     if action == "start":
         return thread_id
     return None

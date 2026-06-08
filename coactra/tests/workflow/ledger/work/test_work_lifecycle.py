@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
 from coactra.workflow.ledger import (
     Artifact,
     ArtifactPart,
@@ -10,16 +9,19 @@ from coactra.workflow.ledger import (
     CapabilityDescriptor,
     CapabilityRequirement,
     CapabilitySet,
-    Decision,
     Deadline,
+    Decision,
     DecisionOutcome,
     InMemoryWorkStore,
     InvalidTransitionError,
     LeaseError,
     RetryPolicy,
+    WorkManager,
     WorkNotFoundError,
+    WorkOrder,
     WorkStatus,
 )
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class AuditRecorder:
@@ -32,7 +34,7 @@ class AuditRecorder:
 
 class Clock:
     def __init__(self) -> None:
-        self.now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        self.now = datetime(2026, 1, 1, tzinfo=UTC)
 
     def __call__(self):
         return self.now
@@ -48,7 +50,9 @@ def test_submit_is_idempotent_within_scope_only():
 
     first = manager.submit(WorkOrder(scope=acme, title="index docs", idempotency_key="evt-1"))
     duplicate = manager.submit(WorkOrder(scope=acme, title="different", idempotency_key="evt-1"))
-    other_tenant = manager.submit(WorkOrder(scope=globex, title="index docs", idempotency_key="evt-1"))
+    other_tenant = manager.submit(
+        WorkOrder(scope=globex, title="index docs", idempotency_key="evt-1")
+    )
 
     assert duplicate.id == first.id
     assert other_tenant.id != first.id
@@ -164,9 +168,7 @@ def test_expired_deadline_rejects_claim_and_marks_work_failed():
 def test_usage_budget_stops_running_work_and_releases_lease():
     manager = WorkManager()
     scope = WorkScope(tenant_id="acme")
-    order = manager.submit(
-        WorkOrder(scope=scope, title="bounded", budget=Budget(max_tokens=3))
-    )
+    order = manager.submit(WorkOrder(scope=scope, title="bounded", budget=Budget(max_tokens=3)))
     lease = manager.claim(order.id, scope, worker="agent:worker")
     manager.start(lease, scope)
 

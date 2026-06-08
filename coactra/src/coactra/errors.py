@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any
 
 
 class ErrorCode(StrEnum):
@@ -155,7 +156,7 @@ class ExecutionError(CoactraError):
         )
 
 
-class TimeoutError(ExecutionError):
+class CoactraTimeoutError(ExecutionError):
     """Execution exceeded its deadline."""
 
     def __init__(
@@ -237,6 +238,7 @@ def coactra_error_from_exception(
 __all__ = [
     "AdapterError",
     "CoactraError",
+    "CoactraTimeoutError",
     "ConfigError",
     "ErrorCode",
     "ErrorInfo",
@@ -244,7 +246,6 @@ __all__ = [
     "MissingExtraError",
     "PermissionDeniedError",
     "SecurityError",
-    "TimeoutError",
     "ValidationError",
     "coactra_error_from_exception",
 ]

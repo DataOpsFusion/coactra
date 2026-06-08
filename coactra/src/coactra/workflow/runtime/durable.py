@@ -5,10 +5,11 @@ Temporal, a host workflow runtime, or another durable engine can implement this 
 ``AsyncProcedureRunnerAdapter`` is an honest bridge for local run-to-completion engines:
 it supports async start but deliberately rejects resume.
 """
+
 from __future__ import annotations
 
 import uuid
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
@@ -17,7 +18,7 @@ from coactra.workflow.domain.models import Procedure, RunResult
 from coactra.workflow.runtime.engine import ProcedureRunner, RunContext
 
 
-class WorkflowRunStatus(str, Enum):
+class WorkflowRunStatus(StrEnum):
     running = "running"
     interrupted = "interrupted"
     completed = "completed"

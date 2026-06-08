@@ -71,6 +71,7 @@ def test_does_not_overclaim_learning_update_is_manual():
 
 # ---- KEYSTONE: induced and authored are the same type AND run the same path ----
 
+
 def test_keystone_induced_and_authored_run_the_same_path_to_same_result():
     authored = Procedure(
         name="deploy the service",

@@ -1,13 +1,12 @@
-
 from coactra.workflow import (
     InMemoryProcedureStore,
     Procedure,
     ProcedureStore,
+    ReasoningTrace,
     Scope,
     Step,
     induce,
 )
-from coactra.workflow import ReasoningTrace
 
 ACME = Scope(tenant_id="acme", namespace="agent:1")
 GLOBEX = Scope(tenant_id="globex", namespace="agent:1")

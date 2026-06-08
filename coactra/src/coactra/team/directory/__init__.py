@@ -3,6 +3,7 @@
 The package initializer stays dependency-light. SQL and optional authorization
 backends are imported lazily when their exported names are accessed.
 """
+
 from __future__ import annotations
 
 from importlib import import_module

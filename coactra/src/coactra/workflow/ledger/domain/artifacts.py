@@ -25,7 +25,7 @@ class ArtifactPart(BaseModel):
     reference: ArtifactRef | None = None
 
     @model_validator(mode="after")
-    def _validate_payload(self) -> "ArtifactPart":
+    def _validate_payload(self) -> ArtifactPart:
         payloads = {
             "text": self.text,
             "data": self.data,

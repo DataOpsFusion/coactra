@@ -134,25 +134,25 @@ def test_resave_flushes_mutations_status_block_grant_move_override():
     save_org(acme, store=store)
 
     # now mutate the persisted tree and re-save
-    rnd.suspend(ada)               # status change
-    eng.block_inheritance = True   # block flag change
-    acme.revoke("root-grant")      # grant removal
-    rnd.grant("rnd-grant")         # grant addition
-    rnd.move(ada, to=eng)          # reparent
-    del ada.overrides["legacy"]    # override removal
-    ada.deny("danger")             # override addition
+    rnd.suspend(ada)  # status change
+    eng.block_inheritance = True  # block flag change
+    acme.revoke("root-grant")  # grant removal
+    rnd.grant("rnd-grant")  # grant addition
+    rnd.move(ada, to=eng)  # reparent
+    del ada.overrides["legacy"]  # override removal
+    ada.deny("danger")  # override addition
     save_org(acme, store=store)
 
     again = load_org("acme", store=store)
     a = {m.name: m for m in again.members(recursive=True)}["ada"]
     reng = again.children[0]
     rrnd = reng.children[0]
-    assert a.dn == "acme/Engineering/ada"          # moved
-    assert a.status.value == "suspended"           # status flushed
-    assert reng.block_inheritance is True          # block flushed
-    assert "root-grant" not in again.grants        # revoke flushed
-    assert "rnd-grant" in rrnd.grants              # grant-add flushed
-    assert a.overrides.get("legacy") is None       # override removed
+    assert a.dn == "acme/Engineering/ada"  # moved
+    assert a.status.value == "suspended"  # status flushed
+    assert reng.block_inheritance is True  # block flushed
+    assert "root-grant" not in again.grants  # revoke flushed
+    assert "rnd-grant" in rrnd.grants  # grant-add flushed
+    assert a.overrides.get("legacy") is None  # override removed
     assert a.overrides.get("danger").value == "deny"  # override added
 
     # no duplicate placement rows after move (one seat, one node)

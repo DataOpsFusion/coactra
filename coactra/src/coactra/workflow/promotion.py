@@ -66,9 +66,7 @@ class InMemoryProcedurePromotionStore:
         self._candidate_bucket(scope)[candidate.id] = candidate.model_copy(deep=True)
         return candidate
 
-    def approve(
-        self, candidate_id: str, scope: Scope, *, reviewed_by: str
-    ) -> ProcedureCandidate:
+    def approve(self, candidate_id: str, scope: Scope, *, reviewed_by: str) -> ProcedureCandidate:
         candidate = self._candidate(candidate_id, scope)
         if candidate.status is not CandidateStatus.proposed:
             raise ValueError("only proposed procedures can be approved")
@@ -77,9 +75,7 @@ class InMemoryProcedurePromotionStore:
         candidate.reviewed_at = utc_now()
         return self._save_candidate(candidate)
 
-    def reject(
-        self, candidate_id: str, scope: Scope, *, reviewed_by: str
-    ) -> ProcedureCandidate:
+    def reject(self, candidate_id: str, scope: Scope, *, reviewed_by: str) -> ProcedureCandidate:
         candidate = self._candidate(candidate_id, scope)
         if candidate.status is not CandidateStatus.proposed:
             raise ValueError("only proposed procedures can be rejected")
@@ -88,9 +84,7 @@ class InMemoryProcedurePromotionStore:
         candidate.reviewed_at = utc_now()
         return self._save_candidate(candidate)
 
-    def promote(
-        self, candidate_id: str, scope: Scope, *, promoted_by: str
-    ) -> ProcedureVersion:
+    def promote(self, candidate_id: str, scope: Scope, *, promoted_by: str) -> ProcedureVersion:
         candidate = self._candidate(candidate_id, scope)
         if candidate.status is not CandidateStatus.approved:
             raise ValueError("procedure must be approved before promotion")
@@ -126,10 +120,7 @@ class InMemoryProcedurePromotionStore:
         raise KeyError((name, version))
 
     def versions(self, name: str, scope: Scope) -> list[ProcedureVersion]:
-        return [
-            item.model_copy(deep=True)
-            for item in self._version_bucket(scope).get(name, [])
-        ]
+        return [item.model_copy(deep=True) for item in self._version_bucket(scope).get(name, [])]
 
     def _candidate(self, candidate_id: str, scope: Scope) -> ProcedureCandidate:
         candidate = self._candidate_bucket(scope).get(candidate_id)

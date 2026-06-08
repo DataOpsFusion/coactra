@@ -24,6 +24,11 @@ from langgraph.types import Command, Send, interrupt
 from typing_extensions import TypedDict
 
 from coactra.workflow.domain.models import Procedure, RunResult
+from coactra.workflow.runtime.capabilities import (
+    CapabilityRegistry,
+    validate_tool_call,
+    validate_workflow_capabilities,
+)
 from coactra.workflow.runtime.durable import (
     WorkflowInterrupt,
     WorkflowNotResumableError,
@@ -32,11 +37,6 @@ from coactra.workflow.runtime.durable import (
 )
 from coactra.workflow.runtime.engine import RunContext
 from coactra.workflow.runtime.handlers import Escalation
-from coactra.workflow.runtime.capabilities import (
-    CapabilityRegistry,
-    validate_tool_call,
-    validate_workflow_capabilities,
-)
 from coactra.workflow.runtime.tools import ToolInvoker
 from coactra.workflow.runtime.verification import (
     VerificationResult,
@@ -53,9 +53,7 @@ _CEL_ENV = celpy.Environment()
 _DEFAULT_MAX_FANOUT = 100
 
 
-def merge_data(
-    left: dict[str, Any] | None, right: dict[str, Any] | None
-) -> dict[str, Any]:
+def merge_data(left: dict[str, Any] | None, right: dict[str, Any] | None) -> dict[str, Any]:
     out = dict(left or {})
     out.update(right or {})
     return out
@@ -153,9 +151,7 @@ def _gate_red_tier(node: dict[str, Any], action: str, params: Any) -> None:
         }
     )
     if _decision_denied(decision):
-        raise ApprovalDenied(
-            f"red-tier node {node['id']!r} ({action}) denied by operator"
-        )
+        raise ApprovalDenied(f"red-tier node {node['id']!r} ({action}) denied by operator")
 
 
 def make_tool_node(
@@ -190,9 +186,7 @@ def make_tool_node(
 def make_python_node(node: dict[str, Any], registry: dict[str, Callable]) -> Callable:
     async def _node(state: dict[str, Any]) -> dict[str, Any]:
         data = state["data"]
-        _gate_red_tier(
-            node, f"python:{node['function']}", {"function": node["function"]}
-        )
+        _gate_red_tier(node, f"python:{node['function']}", {"function": node["function"]})
         fn = registry[node["function"]]
         result = fn(data)
         if inspect.isawaitable(result):
@@ -357,7 +351,7 @@ def _with_timeout(node_fn: Callable, nid: str, timeout: float | None) -> Callabl
     async def _wrapped(state: dict[str, Any]) -> dict[str, Any]:
         try:
             return await asyncio.wait_for(node_fn(state), timeout)
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             raise TimeoutError(f"node {nid!r} exceeded {timeout}s") from exc
 
     return _wrapped
@@ -438,9 +432,7 @@ def build_graph(
             builder.add_node(nid, make_branch_node())
         elif ntype == "sub-procedure":
             if procedure_resolver is None:
-                raise ValueError(
-                    f"sub-procedure node {nid!r} requires a procedure_resolver"
-                )
+                raise ValueError(f"sub-procedure node {nid!r} requires a procedure_resolver")
             builder.add_node(
                 nid,
                 make_sub_procedure_node(
@@ -484,11 +476,7 @@ def build_graph(
 
     has_outgoing: set[str] = set()
     for edge in workflow.get("edges", []):
-        if (
-            edge["from"] in branch_ids
-            or edge["from"] in parallel_ids
-            or edge["from"] in loop_ids
-        ):
+        if edge["from"] in branch_ids or edge["from"] in parallel_ids or edge["from"] in loop_ids:
             continue
         builder.add_edge(edge["from"], edge["to"])
         has_outgoing.add(edge["from"])
@@ -539,9 +527,7 @@ def build_graph(
                 try:
                     return on_true if evaluate_cel(expr, state["data"]) else on_false
                 except CELError as exc:
-                    log.warning(
-                        "branch_cel_error", extra={"expr": expr, "error": str(exc)}
-                    )
+                    log.warning("branch_cel_error", extra={"expr": expr, "error": str(exc)})
                     return on_false
 
             return _router
@@ -698,9 +684,7 @@ async def run_workflow(
     """
     for name, spec in (workflow.get("parameters") or {}).items():
         if isinstance(spec, dict) and spec.get("required") and name not in params:
-            raise ValueError(
-                f"workflow {workflow['name']!r} requires parameter {name!r}"
-            )
+            raise ValueError(f"workflow {workflow['name']!r} requires parameter {name!r}")
 
     # Resolve the checkpointer once and share the SAME instance with any child
     # sub-procedures (threaded via build_graph) so a child's human gate is durably
@@ -744,7 +728,7 @@ async def run_workflow(
             result = await asyncio.wait_for(invoke, workflow_timeout)
         else:
             result = await invoke
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         raise TimeoutError(f"workflow {workflow['name']!r} exceeded {workflow_timeout}s") from exc
 
     data = dict(result.get("data", {}))
@@ -757,9 +741,7 @@ async def run_workflow(
 
     criteria = workflow.get("done_criteria")
     if criteria:
-        verification = await verify_done_criteria(
-            criteria, data, tool_invoker=tool_invoker
-        )
+        verification = await verify_done_criteria(criteria, data, tool_invoker=tool_invoker)
         data["_verified"] = verification.passed
         data["_verification"] = verification.model_dump()
         if not verification.passed:
@@ -818,9 +800,7 @@ def _snapshot(thread_id: str, state: dict[str, Any]) -> WorkflowRun:
         if not isinstance(raw, dict):
             raw = {"value": raw}
         step_id = str(raw.get("node") or raw.get("step_id") or "workflow")
-        prompt = str(
-            raw.get("prompt") or raw.get("action") or "operator approval required"
-        )
+        prompt = str(raw.get("prompt") or raw.get("action") or "operator approval required")
         return WorkflowRun(
             thread_id=thread_id,
             status=WorkflowRunStatus.interrupted,
@@ -891,9 +871,7 @@ class DurableLangGraphEngine:
             ctx=ctx,
             node_timeout=node_timeout if node_timeout is not None else self._node_timeout,
             workflow_timeout=(
-                workflow_timeout
-                if workflow_timeout is not None
-                else self._workflow_timeout
+                workflow_timeout if workflow_timeout is not None else self._workflow_timeout
             ),
             capability_registry=self._capability_registry,
         )

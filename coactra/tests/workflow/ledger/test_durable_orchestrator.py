@@ -4,14 +4,12 @@ from coactra.workflow import (
     DurableOrchestrator,
     Procedure,
     Step,
-    WorkOrder,
-    WorkScope,
-)
-from coactra.workflow import (
     WorkflowInterrupt,
     WorkflowRun,
     WorkflowRunStatus,
 )
+from coactra.workflow.ledger import WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Engine:
@@ -23,15 +21,11 @@ class Engine:
         return WorkflowRun(
             thread_id=thread_id or "thread-1",
             status=WorkflowRunStatus.interrupted,
-            interrupt=WorkflowInterrupt(
-                kind="approval", step_id="review", prompt="Ship?"
-            ),
+            interrupt=WorkflowInterrupt(kind="approval", step_id="review", prompt="Ship?"),
             state={**state, "built": True},
         )
 
-    async def resume(
-        self, thread_id, ctx, *, procedure=None, decision=None, state=None
-    ):
+    async def resume(self, thread_id, ctx, *, procedure=None, decision=None, state=None):
         self.resumed_procedure = procedure
         self.resumed_decision = decision
         return WorkflowRun(
@@ -49,9 +43,7 @@ async def test_durable_orchestrator_checkpoints_interrupt_resolves_approval_and_
     orchestrator.register(
         Procedure(name="deploy", steps=[Step(id="review", kind="approve")]), scope
     )
-    order = orchestrator.submit(
-        WorkOrder(scope=scope, title="deploy", procedure="deploy")
-    )
+    order = orchestrator.submit(WorkOrder(scope=scope, title="deploy", procedure="deploy"))
 
     interrupted = await orchestrator.start(
         order.id, scope, worker="agent:builder", state={"sha": "abc"}
@@ -60,9 +52,7 @@ async def test_durable_orchestrator_checkpoints_interrupt_resolves_approval_and_
     assert interrupted.order.checkpoint.state["workflow_thread_id"] == "thread-1"
     assert interrupted.approval.prompt == "Ship?"
 
-    queued = orchestrator.resolve_approval(
-        order.id, scope, approved=True, decided_by="human:ops"
-    )
+    queued = orchestrator.resolve_approval(order.id, scope, approved=True, decided_by="human:ops")
     assert queued.status == "queued"
     completed = await orchestrator.resume(order.id, scope, worker="agent:builder")
     assert completed.order.status == "completed"
@@ -78,19 +68,16 @@ async def test_durable_orchestrator_does_not_resume_rejected_approval():
     orchestrator.register(
         Procedure(name="deploy", steps=[Step(id="review", kind="approve")]), scope
     )
-    order = orchestrator.submit(
-        WorkOrder(scope=scope, title="deploy", procedure="deploy")
-    )
+    order = orchestrator.submit(WorkOrder(scope=scope, title="deploy", procedure="deploy"))
     await orchestrator.start(order.id, scope, worker="agent:builder")
 
-    failed = orchestrator.resolve_approval(
-        order.id, scope, approved=False, decided_by="human:ops"
-    )
+    failed = orchestrator.resolve_approval(order.id, scope, approved=False, decided_by="human:ops")
 
     assert failed.status == "failed"
     with pytest.raises(ValueError, match="resolve an interrupted approval"):
         await orchestrator.resume(order.id, scope, worker="agent:builder")
     assert engine.resumed_procedure is None
+
 
 def test_durable_orchestrator_uses_default_workflow_engine_when_not_injected(monkeypatch):
     import coactra.workflow.ledger_facade as facade
