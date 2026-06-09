@@ -26,9 +26,7 @@ def test_pyproject_addopts_excludes_live_marker():
 def test_live_test_files_define_live_marker():
     for rel in LIVE_TEST_FILES:
         text = (PACKAGE_ROOT / rel).read_text(encoding="utf-8")
-        assert "pytest.mark.live" in text, (
-            f"{rel} must tag live tests with @pytest.mark.live"
-        )
+        assert "pytest.mark.live" in text, f"{rel} must tag live tests with @pytest.mark.live"
 
 
 def test_default_collection_excludes_live_tests():

@@ -23,7 +23,7 @@ def _make_playbook(name: str, goal: str | None = None) -> Playbook:
     """Build a minimal Playbook. goal is ignored here; name IS the identifier."""
     return Playbook(
         name=name,
-        steps=[Step(instruction=f"Do {name}", needs="some.skill")],
+        steps=[Step(instruction=f"Do {name}", requires_skill="some.skill")],
     )
 
 

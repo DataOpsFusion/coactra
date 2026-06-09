@@ -1,56 +1,64 @@
 # Procedure-Backed Work
 
-A Workflow step can target an agent by **capability** (`needs=`) instead of by
-name (`agent=`). The Team's matcher resolves the best agent from its roster at
-runtime — keyword/tag match by default, embedding similarity on request.
+A Workflow step can target an agent by exact **skill id** (`requires_skill=`) instead of by name (`agent=`). The Team resolves the effective agent from its roster at runtime.
 
 ## What This Enables
 
-- Steps declare *what* they need, not *who* does it
-- The Team picks the right agent from the registered roster
+- Steps declare *what capability package* they require, not *who* performs the work
+- The Team picks an agent with the required effective skill
 - Agents can be swapped or added without touching the playbook
-- Ties resolve by first-match or Team-defined priority
+- `agent=` remains available as an explicit override
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent, StaticToken, Skill, Team, Workflow
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, StaticToken, Skill, Team, Workflow
 from coactra.workflow import step
 
 
 async def main() -> None:
-    sre = await Agent.create(
-        model="claude-sonnet-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="ops"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="sre",
+                profile=ModelProfile(name="sre", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+            ),
+            ModelRoute(
+                capability="security",
+                profile=ModelProfile(name="security", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+            ),
+        ]),
+    )
+    await team.add_agent(
+        model_capability="sre",
         name="sre-agent",
-        tenant="acme",
         auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
-        skills=[Skill("infra.restart", description="Restart infra services",
-                      tags=["sre", "infra"])],
+        skills=[Skill("infra.restart", description="Restart infra services", tags=["sre", "infra"])],
+        expose=True,
     )
-
-    security = await Agent.create(
-        model="claude-sonnet-4-5",
+    await team.add_agent(
+        model_capability="security",
         name="security-agent",
-        tenant="acme",
         auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
-        skills=[Skill("cert.rotate", description="Rotate TLS certs",
-                      tags=["security", "certs"])],
+        skills=[Skill("cert.rotate", description="Rotate TLS certs", tags=["security", "certs"])],
+        expose=True,
     )
-
-    # Keyword match (default) — no embedding model required
-    team = Team([sre, security])
 
     play = Workflow("cert-rotation-deploy", steps=[
-        step("rotate the production cert", needs="certs"),      # → security-agent
-        step("verify cert chain", needs="certs"),               # → security-agent
-        step("redeploy web tier", needs="infra"),               # → sre-agent
+        step("rotate the production cert", requires_skill="cert.rotate"),
+        step("verify cert chain", requires_skill="cert.rotate"),
+        step("redeploy web tier", agent="sre-agent"),
         step("final sign-off", approve=True),
     ])
 
-    run = await play.run(team, durable=True)
+    run = await team.run(play)
     print("Done:", run.status)
 
 
@@ -61,12 +69,12 @@ asyncio.run(main())
 
 | Option | Resolver | Use when |
 |---|---|---|
-| `Team([...])` | Keyword/tag match | Deterministic; no model required |
-| `Team([...], match="semantic")` | Embedding similarity | Fuzzy natural-language needs |
-| `step(..., agent="name")` | Pinned — trivial match | You know exactly who does it |
+| `team.match_skill("cert.rotate")` | Exact skill-id match | Stable capability routing |
+| Team-owned fuzzy/semantic routing | Future adapter seam | Not part of the current Team-first execution path |
+| `step(..., agent="name")` | Pinned | You know exactly who does it |
 
 ## See Also
 
 - [Work Order Lifecycle](work-order-lifecycle.md) — the durable run model
-- [Multi-Agent Policy](multi-agent-policy.md) — who-may-talk policy (runnable now)
+- [Multi-Agent Policy](multi-agent-policy.md) — who-may-talk policy
 - [Workflow design spec](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md)

@@ -7,7 +7,7 @@ from typing import Any
 
 
 def bind_runtime_memory(memory: Any, *, tenant: str, agent: str) -> Any:
-    """Bind a memory spec to the runtime scope used by Agent.create."""
+    """Bind a memory spec to the Team-owned runtime scope for an agent."""
     if memory is None:
         return None
 

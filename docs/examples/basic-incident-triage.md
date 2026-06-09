@@ -1,23 +1,23 @@
 # Basic Incident Triage
 
-The smallest Coactra application: one `Agent` that receives an incident description
-and returns a triage plan. No Team, no Workflow — just the agent thinking.
+The smallest Coactra application: one Team-owned agent that receives an incident description and returns a triage plan.
 
 ## Demonstrates
 
-- `Agent.create(model=, tools=, instructions=)`
-- `agent.run(prompt)` — synchronous result
-- plain local tools passed to the agent
+- `team.add_agent(model_capability=..., tools=, instructions=)`
+- `agent.run(prompt)`
+- plain local tools
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def get_runbook(service: str) -> str:
-    """Return the runbook URL for a service."""
     runbooks = {
         "nginx": "https://wiki.example.com/runbooks/nginx",
         "postgres": "https://wiki.example.com/runbooks/postgres",
@@ -26,33 +26,27 @@ def get_runbook(service: str) -> str:
 
 
 async def triage_incident(incident: str) -> str:
-    agent = await Agent.create(
-        model="claude-sonnet-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="incident"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="triage",
+                profile=ModelProfile(
+                    name="triage",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="triage",
         name="triage-1",
-        auth="dev-token",          # swap for StaticToken or authlib TokenSource in production
+        auth="dev-token",
         tools=[get_runbook],
         instructions="You are a senior SRE. Be brief and actionable.",
     )
     return await agent.run(f"Triage this incident: {incident}")
-
-
-if __name__ == "__main__":
-    result = asyncio.run(triage_incident("nginx is returning 502 on /api/checkout"))
-    print(result)
 ```
-
-## Run
-
-```bash
-python basic_incident_triage.py
-```
-
-## Production Notes
-
-| Concern | Dev default | Production |
-|---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| MCP tools | local functions only | `gateway="https://gateway/mcp"` with `auth=` |
-| Model | provider string (`anthropic:...`) | pydantic-ai `Model` instance or `gateway=` token scopes |
-
-See [Concepts: Architecture](../concepts/architecture.md) for the full Agent/Team/Workflow model.

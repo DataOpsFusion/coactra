@@ -82,9 +82,7 @@ def _loads_json_object(text: str) -> dict[str, Any]:
         start = candidate.find("{")
         end = candidate.rfind("}")
         if start < 0 or end <= start:
-            raise ValueError(
-                "Graphiti expected a JSON object from coactra.ai.ask"
-            ) from None
+            raise ValueError("Graphiti expected a JSON object from coactra.ai.ask") from None
         parsed = json.loads(candidate[start : end + 1])
     if not isinstance(parsed, dict):
         raise ValueError("Graphiti expected a JSON object from coactra.ai.ask")

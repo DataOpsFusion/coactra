@@ -194,7 +194,7 @@ def open_workspace(
     Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
     ephemeral=True uses a throwaway temp dir cleaned up on close(). Local subprocesses are
     not jailed; pass allow_unsafe_local_exec=True only for trusted local development.
-    When local exec is enabled without an explicit policy, a conservative allowlist is used.
+    Local command execution requires an explicit policy.
     """
     from coactra.workspace.backends.local import LocalFilesystemBackend
 
@@ -203,7 +203,7 @@ def open_workspace(
     else:
         base = base_dir or ".fleet-workspaces"
     if allow_unsafe_local_exec and policy is None:
-        policy = CliPolicy.safe_default()
+        raise ValueError("allow_unsafe_local_exec=True requires an explicit CliPolicy")
     backend = LocalFilesystemBackend(
         base_dir=base,
         allow_unsafe_exec=allow_unsafe_local_exec,

@@ -1,7 +1,7 @@
 """Approval-routed agent collaboration.
 
 The transport is local and fake. The point is the boundary: cross-agent calls go
-through a policy gate before any A2A transport is allowed to send work.
+through shared Policy before any A2A transport is allowed to send work.
 """
 
 from __future__ import annotations
@@ -9,13 +9,15 @@ from __future__ import annotations
 import asyncio
 from pprint import pprint
 
-from coactra.agent import (
-    AgentRef,
-    AllowSameTenant,
-    CollaborationDenied,
-    AsyncPolicyGatedCollaborator,
-    Scope,
-)
+from coactra import Decision, DecisionOutcome, PolicyRequest
+from coactra.agent import AgentRef, AsyncPolicyGatedCollaborator, CollaborationDenied, Scope
+
+
+class TenantOnlyPolicy:
+    async def check(self, request: PolicyRequest) -> Decision:
+        if request.context.get("src_tenant") != request.context.get("dst_tenant"):
+            return Decision(outcome=DecisionOutcome.deny, reason="cross-tenant denied")
+        return Decision(outcome=DecisionOutcome.allow, source="demo")
 
 
 class RecordingTransport:
@@ -28,20 +30,20 @@ class RecordingTransport:
 
 
 async def run_routing_demo() -> dict[str, object]:
-    scope = Scope(tenant_id="acme", namespace="agent:oncall")
+    scope = Scope(tenant_id="acme", namespace="ops", agent_id="oncall")
     transport = RecordingTransport()
     collaborator = AsyncPolicyGatedCollaborator(
         transport=transport,
-        policy=AllowSameTenant(),
+        policy=TenantOnlyPolicy(),
         scope=scope,
-        me="agent:oncall",
+        me="oncall",
     )
 
-    allowed = await collaborator.ask("agent:database", "Why did checkout latency spike?", {})
+    allowed = await collaborator.ask("database", "Why did checkout latency spike?", {})
 
     try:
         await collaborator.ask(
-            AgentRef(tenant_id="globex", agent_id="agent:database"),
+            AgentRef(tenant_id="globex", agent_id="database"),
             "Can you inspect another tenant?",
             {},
         )

@@ -1,64 +1,48 @@
 # Workspace Research Desk
 
-An agent with a **workspace** — a persistent desk where it can read and write files
-between tasks and sessions. The agent gets `read_file`, `write_file`, `list_files`,
-and (if configured) `run` as automatic tools from the workspace path.
+An agent with a **workspace** — a persistent desk where it can read and write files between tasks and sessions.
 
 ## Demonstrates
 
-- `Agent.create(workspace="./desk")` — capability by path
+- `team.add_agent(workspace="./desk", model_capability=...)`
 - Workspace surfaces as tools the model can call directly
-- `run` is allow-listed (disabled by default; must be explicitly enabled)
-- Persistent notes across sessions (files live in the workspace path)
+- `run` is allow-listed
+- Persistent notes across sessions
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 async def research_session(topic: str) -> str:
-    agent = await Agent.create(
-        model="claude-sonnet-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="research"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="research",
+                profile=ModelProfile(
+                    name="research",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="research",
         name="research-agent",
-        tenant="acme",
         auth="dev-token",
-        workspace="./desk",         # creates ./desk if not present
+        workspace="./desk",
         instructions=(
             "You are a research assistant. Use the workspace to take notes, "
             "store findings, and write a summary file when done."
         ),
     )
     return await agent.run(f"Research {topic} and save a summary to summary.md")
-
-
-if __name__ == "__main__":
-    result = asyncio.run(research_session("TLS certificate rotation best practices"))
-    print(result)
 ```
-
-## Workspace Tools
-
-When `workspace=` is set, the agent automatically receives these tools:
-
-| Tool | Description |
-|---|---|
-| `read_file(path)` | Read a file from the workspace |
-| `write_file(path, content)` | Write content to a file |
-| `list_files(path?)` | List files in the workspace |
-| `run(cmd)` | Execute a command — **disabled by default**, require explicit allow-list |
-
-## Security Notes
-
-- `run` is gated by an allow-list. Never enable broad shell access for untrusted tenants.
-- Workspace path is scoped per-tenant; cross-tenant file access is denied.
-- For untrusted workloads, use a sandbox-backed workspace adapter (Daytona, E2B, OpenHands) rather than local filesystem.
-
-## Production Notes
-
-| Concern | Dev default | Production |
-|---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| Workspace backend | Local filesystem | Sandbox/remote backend |
-| `run` commands | Disabled | Explicit allow-list per tenant |

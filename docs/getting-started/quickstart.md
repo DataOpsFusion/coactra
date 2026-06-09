@@ -1,8 +1,6 @@
 # Quickstart
 
-This guide builds a small incident-triage agent using the current public API. Start from the root package and add lower-level backends only when the app needs them.
-
-`Agent` is a thin composition shell over pydantic-ai. For advanced model control, pass a pydantic-ai `Model` instance directly. `Team` and `Workflow` are the multi-agent orchestration layer.
+This guide builds a small incident-triage system using the Team-first public API. `Team` is the assembly door; `Agent` remains the runtime actor type returned by `team.add_agent(...)`.
 
 ## 1. Install
 
@@ -18,8 +16,6 @@ python -m pip install -e "./coactra[all,dev]"
 
 ## 2. Write A Tool
 
-A tool is just a callable. Coactra adapts it for the model runtime.
-
 ```python
 def get_runbook(service: str) -> str:
     runbooks = {
@@ -29,11 +25,13 @@ def get_runbook(service: str) -> str:
     return runbooks.get(service, "https://wiki.example.com/runbooks/generic")
 ```
 
-## 3. Create An Agent
+## 3. Create A Team And Add An Agent
 
 ```python
 import asyncio
-from coactra import Agent, Skill
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 
 
 def get_runbook(service: str) -> str:
@@ -41,14 +39,29 @@ def get_runbook(service: str) -> str:
 
 
 async def main() -> None:
-    agent = await Agent.create(
-        model="anthropic:claude-haiku-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="triage",
+                profile=ModelProfile(
+                    name="triage",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="triage",
         name="triage-agent",
-        tenant="acme",
         auth="dev-token",
         tools=[get_runbook],
         skills=[Skill(id="incident.triage", description="Triage production incidents")],
         instructions="You are a senior SRE. Be concise and actionable.",
+        expose=True,
     )
     answer = await agent.run("Triage nginx 502s on checkout")
     print(answer)
@@ -57,49 +70,70 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-For full provider control, pass a pydantic-ai model instance:
-
-```python
-from pydantic_ai.models.anthropic import AnthropicModel
-
-agent = await Agent.create(
-    model=AnthropicModel("claude-haiku-4-5"),
-    ...
-)
-```
+For deterministic local tests, route a capability to `TestModel()` or `FunctionModel(...)` instead of a live provider.
 
 ## 4. Add Memory, Workspace, Or Gateway Tools
 
 ```python
-from coactra import Agent, StaticToken
+import os
 
-agent = await Agent.create(
-    model="anthropic:claude-sonnet-4-5",
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, StaticToken, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="ops"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="sre",
+            profile=ModelProfile(
+                name="sre",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="sre",
     name="sre-agent",
-    tenant="acme",
     gateway="https://gateway.example/mcp",
-    auth=StaticToken("your-gateway-token"),  # or any async TokenSource
+    auth=StaticToken("your-gateway-token"),
     memory="graphiti",
     workspace="./desk",
 )
 ```
 
-For OAuth client-credentials fetch and refresh, use `authlib` or `httpx-oauth` and pass the resulting token source to `auth=`. Coactra ships `StaticToken` for dev and pre-fetched production tokens.
-
 ## 5. Route Across A Team
 
 ```python
-from coactra import Agent, Skill, Team
+import os
 
-security = await Agent.create(
-    model="anthropic:claude-haiku-4-5",
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="security"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="security-review",
+            profile=ModelProfile(
+                name="security-review",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+await team.add_agent(
+    model_capability="security-review",
     name="security-agent",
-    tenant="acme",
     auth="dev-token",
     skills=[Skill(id="security.review", description="Review security-sensitive changes")],
+    expose=True,
 )
-team = Team([security])
-print(team.match("review certificate rotation risk").card)
+print(team.match_skill("security.review").card)
 ```
 
 ## 6. Run A Workflow
@@ -111,25 +145,25 @@ from coactra.workflow import step
 workflow = Workflow(
     "cert rotation",
     steps=[
-        step("plan", needs="sre planning"),
-        step("approve", needs="security review", approve=True),
-        step("execute", needs="sre execution"),
+        step("plan", requires_skill="sre.plan"),
+        step("approve", requires_skill="security.review", approve=True),
+        step("execute", requires_skill="sre.execute"),
     ],
 )
 ```
 
-`Workflow` supports Team capability routing, approval pause/resume, checkpoint storage, and swappable engine seams.
+`Workflow` supports Team skill routing, approval pause/resume, checkpoint storage, and swappable engine seams.
 
 ## 7. Production Shape
 
 | Concern | Development | Production |
 |---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or custom `TokenSource` (authlib / httpx-oauth for client-credentials) |
-| Model | provider string (`anthropic:...`) | pydantic-ai `Model` instance with explicit provider config |
+| Policy | `Policy.permissive()` | guarded / approval-gated custom policy |
+| Scope | `Scope(tenant_id="acme", namespace="support")` | tenant/workspace-qualified scope |
+| Model | `TestModel()` / `FunctionModel(...)` route | Team-owned routed profiles via `ModelResolver` |
 | Tools | local callables | `gateway=` plus scoped auth |
 | Memory | in-process or named local backend | Graphiti/mem0 adapter with tenant scope |
 | Workspace | local gated directory | host-controlled workspace backend |
-| Peers | local `Agent` objects | `RemotePeer(...)` over A2A (`coactra.agent.adapters`) |
-| Inbound A2A | not required for local dev | wire `a2a-sdk` server; handler calls `await agent.run(message)` |
+| Peers | local runtime agents | `RemotePeer(...)` over A2A |
 
-Coactra should give you stable seams. Keep business behavior in plain functions and let `Agent`, `Team`, and `Workflow` own runtime state.
+Coactra should give you stable seams. Keep business behavior in plain functions and let `Team`, `Agent`, and `Workflow` own runtime state.

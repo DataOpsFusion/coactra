@@ -1,8 +1,4 @@
-"""Incident response handoff using the current Agent facade.
-
-This example runs offline with pydantic-ai FunctionModel and keeps durable work
-state in the in-memory WorkManager.
-"""
+"""Incident response handoff using the Team-first facade."""
 
 from __future__ import annotations
 
@@ -13,10 +9,9 @@ from pprint import pprint
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent
-from coactra.workflow.ledger import WorkManager, WorkOrder
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+from coactra.workflow.ledger import Artifact, ArtifactPart, WorkManager, WorkOrder
 from coactra.workflow.ledger.domain.scope import Scope as WorkScope
-from coactra.workflow.ledger import Artifact, ArtifactPart
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")
 
@@ -44,10 +39,16 @@ def handoff_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
 
 async def handoff_incident(summary: str) -> dict[str, object]:
     work = WorkManager()
-    agent = await Agent.create(
-        model=FunctionModel(handoff_model),
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="incident"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(capability="handoff", profile=ModelProfile(name="handoff", model=FunctionModel(handoff_model)))
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="handoff",
         name="oncall-agent",
-        tenant="acme",
         auth="dev-token",
         instructions="Draft concise on-call handoffs.",
     )

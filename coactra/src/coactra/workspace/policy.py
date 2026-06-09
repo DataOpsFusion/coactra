@@ -36,16 +36,14 @@ def to_argv(command: str | Sequence[str]) -> list[str]:
 class CliPolicy(BaseModel):
     """Allow/deny gate evaluated (on argv) before a command reaches the backend."""
 
-    allow: list[str] = Field(default_factory=list)  # empty => allow all (subject to deny)
+    allow: list[str] = Field(default_factory=list)
     deny: list[str] = Field(default_factory=list)
 
     @classmethod
     def safe_default(cls) -> CliPolicy:
         """Conservative policy used when local subprocess execution is enabled implicitly.
 
-        Empty ``allow`` means allow-all for backward compatibility. This helper gives
-        ``open_workspace(..., allow_unsafe_local_exec=True)`` a safer default without
-        changing explicitly provided policies.
+        This helper gives local development an explicit conservative allowlist.
         """
         return cls(
             allow=["pwd", "ls", "cat", "echo"],
@@ -60,7 +58,9 @@ class CliPolicy(BaseModel):
         for pattern in self.deny:
             if self._matches(argv, pattern):
                 raise PolicyError(f"command blocked by deny rule: {pattern!r}")
-        if self.allow and not any(self._matches(argv, p) for p in self.allow):
+        if not self.allow:
+            raise PolicyError("CliPolicy requires an explicit allowlist")
+        if not any(self._matches(argv, p) for p in self.allow):
             raise PolicyError(f"command not in allowlist: {argv!r}")
         return argv
 

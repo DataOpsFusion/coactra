@@ -1,8 +1,4 @@
-"""Support ticket agent using the current Agent facade.
-
-The model is local and deterministic so the script runs in CI and fresh checkouts
-with `coactra[agent]` installed.
-"""
+"""Support ticket agent using the Team-first facade."""
 
 from __future__ import annotations
 
@@ -13,7 +9,7 @@ from pprint import pprint
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent, Skill
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 from coactra.workflow.ledger import WorkManager, WorkOrder
 from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
@@ -47,14 +43,21 @@ def open_ticket(work: WorkManager, ticket_id: str, issue: str) -> WorkOrder:
 
 async def handle_ticket(ticket_id: str, issue: str) -> dict[str, object]:
     work = WorkManager()
-    agent = await Agent.create(
-        model=FunctionModel(ticket_model),
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(capability="support-triage", profile=ModelProfile(name="support-triage", model=FunctionModel(ticket_model)))
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="support-triage",
         name="support-agent",
-        tenant="acme",
         auth="dev-token",
         tools=[fetch_ticket],
         skills=[Skill(id="support.triage", description="Triage support tickets")],
         instructions="Draft concise support triage notes.",
+        expose=True,
     )
 
     order = open_ticket(work, ticket_id, issue)

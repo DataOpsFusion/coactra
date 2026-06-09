@@ -1,6 +1,6 @@
 """AgentRef — a tenant-qualified, deniable collaboration / A2A target.
 
-A target carries its OWN tenant, so a CollaborationPolicy can adjudicate cross-tenant
+A target carries its OWN tenant, so Policy-driven delegation checks can adjudicate cross-tenant
 talk and DENY it. A bare-string agent id (e.g. a workflow `ask` step's `agent`) is lifted
 to an AgentRef in the caller's tenant, so the intra-tenant path is unchanged while
 cross-tenant talk becomes expressible.
@@ -16,7 +16,7 @@ from coactra.agent.domain.scope import Scope
 class AgentRef(BaseModel):
     """A tenant-qualified collaboration / A2A target.
 
-    The target carries its OWN tenant, so a CollaborationPolicy can deny cross-tenant talk.
+    The target carries its OWN tenant, so policy checks can deny cross-tenant talk.
     """
 
     model_config = {"frozen": True}

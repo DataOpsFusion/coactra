@@ -6,9 +6,10 @@ Complete public surface for Coactra 0.0.x (alpha). Tags: **Available** = works t
 
 ```python
 from coactra import (
-    Agent, RemotePeer, Run, Scope, Skill, StaticToken, Team, Workflow,
-    CoactraError, ErrorCode, MissingExtraError, ValidationError,
-    __version__,
+    Agent, CoactraError, Decision, DecisionOutcome, ErrorCode,
+    MissingExtraError, ModelProfile, ModelResolver, ModelRoute,
+    Policy, PolicyRequest, RemotePeer, Run, Scope, Skill,
+    StaticToken, Team, ValidationError, Workflow, __version__,
 )
 ```
 
@@ -17,10 +18,17 @@ from coactra import (
 | `Agent` | class | **Available** | Thin facade over pydantic-ai: model, tools, memory, workspace, skills, peers, learned procedure replay. |
 | `RemotePeer` | dataclass | **Available** | Remote A2A peer config for outbound delegation tools. |
 | `Run` | class | **Available** | Handle returned by `agent.send(...)`; supports `stream()` and `wait()`. |
+| `Decision` | dataclass | **Available** | Shared policy decision payload with outcome, reason, source, and metadata. |
+| `DecisionOutcome` | enum | **Available** | Shared policy outcomes: `allow`, `deny`, `requires_approval`. |
+| `Policy` | protocol | **Available** | Cross-cutting policy contract for governed actions across components. |
+| `PolicyRequest` | dataclass | **Available** | Shared policy input payload: principal, action, resource, scope, component, and context. |
+| `ModelProfile` | dataclass | **Available** | Declarative model profile metadata used by governed routing. |
+| `ModelResolver` | class | **Available** | Policy-gated resolver from model capability to a concrete route. |
+| `ModelRoute` | dataclass | **Available** | Mapping from a capability name to model/provider/runtime defaults. |
 | `Scope` | dataclass | **Available** | Canonical composed-app scope DTO (`tenant_id`, `namespace`, `agent_id`, `session_id`). |
 | `Skill` | dataclass | **Available** | Structured skill entry for the Agent Card. |
 | `StaticToken` | class | **Available** | Pre-fetched JWT token source for dev / CI. |
-| `Team` | class | **Available** | Agent roster with capability routing and same-tenant policy. |
+| `Team` | class | **Available** | Team-first coordination root with explicit scope, policy, catalogs, routing, and execution. |
 | `Workflow` | class | **Available** | Playbook runner with capability routing, approvals, checkpoint resume, and engine bridge. |
 | `CoactraError` | class | **Available** | Base exception for all Coactra errors. |
 | `ErrorCode` | enum | **Available** | Machine-readable error categories (TIMEOUT, VALIDATION, PROVIDER, etc.). |
@@ -34,19 +42,37 @@ The application-facing contract is intentionally small: start from the root `coa
 
 `from coactra import Team` is the stable roster API. Deep imports from `coactra.team.directory` (org stores, authorization, bootstrap helpers) are **beta** — useful for host wiring but not compatibility-promised at v1.
 
+`coactra.team` now exposes the public `Team` facade only. Directory control-plane APIs such as `Organization`, `OrgStore`, and `OpenFGAAuthorizer` remain available from `coactra.team.directory` as beta seams.
+
 For OAuth client-credentials token fetch/refresh, use `authlib` or `httpx-oauth` and pass the result to `auth=` via `StaticToken` or a custom `TokenSource`. For inbound A2A serving, use the official `a2a-sdk` server APIs directly; the agent handler is `await agent.run(message)`. See [Bring Your Own Stack](getting-started/bring-your-own.md) for full recipes.
 
 Removed alpha roots are intentionally not compatibility-shimmed; the exact banned names are enforced by the architecture guard and release checklist.
 
-## Agent.create(...)
+## Team.add_agent(...)
 
 ```python
-from pydantic_ai.models.anthropic import AnthropicModel
+import os
 
-agent = await Agent.create(
-    model=AnthropicModel("claude-haiku-4-5"),
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, StaticToken, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="ops"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="sre",
+            profile=ModelProfile(
+                name="sre",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="sre",
     name="sre-1",
-    tenant="acme",
     gateway="https://gateway/mcp",
     auth=StaticToken("dev-token"),
     tools=[my_func],
@@ -56,31 +82,11 @@ agent = await Agent.create(
     peers=["security-agent"],
     expose=True,
     instructions="Be terse.",
-    output=MyPydanticModel,
     tracer=tracer,
 )
 ```
 
-| Parameter | Type | Status | Description |
-|-----------|------|--------|-------------|
-| `model` | pydantic-ai `Model` or provider string | **Available** | Pass a pydantic-ai `Model` instance for full provider control, or a provider string such as `"anthropic:claude-haiku-4-5"`. |
-| `name` | `str` | **Available** | This agent identity. Peers reference agents by name. |
-| `tenant` | `str` | **Available** | Tenant namespace. Defaults to `default`. |
-| `gateway` | `str` | **Available** | Primary MCP endpoint. Token scopes slice the tool list. |
-| `auth` | `TokenSource` | **Available** | Token source such as `StaticToken` or a custom async `token()` provider. |
-| `tools` | `list` | **Available** | Local Python functions. Gateway tools are additive when `gateway=` is set. |
-| `memory` | `str | backend` | **Available** | Memory backend. Auto-recall before model calls and auto-remember after. |
-| `workspace` | `str` | **Available** | Path to file desk. Surfaces file and gated run tools. |
-| `skills` | `list[Skill | str]` | **Available** | Curated skill roster, published as the A2A Agent Card. |
-| `peers` | `list[str | Agent | RemotePeer]` | **Available** | Adds `ask_<peer>` delegation tools. Strings create unavailable placeholders; Agent objects call in-process; `RemotePeer` uses A2A transport. |
-| `expose` | `bool` | **Available** | Enables an Agent Card even without explicit skills. |
-| `learned` | `ProcedureVersion | list[ProcedureVersion]` | **Available** | Promoted learned procedures exposed as skills and replay tools. Raw procedures require `allow_unreviewed_learned=True`. |
-| `procedure_engine` | `WorkflowEngine` | **Advanced seam** | Engine used by learned replay tools. Without it, replay tools report configuration failure. |
-| `procedure_scope` | workflow `Scope` | **Advanced seam** | Override scope used by learned replay tools. |
-| `allow_unreviewed_learned` | `bool` | **Available** | Explicit escape hatch for local experiments with raw procedures. Defaults to `False`. |
-| `tracer` | tracer-like object | **Available** | Emits Agent run/stream spans and model request/response events. |
-| `instructions` | `str` | **Available** | Optional system prompt. |
-| `output` | `type` | **Available** | Pydantic model type for structured output. `run()` returns an instance. |
+`Team.add_agent(...)` is the public construction door. `model_capability=` is the governed route-selection path.
 
 ## run / send / stream
 
@@ -108,12 +114,28 @@ card = agent.card
 ## RemotePeer(...)
 
 ```python
-from coactra import Agent, RemotePeer
+import os
 
-agent = await Agent.create(
-    model="anthropic:claude-haiku-4-5",
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, RemotePeer, Scope, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="delegation"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="delegation",
+            profile=ModelProfile(
+                name="delegation",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="delegation",
     name="sre-agent",
-    tenant="acme",
     peers=[RemotePeer(
         name="security-agent",
         endpoint="https://security.example/a2a",
@@ -122,13 +144,33 @@ agent = await Agent.create(
 )
 ```
 
-`RemotePeer` creates an `ask_<name>` tool backed by the official A2A transport (`coactra.agent.adapters.OfficialA2ATransport`). Same-tenant policy is enforced before the wire is touched. A plain string peer is accepted for the documented `peers=["name"]` shape, but without a registry or remote config it reports unavailable.
+`RemotePeer` creates an `ask_<name>` tool backed by the official A2A transport (`coactra.agent.adapters.OfficialA2ATransport`). Policy is checked before the wire is touched. A plain string peer is accepted for the documented `peers=["name"]` shape, but without a registry or remote config it reports unavailable.
 
 ## Learned Procedures
 
 ```python
-agent = await Agent.create(
-    model="anthropic:claude-haiku-4-5",
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="learned"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="learned",
+            profile=ModelProfile(
+                name="learned",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="learned",
+    name="sre-agent",
     learned=[promoted_version],
     procedure_engine=engine,
 )
@@ -169,10 +211,29 @@ Use `to_memory_kwargs()`, `to_workspace_kwargs()`, and related helpers at packag
 Additive external MCP servers (not the primary `gateway=` path):
 
 ```python
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent import MCPServer
 
-agent = await Agent.create(
-    model="anthropic:claude-haiku-4-5",
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="tools"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="tool-agent",
+            profile=ModelProfile(
+                name="tool-agent",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="tool-agent",
+    name="tool-agent",
     tools=[MCPServer(url="https://tools.example/mcp", name="extra")],
 )
 ```
@@ -180,10 +241,10 @@ agent = await Agent.create(
 Workflow playbook steps:
 
 ```python
-from coactra.workflow import step, PlaybookStep
+from coactra.workflow import PlaybookStep, step
 
 wf = Workflow("release", steps=[
-    step("Run checks", needs="test"),
+    step("Run checks", requires_skill="test.run"),
     PlaybookStep(instruction="Approve", approve=True),
 ])
 ```

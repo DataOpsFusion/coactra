@@ -1,18 +1,20 @@
 # Memory Design
 
-Memory is an **agent capability**, not a standalone domain. You enable it with
-`Agent.create(memory="graphiti")` — the agent auto-recalls before each model turn
-and auto-stores the turn after. coactra is a pure connector: it calls the backend's
-own `recall()` / `remember()` APIs and never ranks, stores, or judges salience itself.
+Memory is an **agent capability**, not a standalone domain. You enable it through
+`team.add_agent(memory="graphiti", model_capability=...)` — the agent auto-recalls
+before each model turn and auto-stores the turn after. Coactra is a pure connector:
+it calls the backend's own `recall()` / `remember()` APIs and never ranks, stores,
+or judges salience itself.
 
 **Key principles:**
 
 - Named capability: `memory="graphiti"` / `"mem0"` / `"inprocess"` (dev)
 - Automatic: recall fires before the model sees the user message; remember fires after
 - coactra owns *when/where* (scope, provenance, cap); the backend owns *ranking/consolidation*
-- Memory scope is isolated per tenant automatically
+- Memory scope is isolated per Team scope automatically
 - Memory guardrails: tenant/session scope, injected-memory cap, deletion/export path (GDPR)
 - Backends: Graphiti (Neo4j + LLM, relational facts), mem0 (OSS / cloud), inprocess (ephemeral dev)
+- Team-owned model routes can point at live OpenCode/Zen profiles or deterministic local models without changing the memory contract
 
 The authoritative spec for memory — automatic connector model, guardrails, scope,
 provenance, and backend wiring — lives in the agent API design document (memory

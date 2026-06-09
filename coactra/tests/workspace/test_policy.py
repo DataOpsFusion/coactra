@@ -3,13 +3,13 @@ import pytest
 from coactra.workspace import CliPolicy, PolicyError
 
 
-def test_default_policy_allows_everything():
-    pol = CliPolicy()
-    pol.check("ls -la")  # no raise
+def test_default_policy_requires_explicit_allowlist():
+    with pytest.raises(PolicyError, match="explicit allowlist"):
+        CliPolicy().check("ls -la")
 
 
 def test_deny_blocks_matching_command():
-    pol = CliPolicy(deny=["rm"])
+    pol = CliPolicy(allow=["ls"], deny=["rm"])
     pol.check("ls")  # allowed
     with pytest.raises(PolicyError, match="rm"):
         pol.check("rm -rf /")

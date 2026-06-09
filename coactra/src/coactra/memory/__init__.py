@@ -18,13 +18,7 @@ objects; no mem0/graphiti type ever leaks across the boundary.
 """
 
 from coactra._version import distribution_version
-from coactra.memory.authorization import (
-    AllowListMemoryAuthorizer,
-    AuthorizedMemory,
-    MemoryAccess,
-    MemoryAccessDenied,
-    MemoryAuthorizer,
-)
+from coactra.memory.authorization import AuthorizedMemory, MemoryAccess, MemoryAccessDenied
 from coactra.memory.backends.base import MemoryBackend
 from coactra.memory.capabilities import Capability
 from coactra.memory.conformance import MemoryBackendReport, check_memory_backend_contract
@@ -44,8 +38,6 @@ __all__ = [
     "MemoryBackend",
     "MemoryAccess",
     "MemoryAccessDenied",
-    "MemoryAuthorizer",
-    "AllowListMemoryAuthorizer",
     "AuthorizedMemory",
     "Capability",
     "MemoryBackendReport",
