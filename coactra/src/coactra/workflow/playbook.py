@@ -17,10 +17,6 @@ __all__ = [
     "WorkflowRun",
 ]
 
-# ---------------------------------------------------------------------------
-# Step — frozen data (the definition unit)
-# ---------------------------------------------------------------------------
-
 
 @dataclass(frozen=True)
 class Step:
@@ -31,11 +27,10 @@ class Step:
     instruction:
         What the agent should do.
     agent:
-        Pin to an agent by name (mutually exclusive with *needs* in spirit,
-        but both may be provided — name-pin wins).
-    needs:
-        Route by capability: the Team's capability matcher selects the best
-        agent whose skills cover this need.
+        Pin to an agent by name. Name-pin wins over skill routing.
+    requires_skill:
+        Route by exact skill identifier: the Team selects an agent whose
+        effective skills include this value.
     approve:
         If True, the runner pauses here and waits for a human decision before
         executing this step.
@@ -43,7 +38,7 @@ class Step:
 
     instruction: str
     agent: str | None = None
-    needs: str | None = None
+    requires_skill: str | None = None
     approve: bool = False
 
 
@@ -51,36 +46,24 @@ def step(
     instruction: str,
     *,
     agent: str | None = None,
-    needs: str | None = None,
+    requires_skill: str | None = None,
     approve: bool = False,
 ) -> Step:
-    """Build a :class:`Step`.  Instruction-first, keyword-only options."""
-    return Step(instruction=instruction, agent=agent, needs=needs, approve=approve)
-
-
-# ---------------------------------------------------------------------------
-# Playbook — the definition (pure data)
-# ---------------------------------------------------------------------------
+    """Build a :class:`Step`. Instruction-first, keyword-only options."""
+    return Step(
+        instruction=instruction,
+        agent=agent,
+        requires_skill=requires_skill,
+        approve=approve,
+    )
 
 
 @dataclass
 class Playbook:
-    """A named list of steps.  Canonical form is plain dict/YAML.
-
-    Parameters
-    ----------
-    name:
-        Playbook identifier.
-    steps:
-        Ordered list of :class:`Step` objects.
-    """
+    """A named list of steps. Canonical form is plain dict/YAML."""
 
     name: str
     steps: list[Step]
-
-    # ------------------------------------------------------------------
-    # Serialisation
-    # ------------------------------------------------------------------
 
     def to_dict(self) -> dict:
         """Convert to a plain dict (JSON-serialisable)."""
@@ -90,7 +73,7 @@ class Playbook:
                 {
                     "instruction": s.instruction,
                     "agent": s.agent,
-                    "needs": s.needs,
+                    "requires_skill": s.requires_skill,
                     "approve": s.approve,
                 }
                 for s in self.steps
@@ -104,7 +87,7 @@ class Playbook:
             Step(
                 instruction=s["instruction"],
                 agent=s.get("agent"),
-                needs=s.get("needs"),
+                requires_skill=s.get("requires_skill"),
                 approve=bool(s.get("approve", False)),
             )
             for s in d.get("steps", [])
@@ -113,12 +96,9 @@ class Playbook:
 
     @classmethod
     def from_yaml(cls, text: str) -> Playbook:
-        """Parse a YAML string into a :class:`Playbook`.
-
-        ``pyyaml`` is imported lazily so the module stays import-light.
-        """
+        """Parse a YAML string into a :class:`Playbook`."""
         try:
-            import yaml  # noqa: PLC0415 — lazy import to keep module light
+            import yaml
         except ImportError:
             from coactra.errors import MissingExtraError
 
@@ -131,19 +111,14 @@ class Playbook:
         return cls.from_dict(data)
 
 
-# ---------------------------------------------------------------------------
-# Run ledger types
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class StepResult:
     """A single entry in the run ledger."""
 
     instruction: str
-    agent: str  # resolved agent name; "" if unresolved
-    output: str  # agent output; "" if not run
-    status: str  # "done" | "failed" | "skipped"
+    agent: str
+    output: str
+    status: str
 
 
 @dataclass
@@ -152,30 +127,12 @@ class Approval:
 
     step_index: int
     instruction: str
-    decision: bool  # True = approved, False = denied
+    decision: bool
 
 
 @dataclass
 class WorkflowRun:
-    """The result of one Workflow execution (complete, interrupted, or failed).
-
-    Attributes
-    ----------
-    name:
-        Playbook name.
-    status:
-        One of ``"completed"``, ``"interrupted"``, ``"failed"``, ``"denied"``.
-    results:
-        Ordered run ledger — one :class:`StepResult` per step that was
-        attempted or skipped.
-    pending_index:
-        Index of the step that caused an interruption (approve=True pause).
-        ``None`` when not interrupted.
-    approvals:
-        List of :class:`Approval` records for any approval decisions made.
-    _steps:
-        Internal reference to the full step list (for ``pending_step``).
-    """
+    """The result of one Workflow execution."""
 
     name: str
     status: str
@@ -187,7 +144,6 @@ class WorkflowRun:
 
     @property
     def pending_step(self) -> Step | None:
-        """Return the Step awaiting approval, or ``None``."""
         if self.pending_index is None:
             return None
         try:
@@ -196,5 +152,4 @@ class WorkflowRun:
             return None
 
     def output_texts(self) -> list[str]:
-        """Return the output string from every 'done' step in order."""
         return [r.output for r in self.results if r.status == "done"]

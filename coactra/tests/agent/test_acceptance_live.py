@@ -1,10 +1,9 @@
 """Live acceptance — a real Team runs a Workflow against opencode-zen.
 
 Env-gated (skips cleanly without a key, like test_live_zen). Proves the design
-end-to-end: capability routing, approval pause/resume, durable checkpoint/resume,
-run_goal triage with the real planner, and peer delegation. Deterministic parts
-(routing/approval/durable) are hard-asserted; LLM-dependent parts (planner output,
-peer) are asserted loosely (>=1 step / non-empty).
+end-to-end: Team-owned agent assembly, exact skill routing, approval pause/resume,
+durable checkpoint/resume, run_goal triage with the real planner, and peer delegation.
+Deterministic parts are hard-asserted; LLM-dependent parts are asserted loosely.
 
 Run:  OC_KEY=... .venv/bin/python -m pytest tests/agent/test_acceptance_live.py -q -s
 """
@@ -18,7 +17,7 @@ import pytest
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from coactra import Agent, Skill, Team, Workflow
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team, Workflow
 from coactra.agent.checkpoint import InMemoryCheckpointStore
 from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.ai import Client
@@ -45,36 +44,54 @@ def _zen_model():
     return OpenAIChatModel("qwen3.6-plus", provider=provider)
 
 
-async def _agent(name, skills, instr):
-    return await Agent.create(
-        model=_zen_model(),
-        name=name,
-        tenant="acme",
-        skills=skills,
-        instructions=instr,
-    )
-
-
 @live
 async def test_team_workflow_acceptance():
-    security = await _agent(
-        "security-agent",
-        [Skill("cert.rotate", description="rotate TLS certificates and manage vault secrets")],
-        "You rotate TLS certs. Be terse.",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="prod"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [
+                ModelRoute(
+                    capability="security", profile=ModelProfile(name="security", model=_zen_model())
+                ),
+                ModelRoute(capability="sre", profile=ModelProfile(name="sre", model=_zen_model())),
+            ]
+        ),
     )
-    sre = await _agent(
-        "sre-agent",
-        [Skill("deploy", description="redeploy services, restart nginx, run deployments")],
-        "You redeploy services. Be terse.",
+    security = await team.add_agent(
+        name="security-agent",
+        model_capability="security",
+        skills=[
+            Skill(
+                "cert.rotate",
+                description="rotate TLS certificates and manage vault secrets",
+            )
+        ],
+        instructions="You rotate TLS certs. Be terse.",
+        expose=True,
     )
-    team = Team([security, sre])
+    await team.add_agent(
+        name="sre-agent",
+        model_capability="sre",
+        skills=[
+            Skill(
+                "infra.deploy",
+                description="redeploy services, restart nginx, run deployments",
+            )
+        ],
+        instructions="You redeploy services. Be terse.",
+        expose=True,
+    )
 
-    # 1) capability routing + approval pause/resume (deterministic asserts)
     play = Workflow(
         "rotate-and-redeploy",
         steps=[
-            step("Rotate the production TLS certificate.", needs="cert rotation"),
-            step("Redeploy nginx to pick up the new certificate.", needs="deploy", approve=True),
+            step("Rotate the production TLS certificate.", requires_skill="cert.rotate"),
+            step(
+                "Redeploy nginx to pick up the new certificate.",
+                requires_skill="infra.deploy",
+                approve=True,
+            ),
         ],
     )
     run = await play.run(team)
@@ -84,13 +101,12 @@ async def test_team_workflow_acceptance():
     assert done.status == "completed"
     assert done.results[1].agent == "sre-agent"
 
-    # 2) durable checkpoint + resume across a simulated restart
     ck = InMemoryCheckpointStore()
     play2 = Workflow(
         "durable",
         steps=[
-            step("Rotate the prod TLS cert.", needs="cert rotation"),
-            step("Redeploy nginx.", needs="deploy", approve=True),
+            step("Rotate the prod TLS cert.", requires_skill="cert.rotate"),
+            step("Redeploy nginx.", requires_skill="infra.deploy", approve=True),
         ],
     )
     r2 = await play2.run(team, checkpoint=ck, run_id="acc-2")
@@ -99,7 +115,6 @@ async def test_team_workflow_acceptance():
     r2b = await play2.resume_from(ck, "acc-2", team, decision=True)
     assert r2b.status == "completed"
 
-    # 3) run_goal triage with the real planner (LLM-dependent → loose assert)
     store = InMemoryPlaybookStore()
     r3 = await Workflow.run_goal(
         "Rotate the production TLS certificate, then redeploy nginx.",
@@ -109,8 +124,18 @@ async def test_team_workflow_acceptance():
     )
     assert len(r3.results) >= 1
 
-    # 4) peer delegation (deterministic tool invocation)
-    mgr = await Agent.create(model=_zen_model(), name="manager", tenant="acme", peers=[security])
+    mgr_team = Team(
+        scope=Scope(tenant_id="acme", namespace="prod-manager"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [
+                ModelRoute(
+                    capability="manager", profile=ModelProfile(name="manager", model=_zen_model())
+                )
+            ]
+        ),
+    )
+    mgr = await mgr_team.add_agent(model_capability="manager", name="manager", peers=[security])
     ask = next((t for t in mgr._tools if getattr(t, "__name__", "") == "ask_security_agent"), None)
     assert ask is not None
     out = await ask("Rotate the prod cert and report what you did.")

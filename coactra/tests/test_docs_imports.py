@@ -23,7 +23,6 @@ def test_api_index_preferred_imports_resolve():
         "coactra.agent": [
             "Scope",
             "AgentRef",
-            "AllowSameTenant",
             "AsyncPolicyGatedCollaborator",
             "CollaborationDenied",
         ],
@@ -35,15 +34,8 @@ def test_api_index_preferred_imports_resolve():
             "coactra_error_from_exception",
         ],
         "coactra.ai": ["ask", "structured", "Client", "ReasoningEngine", "InMemoryStore"],
-        "coactra.team": [
-            "Team",
-            "Organization",
-            "OrgStore",
-            "make_org_store",
-            "Authorizer",
-            "CompanySpec",
-            "bootstrap_company",
-        ],
+        "coactra.team": ["Team"],
+        "coactra.policy": ["Policy", "PolicyRequest", "Decision", "DecisionOutcome"],
     }
     for module_name, symbols in documented.items():
         for symbol in symbols:

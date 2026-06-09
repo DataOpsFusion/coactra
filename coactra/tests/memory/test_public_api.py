@@ -12,8 +12,6 @@ def test_public_surface_is_exact():
         "MemoryBackend",
         "MemoryAccess",
         "MemoryAccessDenied",
-        "MemoryAuthorizer",
-        "AllowListMemoryAuthorizer",
         "AuthorizedMemory",
         "Capability",
         "MemoryBackendReport",

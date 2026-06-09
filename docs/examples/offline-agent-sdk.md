@@ -1,35 +1,49 @@
 # Offline Agent SDK
 
-Create an `Agent` with local tools and stream its events — no network model required
-for offline development. Swap in a real model id when you're ready.
+Create an agent with local tools and stream its events — no network model required.
 
 ## Demonstrates
 
-- `Agent.create(model=, tools=, instructions=)`
-- `agent.send(prompt).stream()` — async event stream
-- `Assistant`, `ToolCall`, `ToolResult`, `Usage`, `Status` events
-- offline model substitution (use any litellm-compatible id)
+- `team.add_agent(model_capability=..., tools=, instructions=)`
+- `agent.send(prompt).stream()`
+- offline model substitution through `ModelResolver`
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent
+
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import FunctionModel
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def check_disk(host: str) -> dict:
-    """Return disk usage for a host (stub for offline demo)."""
     return {"host": host, "used_pct": 78, "free_gb": 22}
 
 
 def restart_service(host: str, service: str) -> str:
-    """Restart a service on a host."""
     return f"Restarted {service} on {host}"
 
 
+def offline_model(messages, info):
+    return ModelResponse(parts=[TextPart("disk is fine; no restart needed")])
+
+
 async def main() -> None:
-    agent = await Agent.create(
-        model="claude-haiku-4-5",   # fast/cheap; swap to your offline model id
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="offline"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="offline-sre",
+                profile=ModelProfile(name="offline-sre", model=FunctionModel(offline_model)),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="offline-sre",
         name="sre-agent",
         auth="dev-token",
         tools=[check_disk, restart_service],
@@ -39,27 +53,4 @@ async def main() -> None:
     print("Streaming response:")
     async for event in agent.send("Check disk on web-01 and restart nginx if >80%").stream():
         print(event)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
-
-## Event Types
-
-| Event | Description |
-|---|---|
-| `Assistant` | Text chunk from the model |
-| `Thinking` | Internal reasoning (thinking models) |
-| `ToolCall` | Tool the agent is invoking |
-| `ToolResult` | Result returned to the agent |
-| `Usage` | Token counts at end |
-| `Status` | Run lifecycle (`started`, `done`, `error`) |
-
-## Production Notes
-
-| Concern | Dev default | Production |
-|---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| Tools via gateway | — | `gateway="https://gateway/mcp"` + `auth=` |
-| Model | local id | any litellm-compatible provider id |

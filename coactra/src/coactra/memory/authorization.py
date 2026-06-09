@@ -6,43 +6,18 @@ their preferred policy system and opt into enforcement by wrapping a ``Memory`` 
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
 
 from coactra.memory.facade import Memory
 from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.policy import Policy, PolicyRequest
+from coactra.scope import Scope as CoreScope
 
 
 class MemoryAccess(StrEnum):
     read = "read"
     write = "write"
-
-
-@runtime_checkable
-class MemoryAuthorizer(Protocol):
-    async def allowed(self, actor: str, access: MemoryAccess, scope: Scope) -> bool:
-        """Return whether ``actor`` may access the exact memory scope."""
-        ...
-
-
-class AllowListMemoryAuthorizer:
-    """Default-deny exact-scope policy for local use and deterministic tests."""
-
-    def __init__(
-        self,
-        grants: Iterable[tuple[str, MemoryAccess, Scope]] = (),
-    ) -> None:
-        self._grants = {(actor, access, scope.key) for actor, access, scope in grants}
-
-    def grant(self, actor: str, access: MemoryAccess, scope: Scope) -> None:
-        self._grants.add((actor, access, scope.key))
-
-    def revoke(self, actor: str, access: MemoryAccess, scope: Scope) -> None:
-        self._grants.discard((actor, access, scope.key))
-
-    async def allowed(self, actor: str, access: MemoryAccess, scope: Scope) -> bool:
-        return (actor, access, scope.key) in self._grants
 
 
 class MemoryAccessDenied(PermissionError):
@@ -57,11 +32,11 @@ class AuthorizedMemory:
         memory: Memory,
         *,
         actor: str,
-        authorizer: MemoryAuthorizer,
+        policy: Policy,
     ) -> None:
         self._memory = memory
         self._actor = actor
-        self._authorizer = authorizer
+        self._policy = policy
 
     @property
     def backend(self):
@@ -76,7 +51,22 @@ class AuthorizedMemory:
         return await self._memory.recall(query, scope, k)
 
     async def _require(self, access: MemoryAccess, scope: Scope) -> None:
-        if not await self._authorizer.allowed(self._actor, access, scope):
-            raise MemoryAccessDenied(
+        request = PolicyRequest(
+            principal=self._actor,
+            action=f"memory.{access.value}",
+            resource=f"memory:{scope.key}",
+            scope=CoreScope(
+                tenant_id=scope.tenant,
+                namespace=scope.namespace,
+                agent_id=scope.agent,
+                session_id=scope.session,
+            ),
+            component="memory",
+            context={"memory_access": access.value, "memory_scope": scope.key},
+        )
+        decision = await self._policy.check(request)
+        if not decision.allowed:
+            reason = decision.reason or (
                 f"{self._actor!r} is not allowed to {access.value} memory scope {scope.key!r}"
             )
+            raise MemoryAccessDenied(reason)

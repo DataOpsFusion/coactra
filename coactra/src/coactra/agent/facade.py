@@ -1,8 +1,8 @@
 """The async Agent facade — a thin composition shell over pydantic-ai.
 
 For direct pydantic-ai access without Coactra memory/workspace/MCP wiring,
-import ``pydantic_ai.Agent`` and compose agents with :class:`coactra.Team` and
-:class:`coactra.Workflow`.
+import ``pydantic_ai.Agent`` and compose runtime agents through
+:class:`coactra.Team`.
 """
 
 from __future__ import annotations
@@ -51,81 +51,6 @@ class Agent:
         self._skills: list[Skill] = list(skills) if skills is not None else []
         self._expose = expose
         self._tools: list[Any] = list(tools) if tools is not None else []
-
-    @classmethod
-    async def create(
-        cls,
-        *,
-        model: Any,
-        instructions: str | None = None,
-        tools: list[Any] | None = None,
-        runtime: AgentRuntimePort | None = None,
-        api_base: str | None = None,
-        api_key: str | None = None,
-        gateway: str | None = None,
-        auth: Any = None,
-        name: str | None = None,
-        tenant: str | None = None,
-        memory: Any = None,
-        workspace: Any = None,
-        skills: Any = None,
-        expose: bool = False,
-        peers: list | None = None,
-        registry: Any | None = None,
-        learned: Any = None,
-        procedure_engine: Any | None = None,
-        procedure_scope: Any | None = None,
-        allow_unreviewed_learned: bool = False,
-        tracer: Any | None = None,
-        **defaults: Any,
-    ) -> Agent:
-        unknown = set(defaults) - _KNOWN_RUNTIME_KWARGS
-        if unknown:
-            raise TypeError(f"Agent.create() got unexpected keyword argument(s): {sorted(unknown)}")
-        if runtime is not None:
-            skills_for_card = normalize_agent_skills(
-                skills,
-                learned=learned,
-                allow_unreviewed_learned=allow_unreviewed_learned,
-            )
-            return cls(runtime, name=name, tenant=tenant, skills=skills_for_card, expose=expose)
-
-        bindings = build_agent_bindings(
-            tools=tools,
-            skills=skills,
-            learned=learned,
-            allow_unreviewed_learned=allow_unreviewed_learned,
-            procedure_engine=procedure_engine,
-            procedure_scope=procedure_scope,
-            peers=peers,
-            registry=registry,
-            name=name,
-            tenant=tenant,
-        )
-        rt = PydanticAIRuntime(
-            model=model,
-            instructions=instructions,
-            tools=bindings.tools,
-            api_base=api_base,
-            api_key=api_key,
-            gateway=gateway,
-            auth=auth,
-            name=name,
-            tenant=tenant,
-            memory=memory,
-            workspace=workspace,
-            tracer=tracer,
-            mcp_servers=bindings.mcp_servers,
-            **defaults,
-        )
-        return cls(
-            rt,
-            name=name,
-            tenant=tenant,
-            skills=bindings.skills,
-            expose=expose,
-            tools=bindings.tools,
-        )
 
     @property
     def card(self) -> dict | None:
@@ -176,3 +101,80 @@ class Agent:
 
     async def __aexit__(self, *exc: Any) -> None:
         await self.aclose()
+
+
+async def build_agent(
+    *,
+    model: Any,
+    instructions: str | None = None,
+    tools: list[Any] | None = None,
+    runtime: AgentRuntimePort | None = None,
+    api_base: str | None = None,
+    api_key: str | None = None,
+    gateway: str | None = None,
+    auth: Any = None,
+    name: str | None = None,
+    tenant: str | None = None,
+    memory: Any = None,
+    workspace: Any = None,
+    skills: Any = None,
+    expose: bool = False,
+    peers: list | None = None,
+    registry: Any | None = None,
+    learned: Any = None,
+    procedure_engine: Any | None = None,
+    procedure_scope: Any | None = None,
+    allow_unreviewed_learned: bool = False,
+    tracer: Any | None = None,
+    policy: Any | None = None,
+    **defaults: Any,
+) -> Agent:
+    """Internal Team-facing agent assembly helper."""
+    unknown = set(defaults) - _KNOWN_RUNTIME_KWARGS
+    if unknown:
+        raise TypeError(f"build_agent() got unexpected keyword argument(s): {sorted(unknown)}")
+    if runtime is not None:
+        skills_for_card = normalize_agent_skills(
+            skills,
+            learned=learned,
+            allow_unreviewed_learned=allow_unreviewed_learned,
+        )
+        return Agent(runtime, name=name, tenant=tenant, skills=skills_for_card, expose=expose)
+
+    bindings = build_agent_bindings(
+        tools=tools,
+        skills=skills,
+        learned=learned,
+        allow_unreviewed_learned=allow_unreviewed_learned,
+        procedure_engine=procedure_engine,
+        procedure_scope=procedure_scope,
+        peers=peers,
+        registry=registry,
+        name=name,
+        tenant=tenant,
+        policy=policy,
+    )
+    rt = PydanticAIRuntime(
+        model=model,
+        instructions=instructions,
+        tools=bindings.tools,
+        api_base=api_base,
+        api_key=api_key,
+        gateway=gateway,
+        auth=auth,
+        name=name,
+        tenant=tenant,
+        memory=memory,
+        workspace=workspace,
+        tracer=tracer,
+        mcp_servers=bindings.mcp_servers,
+        **defaults,
+    )
+    return Agent(
+        rt,
+        name=name,
+        tenant=tenant,
+        skills=bindings.skills,
+        expose=expose,
+        tools=bindings.tools,
+    )

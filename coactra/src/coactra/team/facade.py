@@ -1,112 +1,260 @@
-"""Lean Team registry — a bag of Agents + policy.
+"""Team-first coordination facade.
 
-A Team groups Agents for capability routing (Workflow) and A2A who-may-talk
-policy.  It is intentionally minimal: no hierarchy, no org-chart.
-
-Public API
-----------
-- ``Team``  — roster + match + policy.
+Team is the alpha assembly and execution root for Coactra applications. It owns
+agent, skill, workflow, and model-routing catalogs; routes capability-based work;
+and carries canonical scope and policy for its members.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
-from coactra.agent.matcher import match_agent
+if TYPE_CHECKING:
+    from coactra.agent import Agent
+from coactra.agent.skills import Skill, normalize_skills
+from coactra.model import ModelResolver, ModelRoute
+from coactra.policy import DecisionOutcome, Policy, PolicyRequest
+from coactra.scope import Scope
 
 __all__ = ["Team"]
 
 
-def _default_policy(src: Any, dst: Any) -> bool:
-    """Allow communication between agents that share the same tenant."""
-    return getattr(src, "_tenant", None) == getattr(dst, "_tenant", None)
+@dataclass(slots=True)
+class _AgentSpec:
+    name: str
+    model: Any | None = None
+    model_capability: str | None = None
+    instructions: str | None = None
+    tools: list[Any] = field(default_factory=list)
+    runtime: Any | None = None
+    api_base: str | None = None
+    api_key: str | None = None
+    gateway: str | None = None
+    auth: Any = None
+    memory: Any = None
+    workspace: Any = None
+    skills: list[Skill] = field(default_factory=list)
+    expose: bool = False
+    peers: list[Any] = field(default_factory=list)
+    registry: Any | None = None
+    learned: Any = None
+    procedure_engine: Any | None = None
+    procedure_scope: Any | None = None
+    allow_unreviewed_learned: bool = False
+    tracer: Any | None = None
+    defaults: dict[str, Any] = field(default_factory=dict)
 
 
 class Team:
-    """A lean registry of Agent members with a capability matcher and talk policy.
-
-    Parameters
-    ----------
-    members:
-        List of Agent instances (or any objects exposing ``_name``, ``_tenant``,
-        ``_skills``, and/or ``card``).
-    match:
-        Matching mode: ``"keyword"`` (default, deterministic token overlap) or
-        ``"semantic"`` (cosine similarity via ``coactra.ai`` embeddings).
-    policy:
-        Callable ``(src_agent, dst_agent) -> bool`` determining whether *src*
-        may call *dst*.  Defaults to same-tenant policy.
-    embedder:
-        Optional callable used by semantic matching.  Pass a configured
-        ``LiteLLMEmbedding`` or compatible function for provider-specific
-        embedding endpoints.
-    """
+    """Team-first coordination root."""
 
     def __init__(
         self,
-        members: list[Any],
         *,
-        match: str = "keyword",
-        policy: Callable[[Any, Any], bool] | None = None,
-        embedder: Any = None,
+        scope: Scope,
+        policy: Policy,
+        model_resolver: ModelResolver | None = None,
     ) -> None:
-        self._members: list[Any] = list(members)
-        self._mode: str = match
-        self._policy: Callable[[Any, Any], bool] = policy if policy is not None else _default_policy
-        self._embedder: Any = embedder
+        self.scope = scope
+        self.policy = policy
+        self._model_resolver = model_resolver
+        self._agent_specs: dict[str, _AgentSpec] = {}
+        self._agents: dict[str, Agent] = {}
+        self._members: dict[str, Agent] = self._agents
+        self._skills: dict[str, Skill] = {}
+        self._workflows: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
-    # Capability matching
-    # ------------------------------------------------------------------
+    def set_model_resolver(self, resolver: ModelResolver) -> ModelResolver:
+        self._model_resolver = resolver
+        return resolver
 
-    def match(self, needs: str) -> Any | None:
-        """Return the member whose skills best match *needs*, or ``None``.
+    def set_model_routes(self, *routes: ModelRoute) -> ModelResolver:
+        resolver = self._model_resolver or ModelResolver()
+        for route in routes:
+            resolver.register(route)
+        self._model_resolver = resolver
+        return resolver
 
-        Delegates to :func:`match_agent` with the configured mode.
-        """
-        return match_agent(needs, self._members, mode=self._mode, embedder=self._embedder)
+    async def add_agent(
+        self,
+        *,
+        name: str,
+        model_capability: str | None = None,
+        instructions: str | None = None,
+        tools: list[Any] | None = None,
+        runtime: Any | None = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
+        gateway: str | None = None,
+        auth: Any = None,
+        memory: Any = None,
+        workspace: Any = None,
+        skills: Any = None,
+        expose: bool = False,
+        peers: list[Any] | None = None,
+        registry: Any | None = None,
+        learned: Any = None,
+        procedure_engine: Any | None = None,
+        procedure_scope: Any | None = None,
+        allow_unreviewed_learned: bool = False,
+        tracer: Any | None = None,
+        **defaults: Any,
+    ) -> Agent:
+        """Register and build an Agent owned by this Team."""
+        if name in self._agent_specs:
+            raise ValueError(f"agent {name!r} is already registered")
+        if model_capability is None:
+            raise TypeError("add_agent() requires model_capability=")
+        if self._model_resolver is None:
+            raise ValueError("Team has no model_resolver; configure routes before add_agent()")
 
-    # ------------------------------------------------------------------
-    # Exact-name lookup
-    # ------------------------------------------------------------------
+        route = await self._model_resolver.resolve(
+            model_capability,
+            principal=f"agent:{name}",
+            scope=self.scope,
+            policy=self.policy,
+            context={"agent_name": name},
+        )
+        resolved_model = route.model
+        effective_api_base = api_base if api_base is not None else route.api_base
+        effective_api_key = api_key if api_key is not None else route.api_key
+        effective_defaults = {**route.defaults, **defaults}
 
-    def member(self, name: str) -> Any | None:
-        """Return the member with the given name, or ``None``."""
-        for m in self._members:
-            if getattr(m, "_name", None) == name:
-                return m
+        normalized_skills = normalize_skills(skills)
+        spec = _AgentSpec(
+            name=name,
+            model=resolved_model,
+            model_capability=model_capability,
+            instructions=instructions,
+            tools=list(tools or []),
+            runtime=runtime,
+            api_base=effective_api_base,
+            api_key=effective_api_key,
+            gateway=gateway,
+            auth=auth,
+            memory=memory,
+            workspace=workspace,
+            skills=normalized_skills,
+            expose=expose,
+            peers=list(peers or []),
+            registry=registry,
+            learned=learned,
+            procedure_engine=procedure_engine,
+            procedure_scope=procedure_scope,
+            allow_unreviewed_learned=allow_unreviewed_learned,
+            tracer=tracer,
+            defaults=effective_defaults,
+        )
+        self._agent_specs[name] = spec
+        for skill in normalized_skills:
+            self._skills.setdefault(skill.id, skill)
+
+        from coactra.agent.facade import build_agent
+
+        agent = await build_agent(
+            model=resolved_model,
+            instructions=instructions,
+            tools=list(tools or []),
+            runtime=runtime,
+            api_base=effective_api_base,
+            api_key=effective_api_key,
+            gateway=gateway,
+            auth=auth,
+            name=name,
+            tenant=self.scope.tenant_id,
+            memory=memory,
+            workspace=workspace,
+            skills=normalized_skills,
+            expose=expose,
+            peers=list(peers or []),
+            registry=registry,
+            learned=learned,
+            procedure_engine=procedure_engine,
+            procedure_scope=procedure_scope,
+            allow_unreviewed_learned=allow_unreviewed_learned,
+            tracer=tracer,
+            policy=self.policy,
+            **effective_defaults,
+        )
+        self._agents[name] = agent
+        return agent
+
+    def add_skill(self, skill: Skill) -> Skill:
+        self._skills[skill.id] = skill
+        return skill
+
+    def skill(self, skill_id: str) -> Skill | None:
+        return self._skills.get(skill_id)
+
+    def assign_skill(self, agent_name: str, skill: Skill) -> Skill:
+        agent = self.member(agent_name)
+        if agent is None:
+            raise KeyError(f"unknown agent {agent_name!r}")
+        spec = self._agent_specs[agent_name]
+        if not any(existing.id == skill.id for existing in spec.skills):
+            spec.skills.append(skill)
+        if not any(existing.id == skill.id for existing in agent._skills):
+            agent._skills.append(skill)
+        self._skills[skill.id] = skill
+        return skill
+
+    def add_workflow(self, workflow: Any) -> Any:
+        workflow_name = self._workflow_name(workflow)
+        self._workflows[workflow_name] = workflow
+        return workflow
+
+    def workflow(self, name: str) -> Any | None:
+        return self._workflows.get(name)
+
+    def match_skill(self, skill_id: str) -> Agent | None:
+        for agent in self._agents.values():
+            if any(skill.id == skill_id for skill in getattr(agent, "_skills", [])):
+                return agent
         return None
 
-    # ------------------------------------------------------------------
-    # Talk policy
-    # ------------------------------------------------------------------
+    def member(self, name: str) -> Agent | None:
+        return self._agents.get(name)
 
-    def can_talk(self, src: str, dst: str) -> bool:
-        """Return True if the agent named *src* may communicate with *dst*.
-
-        Uses the configured policy (default: same-tenant).  Returns ``False``
-        when either name is not found in the roster.
-        """
+    async def can_talk(self, src: str, dst: str) -> bool:
         src_agent = self.member(src)
         dst_agent = self.member(dst)
         if src_agent is None or dst_agent is None:
             return False
-        return bool(self._policy(src_agent, dst_agent))
+        decision = await self.policy.check(
+            PolicyRequest(
+                principal=f"agent:{src_agent._name}",
+                action="agent.delegate",
+                resource=f"agent:{dst_agent._name}",
+                scope=self.scope,
+                component="team",
+                context={
+                    "source_agent": src_agent._name,
+                    "target_agent": dst_agent._name,
+                },
+            )
+        )
+        return decision.outcome is DecisionOutcome.allow
 
-    # ------------------------------------------------------------------
-    # Roster
-    # ------------------------------------------------------------------
-
-    def roster(self) -> list[dict]:
-        """Return aggregated Agent Cards for all members that have skills.
-
-        Cards are curated for discovery — they contain skills metadata only,
-        no credentials, tokens, or raw tool names.
-        """
-        cards: list[dict] = []
-        for m in self._members:
-            card = getattr(m, "card", None)
+    def roster(self) -> list[dict[str, Any]]:
+        cards: list[dict[str, Any]] = []
+        for agent in self._agents.values():
+            card = getattr(agent, "card", None)
             if isinstance(card, dict):
                 cards.append(card)
         return cards
+
+    async def run(self, workflow: str | Any, *args: Any, **kwargs: Any) -> Any:
+        resolved = self.workflow(workflow) if isinstance(workflow, str) else workflow
+        if resolved is None:
+            raise KeyError(f"unknown workflow {workflow!r}")
+        return await resolved.run(self, *args, **kwargs)
+
+    @staticmethod
+    def _workflow_name(workflow: Any) -> str:
+        name = getattr(workflow, "name", None)
+        if isinstance(name, str) and name:
+            return name
+        if isinstance(workflow, str) and workflow:
+            return workflow
+        raise ValueError("workflow must expose a non-empty name")

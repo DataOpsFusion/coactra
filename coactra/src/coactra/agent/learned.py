@@ -44,7 +44,7 @@ def _as_procedure(item: Any, *, allow_unreviewed: bool) -> Any:
 
 
 def normalize_learned_procedures(learned: Any, *, allow_unreviewed: bool = False) -> list[Any]:
-    """Normalize Agent.create(learned=...) values to promoted Procedure objects."""
+    """Normalize learned procedure inputs into promoted Procedure objects."""
     if learned is None:
         return []
     if _is_promoted_version(learned):
@@ -122,7 +122,7 @@ def learned_procedure_tools(
             if engine is None:
                 return (
                     f"procedure engine not configured for {_procedure.name!r}; "
-                    "pass procedure_engine= to Agent.create"
+                    "pass procedure_engine= to Team.add_agent"
                 )
 
             from coactra.workflow import RunContext, Scope  # noqa: PLC0415

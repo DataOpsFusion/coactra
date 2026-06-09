@@ -13,12 +13,10 @@ from typing import Any
 from coactra._version import distribution_version
 from coactra.agent.collaboration import (
     AgentRef,
-    AllowSameTenant,
     AsyncA2ATransportPort,
     AsyncNullTransport,
     AsyncPolicyGatedCollaborator,
     CollaborationDenied,
-    CollaborationPolicy,
 )
 from coactra.agent.conformance import TokenExchangeReport, check_token_exchanger_contract
 from coactra.agent.domain import (
@@ -79,8 +77,6 @@ __all__ = [
     "check_token_exchanger_contract",
     "InProcessExchanger",
     # async collaboration
-    "CollaborationPolicy",
-    "AllowSameTenant",
     "AsyncA2ATransportPort",
     "AsyncNullTransport",
     "AsyncPolicyGatedCollaborator",

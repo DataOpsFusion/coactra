@@ -215,9 +215,7 @@ class WorkManager:
             raise InvalidTransitionError("only paused work can be resumed")
         if order.pending_request is not None:
             raise InvalidTransitionError("resolve the pending request before resuming")
-        if token is not None and (
-            order.checkpoint is None or order.checkpoint.token != token
-        ):
+        if token is not None and (order.checkpoint is None or order.checkpoint.token != token):
             raise InvalidTransitionError("resume token does not match latest checkpoint")
         order.status = WorkStatus.queued
         order.lease = None

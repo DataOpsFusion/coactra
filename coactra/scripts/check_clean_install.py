@@ -22,17 +22,24 @@ import coactra
 
 expected = {
     "Agent",
+    "CoactraError",
+    "Decision",
+    "DecisionOutcome",
+    "ErrorCode",
+    "MissingExtraError",
+    "ModelProfile",
+    "ModelResolver",
+    "ModelRoute",
+    "Policy",
+    "PolicyRequest",
     "RemotePeer",
     "Run",
     "Scope",
     "Skill",
     "StaticToken",
     "Team",
-    "Workflow",
-    "CoactraError",
-    "ErrorCode",
-    "MissingExtraError",
     "ValidationError",
+    "Workflow",
     "__version__",
 }
 assert set(coactra.__all__) == expected, coactra.__all__

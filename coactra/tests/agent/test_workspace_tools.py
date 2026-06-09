@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from coactra.agent.workspace_tools import workspace_tools
-from coactra.workspace import Scope, open_workspace
+from coactra.workspace import CliPolicy, Scope, open_workspace
 from coactra.workspace.policy import PolicyError
 
 # ---------------------------------------------------------------------------
@@ -25,6 +25,7 @@ def ws():
         scope=scope,
         ephemeral=True,
         allow_unsafe_local_exec=True,
+        policy=CliPolicy.safe_default(),
     )
     yield workspace
     workspace.close()

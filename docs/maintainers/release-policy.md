@@ -15,10 +15,12 @@ instead of preserving old paths.
 Public exports:
 
 ```python
-from coactra import Agent, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
+from coactra import Agent, Decision, DecisionOutcome, Policy, PolicyRequest, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
 ```
 
 Anything not exported from `coactra` directly is internal and may change at any time.
+
+`coactra.team` is facade-only in alpha: import directory/org/auth helpers from `coactra.team.directory`, not from `coactra.team`.
 
 Advanced seams (not root exports):
 
@@ -39,7 +41,7 @@ Advanced seams (not root exports):
 ## Preferred Import Root (v1 target)
 
 ```
-from coactra import Agent, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
+from coactra import Agent, Decision, DecisionOutcome, Policy, PolicyRequest, RemotePeer, Scope, Skill, StaticToken, Team, Workflow
 ```
 
 Use the top-level `coactra` imports for application code. Lower-level roots such as `coactra.workflow.ledger` and `coactra.team.directory` are implementation surfaces and may change during alpha. Do not reintroduce alias packages for removed roots.

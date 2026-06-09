@@ -27,7 +27,7 @@ def test_write_and_read(tmp_path):
 
 
 def test_run_returns_exec_result(tmp_path):
-    ws = _ws(tmp_path, allow_unsafe_exec=True)
+    ws = _ws(tmp_path, allow_unsafe_exec=True, policy=CliPolicy.safe_default())
     res = ws.run("echo hi")
     assert res.exit_code == 0
     assert "hi" in res.stdout

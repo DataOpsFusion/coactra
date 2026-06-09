@@ -32,9 +32,7 @@ def _zen_key() -> str | None:
 
 
 live = pytest.mark.live(
-    pytest.mark.skipif(
-        _zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)"
-    )
+    pytest.mark.skipif(_zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)")
 )
 
 

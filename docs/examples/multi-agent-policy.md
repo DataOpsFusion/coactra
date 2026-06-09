@@ -1,67 +1,84 @@
 # Multi-Agent Policy
 
-A `Team` is a bag of agents plus a policy that decides who may talk to whom. By default only same-tenant agents may communicate. This example shows Team construction, capability discovery, and outbound peer delegation.
+`Team` is an explicit coordination root: it requires a `Scope` and a `Policy`, then owns agent registration, rostering, and workflow routing. Collaboration remains deny-before-wire, but permissive behavior must be chosen deliberately.
 
 ## Demonstrates
 
-- `Team([agent_a, agent_b])` — registry with default same-tenant policy
-- `agent.card` — curated skills roster, formatted as the Agent Card
-- Same-tenant access allowed; cross-tenant access denied by default
-- `peers=[agent]` and `peers=[RemotePeer(...)]` create outbound A2A-style delegation tools
+- `Team(scope=..., policy=..., model_resolver=...)` — explicit coordination boundary
+- `agent.card` — curated skills roster
+- same-tenant delegation allowed explicitly with `Policy.permissive()`
+- `peers=[agent]` and `peers=[RemotePeer(...)]` create outbound delegation tools
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent, RemotePeer, Team, Skill
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, RemotePeer, Scope, Skill, Team
 
 
 async def main() -> None:
-    sre = await Agent.create(
-        model="claude-haiku-4-5",
+    resolver = ModelResolver([
+        ModelRoute(
+            capability="sre",
+            profile=ModelProfile(name="sre", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+        ),
+        ModelRoute(
+            capability="security",
+            profile=ModelProfile(name="security", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+        ),
+        ModelRoute(
+            capability="orchestrator",
+            profile=ModelProfile(name="orchestrator", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+        ),
+    ])
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="ops"),
+        policy=Policy.permissive(),
+        model_resolver=resolver,
+    )
+    sre = await team.add_agent(
+        model_capability="sre",
         name="sre-agent",
-        tenant="acme",
         auth="dev-token",
-        skills=[Skill("infra.restart", description="Restart infrastructure services",
-                      tags=["sre"], scopes=["infra:write"])],
+        skills=[Skill("infra.restart", description="Restart infrastructure services", tags=["sre"], scopes=["infra:write"])],
         instructions="You manage infra.",
+        expose=True,
     )
-
-    security = await Agent.create(
-        model="claude-haiku-4-5",
+    security = await team.add_agent(
+        model_capability="security",
         name="security-agent",
-        tenant="acme",
         auth="dev-token",
-        skills=[Skill("cert.rotate", description="Rotate TLS certificates",
-                      tags=["security"], scopes=["cert:write"])],
+        skills=[Skill("cert.rotate", description="Rotate TLS certificates", tags=["security"], scopes=["cert:write"])],
         instructions="You handle security.",
+        expose=True,
     )
 
-    team = Team([sre, security])
     print("SRE card:", sre.card)
     print("Security card:", security.card)
     print("Roster:", team.roster())
 
-    caller = await Agent.create(
-        model="claude-haiku-4-5",
+    caller = await team.add_agent(
+        model_capability="orchestrator",
         name="orchestrator",
-        tenant="acme",
         auth="dev-token",
         peers=[security],
     )
     await caller.run("Ask the security peer to review this cert rotation.")
 
-    remote_caller = await Agent.create(
-        model="claude-haiku-4-5",
+    remote_caller = await team.add_agent(
+        model_capability="orchestrator",
         name="remote-orchestrator",
-        tenant="acme",
         auth="dev-token",
-        peers=[RemotePeer(
-            name="security-agent",
-            endpoint="https://security.example/a2a",
-            audience="security-agent",
-            tenant="acme",
-        )],
+        peers=[
+            RemotePeer(
+                name="security-agent",
+                endpoint="https://security.example/a2a",
+                audience="security-agent",
+                tenant="acme",
+            )
+        ],
     )
     await remote_caller.run("Ask the security peer for the current exception policy.")
 
@@ -78,21 +95,19 @@ if __name__ == "__main__":
 | `peers=[RemotePeer(...)]` | A2A transport-backed `ask_security_agent` tool. |
 | `peers=["security-agent"]` | Creates the documented tool name and reports unavailable until a registry or remote config is supplied. |
 
-The same-tenant policy is enforced before local calls or remote A2A sends.
-
 ## Policy Rules
 
 | Caller tenant | Target tenant | Result |
 |---|---|---|
-| `acme` | `acme` | Allowed by default. |
-| `acme` | `other-corp` | Denied before the wire is touched. |
+| `acme` | `acme` | Allowed when your policy permits it. |
+| `acme` | `other-corp` | Denied before the wire is touched by policy checks. |
 
-Custom policies such as OpenFGA or AuthZEN can plug in at the Team/policy seam when a host needs finer-grained authorization.
+Custom policies such as OpenFGA or host authorizers can plug in at the Team/policy seam when you need finer-grained authorization.
 
 ## Production Notes
 
 | Concern | Dev default | Production |
 |---|---|---|
+| Policy | `Policy.permissive()` | guarded / approval-gated / OpenFGA-backed policy |
 | Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| Policy | Same-tenant default | OpenFGA / AuthZEN adapter |
 | A2A transport | In-process Agent peer | `RemotePeer(...)` over `OfficialA2ATransport` |

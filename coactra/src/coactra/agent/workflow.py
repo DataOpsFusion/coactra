@@ -70,6 +70,10 @@ class Workflow:
     def __init__(self, name: str, steps: list[Step]) -> None:
         self._playbook = Playbook(name=name, steps=list(steps))
 
+    @property
+    def name(self) -> str:
+        return self._playbook.name
+
     # ------------------------------------------------------------------
     # Constructors
     # ------------------------------------------------------------------
@@ -90,11 +94,11 @@ class Workflow:
     # ------------------------------------------------------------------
 
     def _resolve_agent(self, s: Step, team: Any) -> Any | None:
-        """Resolve a Step to a team member.  Name-pin wins over needs-routing."""
+        """Resolve a Step to a team member. Name-pin wins over skill routing."""
         if s.agent is not None:
             return team.member(s.agent)
-        if s.needs is not None:
-            return team.match(s.needs)
+        if s.requires_skill is not None:
+            return team.match_skill(s.requires_skill)
         return None
 
     # ------------------------------------------------------------------
@@ -286,8 +290,8 @@ class Workflow:
         Parameters
         ----------
         team:
-            A :class:`~coactra.team.Team` (duck-typed: needs
-            ``.member(name)`` and ``.match(needs)``).
+            A :class:`~coactra.team.Team` (duck-typed: exposes
+            ``.member(name)`` and ``.match_skill(skill_id)``).
         start:
             Step index to begin from.  Used by :meth:`resume` to continue
             after an interruption.

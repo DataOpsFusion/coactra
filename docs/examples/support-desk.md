@@ -1,12 +1,10 @@
 # Support Desk
 
-A helpdesk agent that drafts answers with automatic memory. The runnable part
-combines `Agent` + memory. Durable work tracking and approval pauses are part of
-the **Workflow** layer — see the badge below.
+A helpdesk agent that drafts answers with automatic memory. The runnable part combines `Team` + `Agent` + memory.
 
 ## Demonstrates (Runnable)
 
-- `Agent.create(model=, memory=, tools=, instructions=)`
+- `team.add_agent(model_capability=..., memory=..., tools=, instructions=)`
 - Automatic recall of prior tickets per customer
 - Local tools for ticket resolution
 
@@ -14,44 +12,50 @@ the **Workflow** layer — see the badge below.
 
 ```python
 import asyncio
-from coactra import Agent
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def fetch_ticket(ticket_id: str) -> dict:
-    """Stub: look up a ticket from your ticketing system."""
     return {"id": ticket_id, "subject": "Can't log in", "status": "open"}
 
 
 def mark_resolved(ticket_id: str, resolution: str) -> str:
-    """Stub: mark a ticket resolved."""
     return f"Ticket {ticket_id} marked resolved: {resolution}"
 
 
 async def handle_ticket(ticket_id: str, customer_id: str) -> str:
-    agent = await Agent.create(
-        model="claude-sonnet-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="support-desk",
+                profile=ModelProfile(
+                    name="support-desk",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="support-desk",
         name="support-desk",
-        tenant="acme",
         auth="dev-token",
-        memory="inprocess",     # swap to "graphiti" or "mem0" in production
+        memory="inprocess",
         tools=[fetch_ticket, mark_resolved],
         instructions=(
             "You are a tier-1 support agent. Recall past issues, draft a clear "
             "resolution, and mark the ticket resolved when done."
         ),
     )
-    return await agent.run(
-        f"Handle ticket {ticket_id} for customer {customer_id}"
-    )
-
-
-if __name__ == "__main__":
-    print(asyncio.run(handle_ticket("TKT-1001", "cust-42")))
+    return await agent.run(f"Handle ticket {ticket_id} for customer {customer_id}")
 ```
 
 ## Workflow Extension
-
-Use `Workflow` when ticket handling needs durable approval pause/resume:
 
 ```python
 from coactra import Workflow
@@ -62,13 +66,5 @@ play = Workflow("support-ticket", steps=[
     step("manager approval", approve=True),
     step("mark resolved", agent="support-desk"),
 ])
-await play.run(team)
+await team.run(play)
 ```
-
-## Production Notes
-
-| Concern | Dev default | Production |
-|---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| Memory backend | `"inprocess"` | `"graphiti"` or `"mem0"` |
-| Tool access | local functions | `gateway="https://gateway/mcp"` + `auth=` |

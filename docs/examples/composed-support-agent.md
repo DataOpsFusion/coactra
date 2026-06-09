@@ -1,48 +1,54 @@
 # Composed Support Agent
 
-A support agent with multiple local tools and a structured `Skill` roster so it
-can be discovered by a Team. This replaces the old "ports + composition root"
-pattern — in the new model, composition is `Agent.create(tools=[...], skills=[...])`.
+A support agent with multiple local tools and a structured `Skill` roster so it can be discovered by a Team.
 
 ## Demonstrates
 
-- `Agent.create(tools=, skills=, memory=, instructions=)`
-- `Skill(id, description, tags, scopes)` — structured capability roster entry
-- `agent.card` — the published Agent Card (curated, no raw tool schemas)
+- `team.add_agent(model_capability=..., tools=, skills=, memory=, instructions=)`
+- `Skill(id, description, tags, scopes)`
+- `agent.card`
 - Multiple local tools passed as a plain list
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent, Skill
+import os
 
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 
-# --- Local tools (plain Python functions) ---
 
 def search_knowledge_base(query: str) -> list[str]:
-    """Search internal KB articles."""
-    # stub — wire to your real KB
     return [f"Article: How to fix '{query}'"]
 
 
 def escalate_ticket(ticket_id: str, reason: str) -> str:
-    """Escalate a ticket to tier-2."""
     return f"Ticket {ticket_id} escalated: {reason}"
 
 
 def update_ticket_status(ticket_id: str, status: str) -> str:
-    """Update ticket status."""
     return f"Ticket {ticket_id} set to {status}"
 
 
-# --- Agent ---
-
-async def build_support_agent() -> "Agent":
-    return await Agent.create(
-        model="claude-sonnet-4-5",
+async def build_support_agent():
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="tier1-support",
+                profile=ModelProfile(
+                    name="tier1-support",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    return await team.add_agent(
+        model_capability="tier1-support",
         name="tier1-support",
-        tenant="acme",
         auth="dev-token",
         tools=[search_knowledge_base, escalate_ticket, update_ticket_status],
         memory="inprocess",
@@ -58,35 +64,6 @@ async def build_support_agent() -> "Agent":
             "You are a tier-1 support agent. Search the KB first, then resolve "
             "or escalate. Always update the ticket status."
         ),
+        expose=True,
     )
-
-
-async def triage_incident(incident_text: str) -> str:
-    agent = await build_support_agent()
-    return await agent.run(incident_text)
-
-
-if __name__ == "__main__":
-    result = asyncio.run(triage_incident("TKT-9001: user can't reset password"))
-    print(result)
 ```
-
-## Agent Card
-
-`agent.card` exposes the curated skills roster — the blurb peers and Team routing
-use for capability discovery. Raw tool names and argument schemas are **never**
-published.
-
-```python
-print(agent.card)
-# → {"name": "tier1-support", "tenant": "acme",
-#    "skills": [{"id": "support.tier1", "description": "...", ...}]}
-```
-
-## Production Notes
-
-| Concern | Dev default | Production |
-|---|---|---|
-| Auth | `auth="dev-token"` | `StaticToken` or authlib/httpx-oauth `TokenSource` |
-| MCP tools | local functions | `gateway="https://gateway/mcp"` + `auth=` |
-| Memory | `"inprocess"` | `"graphiti"` or `"mem0"` |

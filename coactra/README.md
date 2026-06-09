@@ -1,6 +1,6 @@
 # coactra
 
-Composition and persistence library for multi-agent workflows. `Agent` is a thin shell over pydantic-ai; `Team`, `Workflow`, and `WorkManager` are the core. Bring your own pydantic-ai `Model`, OAuth token source, and inbound A2A server (via a2a-sdk).
+Component-based orchestration library for agentic systems. Coactra is Team-first: `Team` owns agent registration, policy, workflow routing, and model resolution, while `Agent` remains a thin runtime shell over pydantic-ai.
 
 ```bash
 pip install "coactra[agent]"
@@ -19,7 +19,7 @@ pip install "coactra[sql]"
 ## Small Surface
 
 ```python
-from coactra import Agent, Scope, Skill, Team, Workflow
+from coactra import Team, Scope, Policy, Skill, Workflow
 ```
 
 Submodule helpers when wiring adapters:
@@ -29,7 +29,7 @@ from coactra.agent import MCPServer
 from coactra.workflow import step
 ```
 
-Use this root surface for application code. Use lower-level modules only for adapters and host runtime wiring:
+Use the root surface for application code. Use lower-level modules only for adapters and host runtime wiring:
 
 - `coactra.agent` for event/runtime types and outbound A2A transport (`coactra.agent.adapters`)
 - `coactra.workflow` and `coactra.workflow.ledger` for workflow engines and durable work storage
@@ -40,19 +40,31 @@ Use this root surface for application code. Use lower-level modules only for ada
 
 ```python
 import asyncio
-from pydantic_ai.messages import ModelResponse, TextPart
-from pydantic_ai.models.function import FunctionModel
-from coactra import Agent
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent import MCPServer
 
 
-def existing_model(messages, info):
-    return ModelResponse(parts=[TextPart("existing model handled it")])
-
-
 async def main() -> None:
-    agent = await Agent.create(
-        model=FunctionModel(existing_model),
+    team = Team(
+        scope=Scope.local(),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="existing-stack",
+                profile=ModelProfile(
+                    name="existing-stack",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        name="existing-stack-agent",
+        model_capability="existing-stack",
         tools=[MCPServer(url="https://tools.example/mcp", name="tools")],
         memory="inprocess",
         workspace="./desk",

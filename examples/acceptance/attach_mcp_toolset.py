@@ -5,7 +5,7 @@ import asyncio
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent import MCPServer
 
 
@@ -14,8 +14,16 @@ def existing_model(messages: list[ModelMessage], info: AgentInfo) -> ModelRespon
 
 
 async def main() -> None:
-    agent = await Agent.create(
-        model=FunctionModel(existing_model),
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="acceptance"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(capability="toolset", profile=ModelProfile(name="toolset", model=FunctionModel(existing_model)))
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="toolset",
+        name="toolset-agent",
         tools=[MCPServer(url="https://tools.example/mcp", name="existing-tools")],
     )
     try:

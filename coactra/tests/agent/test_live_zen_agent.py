@@ -1,8 +1,4 @@
-"""Live Agent test against opencode zen — env-gated, skips cleanly without a key.
-
-Run with the key present at /tmp/oc.key (or OC_KEY env var):
-    .venv/bin/python -m pytest tests/agent/test_live_zen_agent.py -q -s
-"""
+"""Live Agent test against opencode zen — env-gated, skips cleanly without a key."""
 
 from __future__ import annotations
 
@@ -13,7 +9,7 @@ import pytest
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from coactra.agent.facade import Agent
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 ZEN_BASE = "https://opencode.ai/zen/go/v1"
 _KEY_FILE = Path("/tmp/oc.key")
@@ -28,20 +24,25 @@ def _zen_key() -> str | None:
 
 
 live = pytest.mark.live(
-    pytest.mark.skipif(
-        _zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)"
-    )
+    pytest.mark.skipif(_zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)")
 )
 
 
 @live
-async def test_agent_create_with_openai_provider_runs_live():
-    """Agent.create() accepts a pydantic-ai Model instance and a real call succeeds."""
+async def test_team_add_agent_with_openai_provider_runs_live():
     key = _zen_key()
     provider = OpenAIProvider(base_url=ZEN_BASE, api_key=key)
     model = OpenAIChatModel("qwen3.6-plus", provider=provider)
-    agent = await Agent.create(
-        model=model,
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="live"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [ModelRoute(capability="live", profile=ModelProfile(name="live", model=model))]
+        ),
+    )
+    agent = await team.add_agent(
+        model_capability="live",
+        name="live-agent",
         instructions="Be brief.",
     )
     out = await agent.run("Say hi in three words.")

@@ -275,7 +275,7 @@ class _PinnedTeam:
     def member(self, name: str):
         return self._members.get(name)
 
-    def match(self, needs: str):
+    def match_skill(self, skill_id: str):
         return None
 
 

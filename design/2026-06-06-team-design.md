@@ -1,53 +1,66 @@
-# Coactra Team — Design (alpha)
+# Coactra Team Design
 
-**Date:** 2026-06-06  **Status:** approved direction, pre-implementation.  **Used by:** Agent (peers/policy), Workflow (capability routing).
+**Status:** current Team-first alpha contract.
 
 ## Goal
 
-A **Team** is "a bag of Agents + policy" — the roster a Workflow routes steps over, and the who-may-talk policy for A2A. It is **optional**: a solo Agent needs no Team. Compose one when you want capability-routing, shared policy, or hierarchy.
+`Team` is the assembly and coordination root. It owns the authoritative scope,
+policy, agent registry, skill catalog, workflow catalog, and routing behavior
+for a Coactra application.
 
-## Public surface
+## Public shape
 
 ```python
-from coactra import Team
+from coactra import Policy, Scope, Team, Workflow
 
-team = Team([sre, security, network])                       # keyword matching (default)
-team = Team([sre, security, network], match="semantic",     # opt into embedding match
-            manager="sre-1")                                # optional hierarchy
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="ops"),
+    policy=Policy.permissive(),
+)
 
-await Workflow.run_goal("rotate prod cert…", team=team)     # Workflow routes over the Team
+await team.add_agent(name="security", model_capability="reasoning")
+team.add_skill(...)
+team.add_workflow(Workflow("rotate-cert", steps=[...]))
+await team.run("rotate-cert")
 ```
 
 ## Decisions
 
-1. **Assembly = optional & composable.** Single agent → no Team. `Team([...])` groups agents for routing/policy/hierarchy; the two paths nest cleanly. (Mix-and-match.)
+1. **Team is the public assembly door.**
+   - `scope` is explicit
+   - `policy` is explicit
+   - permissive behavior must be chosen deliberately
 
-2. **Matching = one matcher seam.** A step's `needs=` resolves against each agent's `skills=` roster through a swappable matcher: **keyword/tag by default** (deterministic, no model, debuggable), `match="semantic"` opts into embedding similarity (reuses `ai` embeddings — connector, no new dependency). A pinned `step("name", …)` is the trivial match. Ties: first match, or a Team-defined priority.
+2. **Team owns the canonical catalogs.**
+   - agents
+   - skills
+   - workflows
+   - model-routing defaults
 
-3. **who-may-talk = same-tenant by default.** An Agent may talk to peers in the same `tenant`; configurable with a custom policy. From the discovery decision: **seeing ≠ calling** — the curated `skills=` roster is discoverable (same-tenant), but every delegation is still auth-gated (token exchange + policy). Raw tools are never advertised.
+3. **Capability routing is exact by default.**
+   - workflow steps use `requires_skill=`
+   - Team routes through `match_skill(skill_id)`
+   - `agent=` remains an override when a step must be pinned
 
-4. **Hierarchy/escalation = optional.** A Team may name a `manager` / reporting chain for escalation; not required for alpha. Maps onto the existing org-tree pieces when richer structure is needed.
+4. **Collaboration is policy-gated.**
+   - Team policy is the canonical collaboration authority
+   - local or remote peer calls are denied before the wire when not allowed
 
-## The capability roster
+5. **Team stays lean.**
+   - richer org/directory/control-plane concepts remain deeper seams
+   - Team is powerful enough to represent an org node
+   - Team is not required to model a whole enterprise hierarchy publicly
 
-Each Agent's author-written `skills=` blurb is its roster entry; the Team aggregates them for matching (decision 2) and discovery (decision 3). Curated strings only — never tool names/args.
+## Ownership
 
-## How it composes
-
-Workflow routes each `needs=` step to a Team member via the matcher; A2A peer calls are gated by the Team's policy. The Team is the single place "who exists + who-may-talk + who-can-do-what" lives.
+- Team defines and assigns.
+- Agent acts.
+- Workflow defines process.
+- Policy governs execution.
+- Scope locates execution.
 
 ## Connector boundaries
 
-- **Owns:** the Team registry (agents + skills + policy), the matcher seam (keyword default), policy evaluation.
-- **Delegates:** semantic matching → `ai` embeddings; richer org structure/permissions (inheritance, seats, external authz) → the existing directory backends (sqlite/postgres/openfga) only when needed.
-- **Never:** reimplements an authorization engine or an embedding store.
-
-## Today vs target
-
-**Today (`coactra.team.directory` + `coactra.agent.collaboration`):** `Organization` tree, `Authorizer` (in-memory/OpenFGA), `OrgStore`, `AllowSameTenant` policy, `AgentRef`.
-
-**Target:** a `Team` facade (bag of agents + `match` + policy) over those pieces; the keyword matcher; the optional semantic matcher via `ai`; rename `coactra.team.directory`/`organization` → `coactra.team`.
-
-## Out of scope (this spec)
-
-Deep org-tree/permission modeling (inheritance, seats) — stays in directory backends, surfaced only as needed; migrating homelab off `coactra.team.directory`.
+- Coactra owns Team catalogs, routing, and Team-level policy wiring.
+- Directory stores, OpenFGA adapters, and richer org topology remain advanced seams.
+- Team does not own low-level workflow runtime engines or memory storage engines.

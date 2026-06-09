@@ -1,78 +1,79 @@
 # Customer Support Memory
 
-An agent that **automatically remembers and recalls** past support interactions.
-Memory is a named capability — set `memory="graphiti"` and the agent handles
-recall and storage without extra code.
+An agent that automatically remembers and recalls past support interactions.
 
 ## Demonstrates
 
-- `Agent.create(memory="graphiti")` — automatic recall on every turn
-- Memory is auto-injected into the model's context from the backend
+- `team.add_agent(memory="graphiti", model_capability=...)`
+- Memory is auto-injected into the model's context
 - `memory="inprocess"` for local/offline development
-- Production swap to `"graphiti"` or `"mem0"` backends
 
 ## Code
 
 ```python
 import asyncio
-from coactra import Agent
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 async def handle_ticket(ticket_text: str, customer_id: str) -> str:
-    agent = await Agent.create(
-        model="claude-sonnet-4-5",
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="support-memory",
+                profile=ModelProfile(
+                    name="support-memory",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="support-memory",
         name="support-agent",
-        tenant="acme",
         auth="dev-token",
-        memory="inprocess",     # swap to "graphiti" or "mem0" in production
+        memory="inprocess",
         instructions=(
             "You are a helpful support agent. Use past interactions to give "
             "consistent, personalised answers."
         ),
     )
-    # Memory auto-recalls relevant context before the model sees the message,
-    # and auto-stores the turn after the response.
     return await agent.run(f"[customer:{customer_id}] {ticket_text}")
-
-
-async def main() -> None:
-    # First ticket
-    r1 = await handle_ticket("My dashboard is loading slowly", "cust-42")
-    print("Turn 1:", r1)
-
-    # Second ticket — the agent will recall turn 1 automatically
-    r2 = await handle_ticket("Is the performance issue resolved?", "cust-42")
-    print("Turn 2:", r2)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
-
-## How Memory Works
-
-coactra is a **pure connector**: it calls the backend's own `recall()` before the
-model turn and `remember()` after. Ranking, consolidation, and storage are handled
-entirely by the backend (Graphiti / mem0). coactra never ranks or stores facts itself.
-
-| Backend | Dev/offline | Production |
-|---|---|---|
-| `"inprocess"` | Fast, no deps, ephemeral | — |
-| `"mem0"` | Needs mem0 + LLM config | OSS self-hosted or cloud |
-| `"graphiti"` | Needs Neo4j + LLM | Best for relational facts |
 
 ## Production Swap
 
 ```python
-agent = await Agent.create(
-    model="claude-sonnet-4-5",
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, StaticToken, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="support"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="support-memory",
+            profile=ModelProfile(
+                name="support-memory",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
+)
+agent = await team.add_agent(
+    model_capability="support-memory",
     name="support-agent",
-    tenant="acme",
-    auth=StaticToken("gateway-token"),  # or authlib TokenSource in production
+    auth=StaticToken("gateway-token"),
     gateway="https://gateway/mcp",
     memory="graphiti",
     instructions="...",
 )
 ```
-
-Memory scope is isolated per tenant automatically.

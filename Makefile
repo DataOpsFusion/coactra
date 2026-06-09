@@ -7,7 +7,7 @@ lint:
 	cd coactra && python3 -m ruff check src tests
 
 type:
-	cd coactra && python3 -m pyright
+	cd coactra && .venv/bin/pyright
 
 docs:
 	mkdocs build --strict

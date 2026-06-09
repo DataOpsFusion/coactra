@@ -1,23 +1,25 @@
-"""Tests for peers= outbound delegation via the Agent facade.
-
-Offline: all model interactions use FunctionModel (no network).
-"""
+"""Tests for peers= outbound delegation via the Team-first facade."""
 
 from __future__ import annotations
 
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
+from coactra import (
+    Decision,
+    DecisionOutcome,
+    ModelProfile,
+    ModelResolver,
+    ModelRoute,
+    Policy,
+    PolicyRequest,
+    Scope,
+    Team,
+)
 from coactra.agent import Agent
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _echo_model(name: str) -> FunctionModel:
-    """FunctionModel that echoes back '<name>:<question>'."""
-
     def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         last_text = name
         for msg in reversed(messages):
@@ -33,68 +35,53 @@ def _echo_model(name: str) -> FunctionModel:
     return FunctionModel(_reply)
 
 
-async def _make_peer(name: str, tenant: str) -> Agent:
-    return await Agent.create(
-        model=_echo_model(name),
-        name=name,
-        tenant=tenant,
-        expose=True,
+def _team(tenant: str, model, capability: str = "default", policy=None) -> Team:
+    return Team(
+        scope=Scope(tenant_id=tenant, namespace="peers"),
+        policy=policy or Policy.permissive(),
+        model_resolver=ModelResolver(
+            [ModelRoute(capability=capability, profile=ModelProfile(name=capability, model=model))]
+        ),
     )
 
 
-# ---------------------------------------------------------------------------
-# Test 1 — peers= wires ask_<peer> tool into main agent; direct invocation works
-# ---------------------------------------------------------------------------
+class CrossTenantDenyPolicy:
+    async def check(self, request: PolicyRequest) -> Decision:
+        if request.action == "model.use":
+            return Decision(outcome=DecisionOutcome.allow, source="test")
+        if request.action == "agent.delegate" and request.context.get(
+            "src_tenant"
+        ) != request.context.get("dst_tenant"):
+            return Decision(
+                outcome=DecisionOutcome.deny, reason="cross-tenant denied", source="test"
+            )
+        return Decision(outcome=DecisionOutcome.allow, source="test")
+
+
+async def _make_peer(name: str, tenant: str) -> Agent:
+    team = _team(tenant, _echo_model(name))
+    return await team.add_agent(model_capability="default", name=name, expose=True)
+
+
+async def _make_main(*, tenant: str = "acme", peers=None, policy=None):
+    team = _team(tenant, _echo_model("sre-1"), policy=policy)
+    return await team.add_agent(model_capability="default", name="sre-1", peers=peers)
 
 
 async def test_peers_tool_present_and_delegates():
-    """peers= on Agent.create adds an ask_<peer> tool that delegates to the peer."""
     peer = await _make_peer("security-agent", "acme")
-    main = await Agent.create(
-        model=_echo_model("sre-1"),
-        name="sre-1",
-        tenant="acme",
-        peers=[peer],
-    )
-
-    # The agent must expose _tools so we can assert the peer tool is wired in.
-    tools = main._tools
-    tool_names = [t.__name__ for t in tools]
-    assert "ask_security_agent" in tool_names, (
-        f"Expected ask_security_agent in tools, got: {tool_names}"
-    )
-
-    # Directly invoke the tool callable to verify delegation works.
-    ask = next(t for t in tools if t.__name__ == "ask_security_agent")
+    main = await _make_main(peers=[peer])
+    ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
     result = await ask("rotate cert")
-    assert "rotate cert" in result, f"Expected 'rotate cert' in {result!r}"
-
-
-# ---------------------------------------------------------------------------
-# Test 2 — cross-tenant peer delegation is denied
-# ---------------------------------------------------------------------------
+    assert "rotate cert" in result
 
 
 async def test_peers_cross_tenant_denied():
-    """A peer in a different tenant causes the delegation tool to refuse."""
-    peer = await _make_peer("ext-agent", "other")  # tenant="other", caller tenant="acme"
-    main = await Agent.create(
-        model=_echo_model("sre-1"),
-        name="sre-1",
-        tenant="acme",
-        peers=[peer],
-    )
-
+    peer = await _make_peer("ext-agent", "other")
+    main = await _make_main(tenant="acme", peers=[peer], policy=CrossTenantDenyPolicy())
     ask = next(t for t in main._tools if t.__name__ == "ask_ext_agent")
     result = await ask("secret task")
-    assert "not permitted" in result.lower() or "denied" in result.lower(), (
-        f"Expected denial message, got: {result!r}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Test 3 — Agent.create remote peers wire OfficialA2ATransport ergonomically
-# ---------------------------------------------------------------------------
+    assert "not permitted" in result.lower() or "denied" in result.lower()
 
 
 class RecordingA2AClient:
@@ -106,8 +93,7 @@ class RecordingA2AClient:
         return f"remote:{kwargs['agent_id']}:{kwargs['message']}"
 
 
-async def test_agent_create_remote_peer_wires_official_a2a_transport():
-    """peers= accepts a remote_peer config and exposes an A2A ask tool."""
+async def test_team_add_agent_remote_peer_wires_official_a2a_transport():
     from coactra.agent import RemotePeer
 
     client = RecordingA2AClient()
@@ -117,12 +103,7 @@ async def test_agent_create_remote_peer_wires_official_a2a_transport():
         audience="security-audience",
         client=client,
     )
-    main = await Agent.create(
-        model=_echo_model("sre-1"),
-        name="sre-1",
-        tenant="acme",
-        peers=[remote],
-    )
+    main = await _make_main(peers=[remote])
 
     ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
     result = await ask("triage incident")
@@ -139,16 +120,9 @@ async def test_agent_create_remote_peer_wires_official_a2a_transport():
     ]
 
 
-async def test_agent_create_peer_name_does_not_crash_and_reports_unavailable():
-    """The documented peers=["name"] shape should create an ask tool, not crash."""
-    main = await Agent.create(
-        model=_echo_model("sre-1"),
-        name="sre-1",
-        tenant="acme",
-        peers=["security-agent"],
-    )
+async def test_team_add_agent_peer_name_does_not_crash_and_reports_unavailable():
+    main = await _make_main(peers=["security-agent"])
 
     ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
     result = await ask("triage incident")
-
     assert "unavailable" in result.lower()
