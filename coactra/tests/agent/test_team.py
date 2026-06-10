@@ -181,3 +181,24 @@ def test_team_importable_from_root_and_module():
 
     assert coactra.Team is Team
     assert team_mod.Team is Team
+
+
+@pytest.mark.asyncio
+async def test_match_skill_with_required_tags_and_ambiguity(team_scope, permissive_policy):
+    team = _team_with_model(team_scope, permissive_policy, TestModel())
+    await team.add_agent(
+        name="python-impl",
+        model_capability="default",
+        skills=[Skill("python", tags=["implement", "backend"])],
+        expose=True,
+    )
+    await team.add_agent(
+        name="python-security",
+        model_capability="default",
+        skills=[Skill("python", tags=["security", "review"])],
+        expose=True,
+    )
+
+    assert team.match_skill("python", required_tags=["security"])._name == "python-security"
+    with pytest.raises(ValueError):
+        team.match_skill("python")

@@ -13,7 +13,21 @@ from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.agent.skills import Skill
 from coactra.agent.workflow import Workflow
 from coactra.team import Team
-from coactra.workflow.playbook import Playbook, step
+from coactra.workflow.playbook import Playbook, ProofBundle, VerificationReceipt, step
+
+
+def _proof_bundle() -> ProofBundle:
+    return ProofBundle(
+        summary="verified",
+        receipts=(
+            VerificationReceipt(
+                command="pytest -q",
+                exit_code=0,
+                stdout_sha256="stdout",
+                stderr_sha256="stderr",
+            ),
+        ),
+    )
 
 
 def _make_echo_model(label: str):
@@ -299,7 +313,7 @@ async def test_resume_from_interrupted_approval_completes(team):
     interrupted = await wf.run(team, checkpoint=cp_store, run_id=run_id)
     assert interrupted.status == "interrupted"
 
-    final = await wf.resume_from(cp_store, run_id, team, decision=True)
+    final = await wf.resume_from(cp_store, run_id, team, decision=True, proof_bundle=_proof_bundle())
 
     assert final.status == "completed"
     assert len(final.results) == 2

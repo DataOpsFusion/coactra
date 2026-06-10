@@ -18,6 +18,21 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope
 from coactra.agent.skills import Skill
 from coactra.team import Team
+from coactra.workflow.playbook import ProofBundle, VerificationReceipt
+
+
+def _proof_bundle() -> ProofBundle:
+    return ProofBundle(
+        summary="verified",
+        receipts=(
+            VerificationReceipt(
+                command="pytest -q",
+                exit_code=0,
+                stdout_sha256="stdout",
+                stderr_sha256="stderr",
+            ),
+        ),
+    )
 
 
 def _make_echo_model(label: str):
@@ -132,7 +147,7 @@ async def test_approval_resume_true_completes(team):
     assert len(interrupted.results) == 1
     assert interrupted.results[0].agent == "security-agent"
 
-    final = await wf.resume(interrupted, team, decision=True)
+    final = await wf.resume(interrupted, team, decision=True, proof_bundle=_proof_bundle())
 
     assert final.status == "completed"
     assert len(final.results) == 2
@@ -140,6 +155,7 @@ async def test_approval_resume_true_completes(team):
     assert final.results[1].status == "done"
     assert len(final.approvals) == 1
     assert final.approvals[0].decision is True
+    assert final.approvals[0].proof_bundle is not None
 
 
 async def test_approval_resume_false_denies(team):
@@ -186,7 +202,7 @@ def test_playbook_to_dict_from_dict_round_trip():
     pb = Playbook(
         name="cert-rotation",
         steps=[
-            step("rotate the cert", requires_skill="cert.rotate"),
+            step("rotate the cert", requires_skill="cert.rotate", required_tags=["tls"]),
             step("redeploy", agent="sre-agent", approve=True),
         ],
     )
@@ -204,6 +220,7 @@ def test_playbook_to_dict_from_dict_round_trip():
     assert len(pb2.steps) == len(pb.steps)
     assert pb2.steps[0].instruction == pb.steps[0].instruction
     assert pb2.steps[0].requires_skill == pb.steps[0].requires_skill
+    assert pb2.steps[0].required_tags == pb.steps[0].required_tags
     assert pb2.steps[1].agent == pb.steps[1].agent
     assert pb2.steps[1].approve == pb.steps[1].approve
 
@@ -306,3 +323,207 @@ async def test_workflow_run_output_texts(team):
     texts = run.output_texts()
     assert len(texts) == 2
     assert all(isinstance(t, str) for t in texts)
+
+
+async def test_required_tags_disambiguate_shared_skill():
+    from coactra.agent.workflow import Workflow, step
+
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="ops"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [
+                ModelRoute(
+                    capability="security",
+                    profile=ModelProfile(name="security", model=_make_echo_model("security-agent")),
+                ),
+                ModelRoute(
+                    capability="review",
+                    profile=ModelProfile(name="review", model=_make_echo_model("review-agent")),
+                ),
+            ]
+        ),
+    )
+    await team.add_agent(
+        name="security-agent",
+        model_capability="security",
+        skills=[Skill("python", tags=["implement", "backend"])],
+        expose=True,
+    )
+    await team.add_agent(
+        name="review-agent",
+        model_capability="review",
+        skills=[Skill("python", tags=["security", "review"])],
+        expose=True,
+    )
+
+    wf = Workflow("tagged-route", steps=[step("review the patch", requires_skill="python", required_tags=["security"])])
+    run = await wf.run(team)
+
+    assert run.status == "completed"
+    assert run.results[0].agent == "review-agent"
+
+
+async def test_ambiguous_skill_without_tags_fails_closed():
+    from coactra.agent.workflow import Workflow, step
+
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="ops"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [
+                ModelRoute(
+                    capability="a",
+                    profile=ModelProfile(name="a", model=_make_echo_model("agent-a")),
+                ),
+                ModelRoute(
+                    capability="b",
+                    profile=ModelProfile(name="b", model=_make_echo_model("agent-b")),
+                ),
+            ]
+        ),
+    )
+    await team.add_agent(name="agent-a", model_capability="a", skills=[Skill("python", tags=["backend"])], expose=True)
+    await team.add_agent(name="agent-b", model_capability="b", skills=[Skill("python", tags=["security"])], expose=True)
+
+    wf = Workflow("ambiguous-route", steps=[step("handle python task", requires_skill="python")])
+    run = await wf.run(team)
+
+    assert run.status == "failed"
+
+
+async def test_workflow_checks_policy_at_route_and_execute():
+    from coactra.agent.workflow import Workflow, step
+
+    observed = Policy.observed()
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="ops"),
+        policy=observed,
+        model_resolver=ModelResolver(
+            [ModelRoute(capability="sre", profile=ModelProfile(name="sre", model=_make_echo_model("sre-agent")))]
+        ),
+    )
+    await team.add_agent(
+        name="sre-agent",
+        model_capability="sre",
+        skills=[Skill("infra.deploy", tags=["deploy"])],
+        expose=True,
+    )
+
+    wf = Workflow("policy-check", steps=[step("deploy", requires_skill="infra.deploy")])
+    run = await wf.run(team)
+
+    assert run.status == "completed"
+    actions = [request.action for request in observed.decisions if request.component == "team"]
+    assert "workflow.route" in actions
+    assert "workflow.execute" in actions
+
+
+async def test_approval_only_gate_records_human_decision_and_continues(team):
+    from coactra.agent.workflow import Workflow, step
+
+    wf = Workflow(
+        "approval-only",
+        steps=[
+            step("rotate the cert", requires_skill="cert.rotate"),
+            step("approve the verified change", approve=True, approval_only=True),
+            step("redeploy the service", requires_skill="infra.deploy"),
+        ],
+    )
+    interrupted = await wf.run(team)
+
+    assert interrupted.status == "interrupted"
+    assert interrupted.pending_index == 1
+    assert len(interrupted.results) == 1
+
+    final = await wf.resume(interrupted, team, decision=True, proof_bundle=_proof_bundle())
+
+    assert final.status == "completed"
+    assert [result.agent for result in final.results] == ["security-agent", "sre-agent"]
+    assert len(final.approvals) == 1
+    assert final.approvals[0].proof_bundle is not None
+
+
+async def test_code_change_builder_returns_workflow_and_contracts():
+    from coactra.agent.workflow import (
+        CodeChangeRiskTier,
+        VerificationCheck,
+        VerifierRequirement,
+        VerifierRole,
+        Workflow,
+    )
+
+    plan = Workflow.code_change(
+        "website-maintenance",
+        implement_instruction="Update the website configuration safely.",
+        implement_skill="ops",
+        verifier_roles=[
+            VerifierRole(
+                role="functional",
+                skill="ops",
+                required_tags=["health"],
+                checks=[
+                    VerificationCheck(
+                        id="healthz",
+                        kind="http",
+                        instruction="GET /healthz and confirm 200",
+                    )
+                ],
+            ),
+            VerifierRole(
+                role="security",
+                skill="security",
+                requirement=VerifierRequirement.advisory,
+                checks=[
+                    VerificationCheck(
+                        id="headers",
+                        kind="state",
+                        instruction="Confirm security headers remain configured.",
+                    )
+                ],
+            ),
+        ],
+        review_skill="review",
+        review_tags=["change-review"],
+        risk_tier=CodeChangeRiskTier.high,
+    )
+
+    assert plan.risk_tier is CodeChangeRiskTier.high
+    assert plan.requires_human_approval is True
+    assert plan.verification_bundle_type.__name__ == "CodeChangeVerificationBundle"
+    assert plan.review_decision_type.__name__ == "CodeChangeReviewDecision"
+    assert plan.workflow.name == "website-maintenance"
+    assert len(plan.workflow._playbook.steps) == 5
+    assert plan.workflow._playbook.steps[1].requires_skill == "ops"
+    assert plan.workflow._playbook.steps[1].required_tags == ("health",)
+    assert plan.workflow._playbook.steps[-1].approval_only is True
+    assert plan.workflow._playbook.steps[-1].approve is True
+
+
+async def test_code_change_builder_low_risk_can_skip_human_gate():
+    from coactra.agent.workflow import CodeChangeRiskTier, VerificationCheck, VerifierRole, Workflow
+
+    plan = Workflow.code_change(
+        "small-fix",
+        implement_instruction="Apply a small safe change.",
+        implement_agent="implementer",
+        verifier_roles=[
+            VerifierRole(
+                role="functional",
+                agent="verifier",
+                checks=[
+                    VerificationCheck(
+                        id="smoke",
+                        kind="command",
+                        instruction="Run the smoke test.",
+                    )
+                ],
+            )
+        ],
+        review_agent="reviewer",
+        risk_tier=CodeChangeRiskTier.low,
+        human_approval="auto",
+    )
+
+    assert plan.requires_human_approval is False
+    assert len(plan.workflow._playbook.steps) == 3

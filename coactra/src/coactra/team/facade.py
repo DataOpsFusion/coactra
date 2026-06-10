@@ -20,6 +20,16 @@ from coactra.scope import Scope
 __all__ = ["Team"]
 
 
+def _has_required_tags(agent: Any, required_tags: tuple[str, ...]) -> bool:
+    if not required_tags:
+        return True
+    required = set(required_tags)
+    for skill in getattr(agent, "_skills", []):
+        if required <= set(getattr(skill, "tags", ())):
+            return True
+    return False
+
+
 @dataclass(slots=True)
 class _AgentSpec:
     name: str
@@ -207,14 +217,65 @@ class Team:
     def workflow(self, name: str) -> Any | None:
         return self._workflows.get(name)
 
-    def match_skill(self, skill_id: str) -> Agent | None:
+    def match_skills(
+        self,
+        skill_id: str,
+        *,
+        required_tags: tuple[str, ...] | list[str] = (),
+    ) -> list[Agent]:
+        tags = tuple(required_tags)
+        matches: list[Agent] = []
         for agent in self._agents.values():
-            if any(skill.id == skill_id for skill in getattr(agent, "_skills", [])):
-                return agent
-        return None
+            if any(skill.id == skill_id for skill in getattr(agent, "_skills", [])) and _has_required_tags(agent, tags):
+                matches.append(agent)
+        return matches
+
+    def match_skill(
+        self,
+        skill_id: str,
+        *,
+        required_tags: tuple[str, ...] | list[str] = (),
+    ) -> Agent | None:
+        matches = self.match_skills(skill_id, required_tags=required_tags)
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise ValueError(
+                f"skill {skill_id!r} is ambiguous for tags {tuple(required_tags)!r}: "
+                f"{[agent._name for agent in matches]!r}"
+            )
+        return matches[0]
 
     def member(self, name: str) -> Agent | None:
         return self._agents.get(name)
+
+    async def check_workflow_step(
+        self,
+        *,
+        phase: str,
+        workflow_name: str,
+        step_index: int,
+        step: Any,
+        agent_name: str,
+    ):
+        return await self.policy.check(
+            PolicyRequest(
+                principal=f"workflow:{workflow_name}",
+                action=f"workflow.{phase}",
+                resource=f"agent:{agent_name}",
+                scope=self.scope,
+                component="team",
+                context={
+                    "workflow_name": workflow_name,
+                    "step_index": step_index,
+                    "instruction": getattr(step, "instruction", ""),
+                    "requires_skill": getattr(step, "requires_skill", None),
+                    "required_tags": list(getattr(step, "required_tags", ())),
+                    "agent": getattr(step, "agent", None),
+                    "target_agent": agent_name,
+                },
+            )
+        )
 
     async def can_talk(self, src: str, dst: str) -> bool:
         src_agent = self.member(src)

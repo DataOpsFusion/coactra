@@ -16,7 +16,9 @@ from coactra.workflow.induction import ReasoningTrace, induce, update
 from coactra.workflow.playbook import (
     Approval,
     Playbook,
+    ProofBundle,
     StepResult,
+    VerificationReceipt,
     step,
 )
 from coactra.workflow.playbook import (
@@ -135,6 +137,8 @@ __all__ = [
     "PlaybookStep",
     "step",
     "StepResult",
+    "VerificationReceipt",
+    "ProofBundle",
     "Approval",
     "PlaybookRun",
     "Scope",

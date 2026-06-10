@@ -238,7 +238,10 @@ def make_ask_node(node: dict[str, Any], ctx: RunContext | None) -> Callable:
             raise ValueError(f"ask node {node['id']} requires a RunContext")
         data = state["data"]
         question = render_value(node.get("question") or str(data), data)
-        answer = ctx.collaborator.ask(node.get("agent", ""), question, data)
+        request_state = dict(data)
+        request_state["_workflow_step_id"] = node.get("id", "")
+        request_state["_workflow_name"] = node.get("workflow_name", "workflow")
+        answer = ctx.collaborator.ask(node.get("agent", ""), question, request_state)
         if inspect.isawaitable(answer):
             answer = await answer
         answers = {**data.get("answers", {}), node.get("agent", ""): answer}
@@ -777,6 +780,7 @@ def document_from_procedure(procedure: Procedure) -> dict[str, Any]:
                 "type": "ask",
                 "agent": step.agent,
                 "question": step.question,
+                "workflow_name": procedure.name,
             }
         elif step.kind == "escalate":
             node = {"id": step.id, "type": "escalate", "reason": step.reason}
