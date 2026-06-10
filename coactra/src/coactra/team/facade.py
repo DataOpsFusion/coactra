@@ -226,7 +226,11 @@ class Team:
         tags = tuple(required_tags)
         matches: list[Agent] = []
         for agent in self._agents.values():
-            if any(skill.id == skill_id for skill in getattr(agent, "_skills", [])) and _has_required_tags(agent, tags):
+            skills = getattr(agent, "_skills", [])
+            if any(skill.id == skill_id for skill in skills) and _has_required_tags(
+                agent,
+                tags,
+            ):
                 matches.append(agent)
         return matches
 
