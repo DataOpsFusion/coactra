@@ -313,7 +313,13 @@ async def test_resume_from_interrupted_approval_completes(team):
     interrupted = await wf.run(team, checkpoint=cp_store, run_id=run_id)
     assert interrupted.status == "interrupted"
 
-    final = await wf.resume_from(cp_store, run_id, team, decision=True, proof_bundle=_proof_bundle())
+    final = await wf.resume_from(
+        cp_store,
+        run_id,
+        team,
+        decision=True,
+        proof_bundle=_proof_bundle(),
+    )
 
     assert final.status == "completed"
     assert len(final.results) == 2

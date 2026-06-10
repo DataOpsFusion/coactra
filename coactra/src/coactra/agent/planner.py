@@ -2,8 +2,10 @@
 
 Public API
 ----------
-- ``PlannedStep``    — pydantic schema: one LLM-generated step (instruction + requires_skill + required_tags).
-- ``PlannedPlan``    — pydantic schema: list of PlannedStep (LLM output envelope).
+- ``PlannedStep``    — pydantic schema: one LLM-generated step
+  (instruction + requires_skill + required_tags).
+- ``PlannedPlan``    — pydantic schema: list of PlannedStep
+  (LLM output envelope).
 - ``plan_playbook``  — turn a goal + Team into a skill-routed Playbook.
 """
 
@@ -57,7 +59,8 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
         f"Goal: {goal}\n\n"
         f"Available agents and skills:\n{roster_text}\n\n"
         "Return a JSON object matching the PlannedPlan schema: "
-        '{"steps": [{"instruction": "...", "requires_skill": "skill_id", "required_tags": ["tag"]}]}'
+        '{"steps": [{"instruction": "...", "requires_skill": "skill_id", '
+        '"required_tags": ["tag"]}]}'
     )
 
 

@@ -357,7 +357,16 @@ async def test_required_tags_disambiguate_shared_skill():
         expose=True,
     )
 
-    wf = Workflow("tagged-route", steps=[step("review the patch", requires_skill="python", required_tags=["security"])])
+    wf = Workflow(
+        "tagged-route",
+        steps=[
+            step(
+                "review the patch",
+                requires_skill="python",
+                required_tags=["security"],
+            )
+        ],
+    )
     run = await wf.run(team)
 
     assert run.status == "completed"
@@ -383,10 +392,23 @@ async def test_ambiguous_skill_without_tags_fails_closed():
             ]
         ),
     )
-    await team.add_agent(name="agent-a", model_capability="a", skills=[Skill("python", tags=["backend"])], expose=True)
-    await team.add_agent(name="agent-b", model_capability="b", skills=[Skill("python", tags=["security"])], expose=True)
+    await team.add_agent(
+        name="agent-a",
+        model_capability="a",
+        skills=[Skill("python", tags=["backend"])],
+        expose=True,
+    )
+    await team.add_agent(
+        name="agent-b",
+        model_capability="b",
+        skills=[Skill("python", tags=["security"])],
+        expose=True,
+    )
 
-    wf = Workflow("ambiguous-route", steps=[step("handle python task", requires_skill="python")])
+    wf = Workflow(
+        "ambiguous-route",
+        steps=[step("handle python task", requires_skill="python")],
+    )
     run = await wf.run(team)
 
     assert run.status == "failed"
@@ -400,7 +422,15 @@ async def test_workflow_checks_policy_at_route_and_execute():
         scope=Scope(tenant_id="acme", namespace="ops"),
         policy=observed,
         model_resolver=ModelResolver(
-            [ModelRoute(capability="sre", profile=ModelProfile(name="sre", model=_make_echo_model("sre-agent")))]
+            [
+                ModelRoute(
+                    capability="sre",
+                    profile=ModelProfile(
+                        name="sre",
+                        model=_make_echo_model("sre-agent"),
+                    ),
+                )
+            ]
         ),
     )
     await team.add_agent(

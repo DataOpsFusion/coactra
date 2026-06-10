@@ -91,7 +91,7 @@ class VerifierRole(BaseModel):
     summary: str = ""
 
     @model_validator(mode="after")
-    def _validate_target(self) -> "VerifierRole":
+    def _validate_target(self) -> VerifierRole:
         if not self.skill and not self.agent:
             raise ValueError("verifier role requires either skill or agent")
         if self.skill and self.agent:
@@ -170,7 +170,8 @@ class _TeamCollaborator:
                 allowed = outcome == "allow" or str(outcome) == "DecisionOutcome.allow"
             if not allowed:
                 raise PermissionError(
-                    f"policy denied workflow step {workflow_name}:{step_id or step_index} for agent {agent}"
+                    "policy denied workflow step "
+                    f"{workflow_name}:{step_id or step_index} for agent {agent}"
                 )
         return str(await member.run(question))
 
@@ -336,7 +337,10 @@ class Workflow:
                 return str(tenant)
         return "default"
 
-    async def _resolve_steps_for_engine(self, team: Any) -> list[tuple[int, Step, Any]] | WorkflowRun:
+    async def _resolve_steps_for_engine(
+        self,
+        team: Any,
+    ) -> list[tuple[int, Step, Any]] | WorkflowRun:
         resolved: list[tuple[int, Step, Any]] = []
         for i, s in enumerate(self._playbook.steps):
             agent = await self._resolve_step_agent(team, i, s)
@@ -967,7 +971,10 @@ class Workflow:
         ]
         if role.summary:
             lines.append(role.summary)
-        lines.append("Collect evidence for every check you can safely run and aggregate failures instead of failing fast.")
+        lines.append(
+            "Collect evidence for every check you can safely run and "
+            "aggregate failures instead of failing fast."
+        )
         for check in role.checks:
             lines.append(
                 f"- [{check.kind}] {check.id}: {check.instruction}"
@@ -975,13 +982,17 @@ class Workflow:
         return "\n".join(lines)
 
     @staticmethod
-    def _code_change_review_instruction(risk_tier: CodeChangeRiskTier, verifier_roles: list[VerifierRole]) -> str:
+    def _code_change_review_instruction(
+        risk_tier: CodeChangeRiskTier,
+        verifier_roles: list[VerifierRole],
+    ) -> str:
         roles = ", ".join(
             f"{role.role}({role.requirement.value})" for role in verifier_roles
         ) or "none"
         return (
             "Review the implementation and the verifier evidence bundle. "
-            "Return a structured review decision with one of: approve, request_changes, escalate, uncertain. "
+            "Return a structured review decision with one of: approve, "
+            "request_changes, escalate, uncertain. "
             f"Risk tier: {risk_tier.value}. Verification coverage: {roles}."
         )
 
@@ -1033,7 +1044,8 @@ class Workflow:
             )
         steps.append(
             step(
-                reviewer_instruction or cls._code_change_review_instruction(risk_tier, verifier_roles),
+                reviewer_instruction
+                or cls._code_change_review_instruction(risk_tier, verifier_roles),
                 agent=review_agent,
                 requires_skill=review_skill,
                 required_tags=tuple(review_tags),
@@ -1045,7 +1057,8 @@ class Workflow:
         if needs_human:
             steps.append(
                 step(
-                    f"Human approval for reviewed change ({risk_tier.value} risk). Approve the proof bundle.",
+                    "Human approval for reviewed change "
+                    f"({risk_tier.value} risk). Approve the proof bundle.",
                     approve=True,
                     approval_only=True,
                 )
