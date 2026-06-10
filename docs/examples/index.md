@@ -13,8 +13,9 @@ These examples show the current Coactra **Team · Agent · Workflow** model. Run
 | Agent + memory + tools | [Support Desk](support-desk.md) |
 | Team routing + explicit policy | [Multi-Agent Policy](multi-agent-policy.md) |
 | Team composition with skills | [Composed Support Agent](composed-support-agent.md) |
-| Durable work with approval | [Work Order Lifecycle](work-order-lifecycle.md) |
-| Procedure-backed steps | [Procedure-Backed Work](procedure-backed-work.md) |
+| Durable work with approvals and proof bundles | [Work Order Lifecycle](work-order-lifecycle.md) |
+| Broad-skill routing with tag disambiguation | [Procedure-Backed Work](procedure-backed-work.md) |
+| Thin implement/verify/review workflow helper | [Code Change Workflow](code-change-workflow.md) |
 | Release pipeline with checkpoints | [Release Runner](release-runner.md) |
 
 ## Local Setup

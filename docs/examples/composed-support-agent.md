@@ -54,9 +54,9 @@ async def build_support_agent():
         memory="inprocess",
         skills=[
             Skill(
-                "support.tier1",
+                "support",
                 description="Handle tier-1 customer support tickets",
-                tags=["support", "helpdesk"],
+                tags=["helpdesk", "tier1"],
                 scopes=["tickets:read", "tickets:write"],
             )
         ],

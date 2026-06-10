@@ -71,7 +71,7 @@ async def main() -> None:
         name="triage-agent",
         model_capability="triage",
         instructions="Use host policy.",
-        skills=[Skill("incident.triage", description="triage incidents")],
+        skills=[Skill("incident", description="triage incidents", tags=["triage"])],
         expose=True,
     )
     print(await agent.run("Triage nginx 502s on checkout"))
@@ -147,27 +147,40 @@ team = Team(
     policy=Policy.permissive(),
     model_resolver=ModelResolver([
         ModelRoute(
-            capability="security",
-            profile=ModelProfile(name="security", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
-        ),
-        ModelRoute(
             capability="deploy",
             profile=ModelProfile(name="deploy", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
         ),
+        ModelRoute(
+            capability="review",
+            profile=ModelProfile(name="review", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+        ),
     ]),
 )
-await team.add_agent(name="security", skills=[Skill("cert.rotate")], model_capability="security", expose=True)
-await team.add_agent(name="sre", skills=[Skill("deploy")], model_capability="deploy", expose=True)
+await team.add_agent(
+    name="release-sre",
+    skills=[Skill("deploy", description="Execute release work", tags=["execute"])],
+    model_capability="deploy",
+    expose=True,
+)
+await team.add_agent(
+    name="release-review",
+    skills=[Skill("deploy", description="Review release evidence", tags=["review"])],
+    model_capability="review",
+    expose=True,
+)
 
 workflow = Workflow(
     "release",
     steps=[
-        step("Run checks", requires_skill="deploy"),
-        step("Approve deployment", requires_skill="cert.rotate", approve=True),
+        step("Run checks", requires_skill="deploy", required_tags=["execute"]),
+        step("Review release evidence", requires_skill="deploy", required_tags=["review"]),
+        step("Approve deployment", approve=True, approval_only=True),
     ],
 )
 run = await team.run(workflow)
 ```
+
+Broad skill ids stay reusable; `required_tags` keeps routing deterministic when multiple agents share the same domain. Approved steps resume with a `ProofBundle`, and `Workflow.code_change(...)` provides a thin implement/verify/review helper for common change-management flows.
 
 ## Development
 

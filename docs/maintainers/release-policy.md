@@ -57,6 +57,8 @@ An adapter can be import-stable but operationally experimental. Track both:
 
 Every workflow engine adapter declares one of:
 
+Approved `approve=True` resumes also require a `ProofBundle` evidence payload at the Workflow facade, regardless of backend.
+
 | Value | Meaning |
 |---|---|
 | `same-thread` | `resume(id, ...)` continues the same durable execution |

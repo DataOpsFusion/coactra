@@ -20,7 +20,9 @@ Status of major features (0.0.x alpha):
 | `gateway=` + `auth=StaticToken` / custom `TokenSource` MCP path | Built |
 | `skills=[Skill(...)]` structured roster | Built |
 | `peers=` outbound A2A delegation (`RemotePeer`, `OfficialA2ATransport`) | Built |
-| `requires_skill` workflow routing | Built |
+| broad `requires_skill` routing with `required_tags` fail-closed disambiguation | Built |
+| approval proof bundles and `approval_only=True` gates | Built |
+| `Workflow.code_change(...)` thin builder | Built |
 | `ModelResolver` / `ModelProfile` / `ModelRoute` | Built |
 
 ## Outstanding: Team and Agent Layer
@@ -33,6 +35,8 @@ Status of major features (0.0.x alpha):
 
 ## Outstanding: Workflow Layer
 
-- richer playbook authoring and import/export surfaces
-- approval policies carried as first-class Team/Policy decisions through every workflow transition
-- broader conformance tests for `requires_skill` routing across adapters
+- richer workflow-candidate review and promotion UX
+- reusable verification profile libraries on top of the typed verifier/check model
+- planner support for emitting verifier roles and richer workflow candidates
+- broader conformance tests for policy-enforced routing and resume semantics across adapters
+- optional bounded retry/rework policies layered above the single-pass code-change helper

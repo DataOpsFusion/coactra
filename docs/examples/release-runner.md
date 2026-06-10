@@ -1,6 +1,7 @@
 # Release Runner
 
-A release pipeline as an authored Workflow: each stage is a `step`, human sign-offs are approval pauses, and the whole run is durable.
+A release pipeline as an authored Workflow: each stage is a `step`, human sign-offs are
+approval pauses, and the whole run is durable.
 
 ## Code
 
@@ -33,19 +34,19 @@ async def main(version: str) -> None:
         name="release-eng",
         auth=StaticToken("gateway-token"),
         gateway="https://gateway/mcp",
-        skills=[Skill("release.pipeline", description="Run release stages", tags=["release", "deploy"])],
+        skills=[Skill("release", description="Run release stages", tags=["pipeline", "execute"])],
         expose=True,
     )
 
     play = Workflow(f"release-{version}", steps=[
-        step("run pre-release checks and tests", agent="release-eng"),
-        step("build and push artifacts", agent="release-eng"),
-        step("deploy to staging", agent="release-eng"),
-        step("staging validation sign-off", approve=True),
-        step("deploy to production", agent="release-eng"),
-        step("smoke-test production", agent="release-eng"),
-        step("release manager sign-off", approve=True),
-        step("tag release and close", agent="release-eng"),
+        step("run pre-release checks and tests", requires_skill="release", required_tags=["execute"]),
+        step("build and push artifacts", requires_skill="release", required_tags=["execute"]),
+        step("deploy to staging", requires_skill="release", required_tags=["execute"]),
+        step("staging validation sign-off", approve=True, approval_only=True),
+        step("deploy to production", requires_skill="release", required_tags=["execute"]),
+        step("smoke-test production", requires_skill="release", required_tags=["execute"]),
+        step("release manager sign-off", approve=True, approval_only=True),
+        step("tag release and close", requires_skill="release", required_tags=["execute"]),
     ])
 
     run = await team.run(play)

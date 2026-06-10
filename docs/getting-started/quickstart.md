@@ -1,6 +1,8 @@
 # Quickstart
 
-This guide builds a small incident-triage system using the Team-first public API. `Team` is the assembly door; `Agent` remains the runtime actor type returned by `team.add_agent(...)`.
+This guide builds a small incident-triage system using the Team-first public API. `Team` is the
+assembly door; runtime agents are created through `team.add_agent(...)` and then routed through the
+same Team policy and scope boundary.
 
 ## 1. Install
 
@@ -59,7 +61,7 @@ async def main() -> None:
         name="triage-agent",
         auth="dev-token",
         tools=[get_runbook],
-        skills=[Skill(id="incident.triage", description="Triage production incidents")],
+        skills=[Skill(id="incident", description="Triage production incidents", tags=["triage"])],
         instructions="You are a senior SRE. Be concise and actionable.",
         expose=True,
     )
@@ -128,31 +130,60 @@ team = Team(
 )
 await team.add_agent(
     model_capability="security-review",
-    name="security-agent",
+    name="security-reviewer",
     auth="dev-token",
-    skills=[Skill(id="security.review", description="Review security-sensitive changes")],
+    skills=[Skill(id="security", description="Review security-sensitive changes", tags=["review", "prod"])],
     expose=True,
 )
-print(team.match_skill("security.review").card)
+await team.add_agent(
+    model_capability="security-review",
+    name="security-operator",
+    auth="dev-token",
+    skills=[Skill(id="security", description="Execute security changes", tags=["execute", "prod"])],
+    expose=True,
+)
+print(team.match_skill("security", required_tags=["review"]).card)
 ```
+
+Broad skill ids keep the roster portable. `required_tags` is the supported way to disambiguate overlapping specialists. `team.match_skill("security")` fails closed if the match is ambiguous.
 
 ## 6. Run A Workflow
 
 ```python
 from coactra import Workflow
-from coactra.workflow import step
+from coactra.workflow import ProofBundle, VerificationReceipt, step
 
 workflow = Workflow(
     "cert rotation",
     steps=[
-        step("plan", requires_skill="sre.plan"),
-        step("approve", requires_skill="security.review", approve=True),
-        step("execute", requires_skill="sre.execute"),
+        step("plan the change", requires_skill="security", required_tags=["review"]),
+        step("apply the rotation", requires_skill="security", required_tags=["execute"]),
+        step("human sign-off", approve=True, approval_only=True),
     ],
 )
+
+run = await team.run(workflow)
+if run.status == "interrupted":
+    run = await workflow.resume(
+        run,
+        team,
+        decision={
+            "approved": True,
+            "proof_bundle": ProofBundle(
+                summary="review completed and operator approved",
+                receipts=[
+                    VerificationReceipt(
+                        command="openssl s_client -connect example.com:443",
+                        exit_code=0,
+                        stdout_sha256="abc123",
+                    )
+                ],
+            ),
+        },
+    )
 ```
 
-`Workflow` supports Team skill routing, approval pause/resume, checkpoint storage, and swappable engine seams.
+`Workflow` supports Team skill routing, approval pause/resume with proof bundles, checkpoint storage, and swappable engine seams. For the common implement/verify/review pattern, see `Workflow.code_change(...)` in [Code Change Workflow](../examples/code-change-workflow.md).
 
 ## 7. Production Shape
 
@@ -166,4 +197,4 @@ workflow = Workflow(
 | Workspace | local gated directory | host-controlled workspace backend |
 | Peers | local runtime agents | `RemotePeer(...)` over A2A |
 
-Coactra should give you stable seams. Keep business behavior in plain functions and let `Team`, `Agent`, and `Workflow` own runtime state.
+Coactra should give you stable seams. Keep business behavior in plain functions and let `Team` and `Workflow` own coordination, policy, and durable state.
