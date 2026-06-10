@@ -21,7 +21,21 @@ from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skil
 from coactra.agent.checkpoint import InMemoryCheckpointStore
 from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.ai import Client
-from coactra.workflow import step
+from coactra.workflow import ProofBundle, VerificationReceipt, step
+
+
+def _proof_bundle() -> ProofBundle:
+    return ProofBundle(
+        summary="verified",
+        receipts=(
+            VerificationReceipt(
+                command="pytest -q",
+                exit_code=0,
+                stdout_sha256="stdout",
+                stderr_sha256="stderr",
+            ),
+        ),
+    )
 
 ZEN = "https://opencode.ai/zen/go/v1"
 MODEL = "openai/qwen3.6-plus"
@@ -97,7 +111,7 @@ async def test_team_workflow_acceptance():
     run = await play.run(team)
     assert run.status == "interrupted"
     assert run.results[0].agent == "security-agent"
-    done = await play.resume(run, team, decision=True)
+    done = await play.resume(run, team, decision=True, proof_bundle=_proof_bundle())
     assert done.status == "completed"
     assert done.results[1].agent == "sre-agent"
 
@@ -112,7 +126,7 @@ async def test_team_workflow_acceptance():
     r2 = await play2.run(team, checkpoint=ck, run_id="acc-2")
     assert r2.status == "interrupted"
     assert ck.load("acc-2") is not None
-    r2b = await play2.resume_from(ck, "acc-2", team, decision=True)
+    r2b = await play2.resume_from(ck, "acc-2", team, decision=True, proof_bundle=_proof_bundle())
     assert r2b.status == "completed"
 
     store = InMemoryPlaybookStore()

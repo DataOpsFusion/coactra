@@ -24,7 +24,13 @@ from coactra.agent.checkpoint import (
     run_from_state,
     run_to_state,
 )
-from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
+from coactra.workflow.playbook import (
+    Approval,
+    ProofBundle,
+    StepResult,
+    VerificationReceipt,
+    WorkflowRun,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -46,7 +52,22 @@ def _make_partial_run() -> WorkflowRun:
         ],
         pending_index=1,
         approvals=[
-            Approval(step_index=0, instruction="do the first thing", decision=True),
+            Approval(
+                step_index=0,
+                instruction="do the first thing",
+                decision=True,
+                proof_bundle=ProofBundle(
+                    summary="verified",
+                    receipts=(
+                        VerificationReceipt(
+                            command="pytest -q",
+                            exit_code=0,
+                            stdout_sha256="stdout",
+                            stderr_sha256="stderr",
+                        ),
+                    ),
+                ),
+            ),
         ],
         # _steps intentionally left as default [] — it's playbook state, not run state
     )
@@ -154,6 +175,8 @@ class TestRoundTrip:
         assert a.step_index == 0
         assert a.instruction == "do the first thing"
         assert a.decision is True
+        assert a.proof_bundle is not None
+        assert a.proof_bundle.receipts[0].command == "pytest -q"
 
     def test_status_preserved(self):
         run = _make_partial_run()
@@ -302,7 +325,23 @@ async def test_langgraph_checkpoint_store_resumes_workflow_across_restart(tmp_pa
     assert interrupted.pending_index == 1
 
     restarted_store = LangGraphCheckpointStore(db)
-    final = await wf.resume_from(restarted_store, run_id, team, decision=True)
+    final = await wf.resume_from(
+        restarted_store,
+        run_id,
+        team,
+        decision=True,
+        proof_bundle=ProofBundle(
+            summary="verified",
+            receipts=(
+                VerificationReceipt(
+                    command="pytest -q",
+                    exit_code=0,
+                    stdout_sha256="stdout",
+                    stderr_sha256="stderr",
+                ),
+            ),
+        ),
+    )
 
     assert final.status == "completed"
     assert [r.agent for r in final.results] == ["alpha", "beta"]

@@ -122,6 +122,25 @@ async def test_plan_playbook_step_requires_skill(team):
     assert result.steps[1].requires_skill == "infra.deploy"
 
 
+async def test_plan_playbook_step_required_tags(team):
+    from coactra.agent.planner import PlannedPlan, PlannedStep, plan_playbook
+
+    fixed_plan = PlannedPlan(
+        steps=[
+            PlannedStep(
+                instruction="Rotate the TLS certificate",
+                requires_skill="cert.rotate",
+                required_tags=["tls"],
+            )
+        ]
+    )
+    fake = FakeClient(fixed_plan)
+
+    result = plan_playbook("rotate cert", team, client=fake)
+
+    assert result.steps[0].required_tags == ("tls",)
+
+
 async def test_plan_playbook_steps_are_step_instances(team):
     from coactra.agent.planner import PlannedPlan, PlannedStep, plan_playbook
 
@@ -163,6 +182,7 @@ async def test_prompt_includes_second_agent_skill_id(team):
     plan_playbook("deploy service", team, client=fake)
 
     assert "infra.deploy" in fake.last_prompt
+    assert "tags=" in fake.last_prompt
 
 
 async def test_prompt_includes_goal(team):

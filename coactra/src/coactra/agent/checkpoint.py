@@ -28,7 +28,13 @@ from typing import Protocol, runtime_checkable
 
 from typing_extensions import TypedDict
 
-from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
+from coactra.workflow.playbook import (
+    Approval,
+    ProofBundle,
+    StepResult,
+    VerificationReceipt,
+    WorkflowRun,
+)
 
 # ---------------------------------------------------------------------------
 # Protocol
@@ -136,6 +142,44 @@ class LangGraphCheckpointStore:
 # ---------------------------------------------------------------------------
 
 
+def _proof_bundle_to_state(bundle: ProofBundle | None) -> dict | None:
+    if bundle is None:
+        return None
+    return {
+        "summary": bundle.summary,
+        "artifact_paths": list(bundle.artifact_paths),
+        "receipts": [
+            {
+                "command": receipt.command,
+                "exit_code": receipt.exit_code,
+                "stdout_sha256": receipt.stdout_sha256,
+                "stderr_sha256": receipt.stderr_sha256,
+                "artifact_paths": list(receipt.artifact_paths),
+            }
+            for receipt in bundle.receipts
+        ],
+    }
+
+
+def _proof_bundle_from_state(state: dict | None) -> ProofBundle | None:
+    if state is None:
+        return None
+    return ProofBundle(
+        summary=state.get("summary", ""),
+        artifact_paths=tuple(state.get("artifact_paths", ())),
+        receipts=tuple(
+            VerificationReceipt(
+                command=receipt["command"],
+                exit_code=int(receipt["exit_code"]),
+                stdout_sha256=receipt.get("stdout_sha256", ""),
+                stderr_sha256=receipt.get("stderr_sha256", ""),
+                artifact_paths=tuple(receipt.get("artifact_paths", ())),
+            )
+            for receipt in state.get("receipts", [])
+        ),
+    )
+
+
 def run_to_state(run: WorkflowRun) -> dict:
     """Serialize *run* to a plain, JSON-serializable dict.
 
@@ -173,6 +217,7 @@ def run_to_state(run: WorkflowRun) -> dict:
                 "step_index": a.step_index,
                 "instruction": a.instruction,
                 "decision": a.decision,
+                "proof_bundle": _proof_bundle_to_state(a.proof_bundle),
             }
             for a in run.approvals
         ],
@@ -209,6 +254,7 @@ def run_from_state(state: dict) -> WorkflowRun:
             step_index=a["step_index"],
             instruction=a["instruction"],
             decision=bool(a["decision"]),
+            proof_bundle=_proof_bundle_from_state(a.get("proof_bundle")),
         )
         for a in state.get("approvals", [])
     ]

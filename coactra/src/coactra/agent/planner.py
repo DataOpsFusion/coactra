@@ -2,7 +2,7 @@
 
 Public API
 ----------
-- ``PlannedStep``    — pydantic schema: one LLM-generated step (instruction + requires_skill).
+- ``PlannedStep``    — pydantic schema: one LLM-generated step (instruction + requires_skill + required_tags).
 - ``PlannedPlan``    — pydantic schema: list of PlannedStep (LLM output envelope).
 - ``plan_playbook``  — turn a goal + Team into a skill-routed Playbook.
 """
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from coactra.workflow.playbook import Playbook
 from coactra.workflow.playbook import step as make_step
@@ -24,6 +24,7 @@ class PlannedStep(BaseModel):
 
     instruction: str
     requires_skill: str
+    required_tags: list[str] = Field(default_factory=list)
 
 
 class PlannedPlan(BaseModel):
@@ -40,7 +41,10 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
         for skill in card.get("skills", []):
             skill_id = skill.get("id", "")
             description = skill.get("description", "")
-            roster_lines.append(f"  - agent={agent_name} skill_id={skill_id}: {description}")
+            tags = ",".join(skill.get("tags", [])) or "-"
+            roster_lines.append(
+                f"  - agent={agent_name} skill_id={skill_id} tags={tags}: {description}"
+            )
 
     roster_text = "\n".join(roster_lines) if roster_lines else "  (no agents available)"
 
@@ -48,11 +52,12 @@ def _build_prompt(goal: str, cards: list[dict]) -> str:
         "You are a workflow planner. Break the following goal into an ordered list of steps.\n"
         "Each step must have:\n"
         "  - instruction: a clear, actionable instruction for the executing agent\n"
-        "  - requires_skill: the skill_id from the roster that best covers this step\n\n"
+        "  - requires_skill: the broad skill_id from the roster that best covers this step\n"
+        "  - required_tags: optional tags that disambiguate agents sharing the same skill_id\n\n"
         f"Goal: {goal}\n\n"
         f"Available agents and skills:\n{roster_text}\n\n"
         "Return a JSON object matching the PlannedPlan schema: "
-        '{"steps": [{"instruction": "...", "requires_skill": "skill_id"}]}'
+        '{"steps": [{"instruction": "...", "requires_skill": "skill_id", "required_tags": ["tag"]}]}'
     )
 
 
@@ -89,5 +94,12 @@ def plan_playbook(
     prompt = _build_prompt(goal, cards)
 
     planned: PlannedPlan = client.structured(PlannedPlan, prompt)
-    steps = [make_step(s.instruction, requires_skill=s.requires_skill) for s in planned.steps]
+    steps = [
+        make_step(
+            s.instruction,
+            requires_skill=s.requires_skill,
+            required_tags=tuple(s.required_tags),
+        )
+        for s in planned.steps
+    ]
     return Playbook(name=goal, steps=steps)

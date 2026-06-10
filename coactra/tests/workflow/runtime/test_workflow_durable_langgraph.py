@@ -157,3 +157,20 @@ async def test_sub_procedure_red_gate_interrupts_parent_and_resumes_idempotently
         ("infra", "wipe_disk", {}),
     ]
     assert final["call_child_result"]["wipe_result"] == {"ok": True, "tool": "wipe_disk"}
+
+
+@pytest.mark.asyncio
+async def test_durable_engine_returns_failed_snapshot_when_collaborator_is_denied():
+    class DenyCollaborator:
+        def ask(self, agent: str, question: str, state: dict):
+            raise PermissionError("policy denied workflow execution")
+
+    engine = DurableLangGraphEngine(checkpointer=MemorySaver())
+    procedure = Procedure(name="ops", steps=[Step(id="inspect", kind="ask", agent="worker")])
+    ctx = RunContext(scope=Scope(tenant_id="acme"), collaborator=DenyCollaborator())
+
+    failed = await engine.start(procedure, {}, ctx, thread_id="deny-1")
+
+    assert failed.status is WorkflowRunStatus.failed
+    assert failed.result is not None
+    assert "policy denied" in failed.result.output["_error"]
