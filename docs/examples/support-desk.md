@@ -1,12 +1,14 @@
 # Support Desk
 
-A helpdesk agent that drafts answers with automatic memory. The runnable part combines `Team` + `Agent` + memory.
+A helpdesk agent that drafts answers with automatic memory. The runnable part combines `Team`
++ runtime agent + memory.
 
 ## Demonstrates (Runnable)
 
-- `team.add_agent(model_capability=..., memory=..., tools=, instructions=)`
+- `team.add_agent(model_capability=..., memory=..., tools=, skills=, instructions=)`
 - Automatic recall of prior tickets per customer
 - Local tools for ticket resolution
+- Optional workflow gating with pure human approval steps
 
 ## Code (Runnable)
 
@@ -14,7 +16,7 @@ A helpdesk agent that drafts answers with automatic memory. The runnable part co
 import asyncio
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 
 
 def fetch_ticket(ticket_id: str) -> dict:
@@ -47,6 +49,7 @@ async def handle_ticket(ticket_id: str, customer_id: str) -> str:
         auth="dev-token",
         memory="inprocess",
         tools=[fetch_ticket, mark_resolved],
+        skills=[Skill("support", description="Handle support tickets", tags=["desk", "tier1"])],
         instructions=(
             "You are a tier-1 support agent. Recall past issues, draft a clear "
             "resolution, and mark the ticket resolved when done."
@@ -62,9 +65,9 @@ from coactra import Workflow
 from coactra.workflow import step
 
 play = Workflow("support-ticket", steps=[
-    step("fetch and draft resolution", agent="support-desk"),
-    step("manager approval", approve=True),
-    step("mark resolved", agent="support-desk"),
+    step("fetch and draft resolution", requires_skill="support", required_tags=["desk"]),
+    step("manager approval", approve=True, approval_only=True),
+    step("mark resolved", requires_skill="support", required_tags=["desk"]),
 ])
 await team.run(play)
 ```

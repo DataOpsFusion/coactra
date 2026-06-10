@@ -42,7 +42,7 @@ async def main() -> None:
         model_capability="sre",
         name="sre-agent",
         auth="dev-token",
-        skills=[Skill("infra.restart", description="Restart infrastructure services", tags=["sre"], scopes=["infra:write"])],
+        skills=[Skill("ops", description="Restart infrastructure services", tags=["sre", "execute"], scopes=["infra:write"])],
         instructions="You manage infra.",
         expose=True,
     )
@@ -50,7 +50,7 @@ async def main() -> None:
         model_capability="security",
         name="security-agent",
         auth="dev-token",
-        skills=[Skill("cert.rotate", description="Rotate TLS certificates", tags=["security"], scopes=["cert:write"])],
+        skills=[Skill("security", description="Review security-sensitive infrastructure changes", tags=["review", "tls"], scopes=["cert:write"])],
         instructions="You handle security.",
         expose=True,
     )

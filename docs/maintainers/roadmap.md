@@ -1,16 +1,16 @@
 # Roadmap
 
 The implementation roadmap now follows the alpha-breaking Team-first order:
-**Team spine → skill-routed workflow → model resolution → broader adapters and
+**Team spine -> skill-routed workflow -> model resolution -> broader adapters and
 durability**.
 
 **Build order:**
 
-1. **Team spine** — `Team(scope=..., policy=...)`; explicit catalogs for agents, skills, and workflows; `add_agent()` and `run()` as the main assembly/runtime verbs. *(in flight)*
-2. **workspace + memory + peers through Team** — runtime agents still expose file tools, memory bindings, MCP gateway tools, and outbound delegation, but Team owns the construction path.
-3. **Workflow** — `Workflow(steps=[...])` + `step()` using `requires_skill`; Team routes steps through `match_skill()` and policy gates.
-4. **Model resolution** — `ModelResolver` selects governed model routes; LiteLLM stays an adapter, not Coactra's identity.
-5. **Durability and external policy** — LangGraph/Temporal/OpenFGA remain adapters layered under the same execution model.
+1. **Team spine** - `Team(scope=..., policy=...)`; explicit catalogs for agents, skills, and workflows; `add_agent()` and `run()` as the main assembly/runtime verbs.
+2. **workspace + memory + peers through Team** - runtime agents still expose file tools, memory bindings, MCP gateway tools, and outbound delegation, but Team owns the construction path.
+3. **Workflow** - `Workflow(steps=[...])` + `step()` using broad `requires_skill` ids, `required_tags`, approval evidence, and policy gates.
+4. **Model resolution** - `ModelResolver` selects governed model routes; LiteLLM stays an adapter, not Coactra's identity.
+5. **Durability and external policy** - LangGraph/Temporal/OpenFGA remain adapters layered under the same execution model.
 
 **What is built today:**
 
@@ -19,7 +19,9 @@ durability**.
 - `Team(scope=..., policy=...)` with explicit catalogs and `add_agent(...)`
 - `peers=` with local Agent objects, string placeholders, and `RemotePeer(...)`
 - `Workflow` / `step()` / `Workflow.run_goal()` with approval pause/resume and checkpoint-store resume
-- `requires_skill`-based workflow routing
+- broad `requires_skill` workflow routing with `required_tags` disambiguation and fail-closed ambiguity
+- `ProofBundle` / `VerificationReceipt` approval evidence and `approval_only=True` pure human gates
+- `Workflow.code_change(...)` as a thin implement/verify/review builder
 - `ModelProfile` / `ModelRoute` / `ModelResolver` as the governed model seam
 - Outbound A2A via `coactra.agent.adapters.OfficialA2ATransport`
 
@@ -34,6 +36,7 @@ durability**.
 - Fleet registry/discovery for remote A2A endpoints
 - OpenFGA/AuthZEN policy adapters
 - Automatic learning loop around reflection, promotion, replay, and advertisement
+- Workflow candidate promotion that emits typed verifier-role metadata directly
 
 The authoritative source for the phased plan, milestone gates, and implementation
 details is the implementation plan spec:

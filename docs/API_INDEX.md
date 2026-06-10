@@ -78,7 +78,7 @@ agent = await team.add_agent(
     tools=[my_func],
     memory="graphiti",
     workspace="./desk",
-    skills=[Skill(id="cert.rotate", description="...", tags=["sre"], scopes=["cert:write"])],
+    skills=[Skill(id="security", description="...", tags=["review", "tls"], scopes=["cert:write"])],
     peers=["security-agent"],
     expose=True,
     instructions="Be terse.",
@@ -182,14 +182,14 @@ agent = await team.add_agent(
 
 ```python
 Skill(
-    id="cert.rotate",
-    description="Rotate TLS certs for any acme.example domain.",
-    tags=["sre", "tls"],
+    id="security",
+    description="Review or operate TLS changes for acme.example domains.",
+    tags=["review", "tls"],
     scopes=["cert:write"],
 )
 ```
 
-A plain string is also accepted anywhere `Skill` is: `skills=["cert rotation, vault, secrets"]`.
+A plain string is also accepted anywhere `Skill` is: `skills=["security"]`.
 
 ## Scope(...)
 
@@ -241,15 +241,62 @@ agent = await team.add_agent(
 Workflow playbook steps:
 
 ```python
-from coactra.workflow import PlaybookStep, step
+from coactra.workflow import PlaybookStep, ProofBundle, VerificationReceipt, step
 
 wf = Workflow("release", steps=[
-    step("Run checks", requires_skill="test.run"),
-    PlaybookStep(instruction="Approve", approve=True),
+    step("Run checks", requires_skill="deploy", required_tags=["execute"]),
+    PlaybookStep(instruction="Human sign-off", approve=True, approval_only=True),
 ])
+
+run = await team.run(wf)
+if run.status == "interrupted":
+    run = await wf.resume(
+        run,
+        team,
+        decision={
+            "approved": True,
+            "proof_bundle": ProofBundle(
+                summary="release checks passed",
+                receipts=[
+                    VerificationReceipt(command="make test", exit_code=0, stdout_sha256="abc123")
+                ],
+            ),
+        },
+    )
 ```
 
-`coactra.workflow.Step` is a separate graph-node type for durable procedure engines.
+`required_tags` disambiguates broad skill ids. Approved steps require a `ProofBundle`, and `approval_only=True` marks a pure human gate. `coactra.workflow.Step` is a separate graph-node type for durable procedure engines.
+
+Thin code-change helper (beta seam during alpha):
+
+```python
+from coactra.agent.workflow import CodeChangeRiskTier, VerificationCheck, VerifierRole
+
+plan = Workflow.code_change(
+    "checkout-fix",
+    implement_instruction="Patch checkout to reject invalid coupon signatures.",
+    implement_skill="python",
+    verifier_roles=[
+        VerifierRole(
+            role="functional",
+            skill="python",
+            required_tags=["verify"],
+            checks=[
+                VerificationCheck(
+                    id="pytest",
+                    kind="command",
+                    instruction="Run the checkout unit tests.",
+                )
+            ],
+        )
+    ],
+    review_skill="security",
+    review_tags=["review"],
+    risk_tier=CodeChangeRiskTier.high,
+)
+```
+
+The helper returns a `CodeChangeWorkflowPlan`; execute `plan.workflow` like any other Workflow.
 
 ## Outbound A2A Adapters
 
