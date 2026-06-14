@@ -1,7 +1,8 @@
 """LocalFilesystemBackend — the ONE working default backend.
 
-A persistent directory per desk: <base_dir>/<tenant_id>/<agent_id>/. Files survive across
-process restarts (persistent by default). Every relative file path is resolved and checked to stay inside the desk root — traversal
+A persistent directory per desk: <base_dir>/<tenant_id>/<agent_id>/. Files survive
+across process restarts (persistent by default). Relative paths are resolved and
+checked to stay inside the desk root — traversal
 (e.g. "../../etc/passwd") is rejected. Local subprocesses are not filesystem jails, so
 exec is disabled unless trusted development explicitly opts in. Production execution for
 mutually untrusted tenants belongs in a sandbox-backed adapter.
@@ -65,9 +66,7 @@ class LocalFilesystemBackend:
 
     def list_files(self, scope: Scope) -> list[str]:
         root = self._root_path(scope)
-        return sorted(
-            str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()
-        )
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
 
     def delete_file(self, path: str, scope: Scope) -> None:
         self._resolve(path, scope).unlink(missing_ok=True)

@@ -38,7 +38,7 @@ class DBOSDispatcher:
         queue_name: str,
         partition_by_scope: bool = False,
         **client_kwargs: Any,
-    ) -> "DBOSDispatcher":
+    ) -> DBOSDispatcher:
         dbos = optional_module("dbos", extra="dbos")
         client = dbos.DBOSClient(system_database_url=system_database_url, **client_kwargs)
         return cls(

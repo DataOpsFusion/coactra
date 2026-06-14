@@ -1,9 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock
+
 from pydantic import BaseModel
-from pydantic_ai.models.function import FunctionModel, AgentInfo
-from pydantic_ai.models.test import TestModel
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
+from pydantic_ai.models.test import TestModel
+
 from coactra.agent.runtime import PydanticAIRuntime
-from coactra.agent.litellm_model import LiteLLMModel
 
 
 def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
@@ -29,29 +31,10 @@ async def test_runtime_structured_output():
     assert isinstance(result.output.steps, list)
 
 
-# --- Provider config threading tests ---
-
-def test_runtime_str_model_with_provider_config_reaches_litellm_model():
-    """Provider config (api_base, api_key) must be forwarded to LiteLLMModel._call_kwargs."""
-    rt = PydanticAIRuntime(
-        model="openai/gpt-4o-mini",
-        api_base="https://x/v1",
-        api_key="k",
-    )
-    assert isinstance(rt._model, LiteLLMModel)
-    assert rt._model._call_kwargs == {"api_base": "https://x/v1", "api_key": "k"}
-
-
-def test_runtime_str_model_with_defaults_forwarded():
-    """Extra **defaults (e.g. temperature) must also reach LiteLLMModel._call_kwargs."""
-    rt = PydanticAIRuntime(
-        model="openai/gpt-4o-mini",
-        api_base="https://x/v1",
-        api_key="k",
-        temperature=0.1,
-    )
-    assert isinstance(rt._model, LiteLLMModel)
-    assert rt._model._call_kwargs == {"api_base": "https://x/v1", "api_key": "k", "temperature": 0.1}
+def test_runtime_str_model_passthrough():
+    """String model ids are passed through to pydantic-ai unchanged."""
+    rt = PydanticAIRuntime(model="openai:gpt-4o-mini")
+    assert rt._model == "openai:gpt-4o-mini"
 
 
 def test_runtime_model_instance_passthrough_ignores_provider_config():
@@ -59,3 +42,21 @@ def test_runtime_model_instance_passthrough_ignores_provider_config():
     inner = TestModel()
     rt = PydanticAIRuntime(model=inner, api_base="https://ignored/v1", api_key="ignored")
     assert rt._model is inner
+
+
+async def test_runtime_stream_failed_preserves_error_message():
+    rt = PydanticAIRuntime(model=TestModel())
+    mock_agent = MagicMock()
+    mock_run = MagicMock()
+    mock_run.__aenter__ = AsyncMock(side_effect=RuntimeError("boom-detail"))
+    mock_agent.iter.return_value = mock_run
+    rt._build = lambda *args, **kwargs: mock_agent  # type: ignore[method-assign]
+
+    results: list = []
+
+    async for _event in rt.stream("hi", run_id="r3", on_result=results.append):
+        pass
+
+    assert results
+    assert results[-1].status == "error"
+    assert results[-1].error == "boom-detail"

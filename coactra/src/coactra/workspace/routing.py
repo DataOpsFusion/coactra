@@ -1,4 +1,5 @@
 """Tenant-routed workspace backends for hard physical silo isolation."""
+
 from __future__ import annotations
 
 from coactra._routing import TenantRouter

@@ -2,8 +2,8 @@ from coactra.ai.models import ReasoningTrace
 from coactra.ai.store import InMemoryStore
 
 
-def _trace(id, vec, succ=0, fail=0):
-    t = ReasoningTrace(id=id, problem=id, reasoning="r", embedding=vec)
+def _trace(trace_id, vec, succ=0, fail=0):
+    t = ReasoningTrace(id=trace_id, problem=trace_id, reasoning="r", embedding=vec)
     t.successes, t.failures = succ, fail
     return t
 
@@ -27,8 +27,8 @@ def test_search_is_bounded_by_k():
 
 def test_search_filters_low_quality():
     s = InMemoryStore()
-    s.put("a", _trace("good", [1.0, 0.0], succ=9, fail=0))   # quality ~0.91
-    s.put("a", _trace("bad", [1.0, 0.0], succ=0, fail=9))    # quality ~0.09
+    s.put("a", _trace("good", [1.0, 0.0], succ=9, fail=0))  # quality ~0.91
+    s.put("a", _trace("bad", [1.0, 0.0], succ=0, fail=9))  # quality ~0.09
     hits = s.search("a", [1.0, 0.0], k=5, min_quality=0.5)
     ids = [t.id for t, _ in hits]
     assert ids == ["good"]

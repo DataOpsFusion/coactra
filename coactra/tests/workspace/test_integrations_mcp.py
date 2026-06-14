@@ -39,9 +39,7 @@ async def test_register_recall_tool_binds_memory_and_scope():
     result = await server.tools["recall_facts"]("query", limit=4)
 
     memory.recall.assert_awaited_once_with("query", scope=scope, k=4)
-    assert result == [
-        {"fact": "fact", "uuid": "source-1", "valid_at": "2026-06-02 00:00:00+00:00"}
-    ]
+    assert result == [{"fact": "fact", "uuid": "source-1", "valid_at": "2026-06-02 00:00:00+00:00"}]
     assert "publish_memory" not in server.tools
 
 
@@ -63,9 +61,7 @@ async def test_shared_recall_is_limited_to_prebound_aliases():
         scope_aliases={"department": department_scope, "company": company_scope},
     )
 
-    result = await server.tools["recall_facts"](
-        "query", scopes=["department", "company"], limit=4
-    )
+    result = await server.tools["recall_facts"]("query", scopes=["department", "company"], limit=4)
 
     assert result == [
         {

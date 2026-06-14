@@ -1,8 +1,4 @@
-"""Offline SRE agent using the optional SDK adapter.
-
-This uses pydantic-ai's FunctionModel, so it does not call a network model.
-Install `coactra[agent]` before running it.
-"""
+"""Offline SRE agent using the Team-first facade."""
 
 from __future__ import annotations
 
@@ -11,7 +7,7 @@ import asyncio
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent
+from coactra import Team
 
 
 def sre_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
@@ -25,8 +21,9 @@ def sre_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
 
 
 async def main() -> None:
-    agent = await Agent.create(
-        model=FunctionModel(sre_model),
+    team = Team.local(model=FunctionModel(sre_model), tenant_id="acme", namespace="incident")
+    agent = await team.add_agent(
+        name="sre-agent",
         instructions="You are a concise SRE incident assistant.",
     )
     try:

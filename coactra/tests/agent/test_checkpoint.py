@@ -11,24 +11,31 @@ Covers:
 4. Simulate restart — save, fresh context, load + reconstruct preserves completed steps
    and pending_index
 """
+
 from __future__ import annotations
 
 import json
 
 import pytest
 
-from coactra.workflow.playbook import Approval, StepResult, WorkflowRun
 from coactra.agent.checkpoint import (
     InMemoryCheckpointStore,
     LangGraphCheckpointStore,
     run_from_state,
     run_to_state,
 )
-
+from coactra.workflow.playbook import (
+    Approval,
+    ProofBundle,
+    StepResult,
+    VerificationReceipt,
+    WorkflowRun,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 def _make_partial_run() -> WorkflowRun:
     """WorkflowRun interrupted at step 2, with one completed step and one approval."""
@@ -45,7 +52,22 @@ def _make_partial_run() -> WorkflowRun:
         ],
         pending_index=1,
         approvals=[
-            Approval(step_index=0, instruction="do the first thing", decision=True),
+            Approval(
+                step_index=0,
+                instruction="do the first thing",
+                decision=True,
+                proof_bundle=ProofBundle(
+                    summary="verified",
+                    receipts=(
+                        VerificationReceipt(
+                            command="pytest -q",
+                            exit_code=0,
+                            stdout_sha256="stdout",
+                            stderr_sha256="stderr",
+                        ),
+                    ),
+                ),
+            ),
         ],
         # _steps intentionally left as default [] — it's playbook state, not run state
     )
@@ -79,6 +101,7 @@ def _make_completed_run() -> WorkflowRun:
 # 1. InMemoryCheckpointStore
 # ---------------------------------------------------------------------------
 
+
 class TestInMemoryCheckpointStore:
     def test_save_and_load_returns_stored_state(self):
         store = InMemoryCheckpointStore()
@@ -107,6 +130,7 @@ class TestInMemoryCheckpointStore:
 # ---------------------------------------------------------------------------
 # 2. round-trip — run_to_state / run_from_state
 # ---------------------------------------------------------------------------
+
 
 class TestRoundTrip:
     def test_partial_run_round_trips(self):
@@ -151,6 +175,8 @@ class TestRoundTrip:
         assert a.step_index == 0
         assert a.instruction == "do the first thing"
         assert a.decision is True
+        assert a.proof_bundle is not None
+        assert a.proof_bundle.receipts[0].command == "pytest -q"
 
     def test_status_preserved(self):
         run = _make_partial_run()
@@ -173,6 +199,7 @@ class TestRoundTrip:
 # ---------------------------------------------------------------------------
 # 3. JSON-serializable
 # ---------------------------------------------------------------------------
+
 
 class TestJsonSerializable:
     def test_partial_run_state_is_json_serializable(self):
@@ -197,6 +224,7 @@ class TestJsonSerializable:
 # ---------------------------------------------------------------------------
 # 4. Simulate restart — save, fresh store, load, reconstruct
 # ---------------------------------------------------------------------------
+
 
 class TestSimulateRestart:
     def test_restart_preserves_completed_steps_and_pending_index(self):
@@ -251,6 +279,7 @@ class TestSimulateRestart:
 # 5. Durable LangGraph store — persists across store/process recreation
 # ---------------------------------------------------------------------------
 
+
 class _FakeAgent:
     def __init__(self, name: str) -> None:
         self._name = name
@@ -269,7 +298,7 @@ class _PinnedTeam:
     def member(self, name: str):
         return self._members.get(name)
 
-    def match(self, needs: str):
+    def match_skill(self, skill_id: str):
         return None
 
 
@@ -281,10 +310,13 @@ async def test_langgraph_checkpoint_store_resumes_workflow_across_restart(tmp_pa
     db = tmp_path / "checkpoints.sqlite"
     run_id = "restartable-run"
     team = _PinnedTeam()
-    wf = Workflow("restartable", steps=[
-        step("collect evidence", agent="alpha"),
-        step("apply change", agent="beta", approve=True),
-    ])
+    wf = Workflow(
+        "restartable",
+        steps=[
+            step("collect evidence", agent="alpha"),
+            step("apply change", agent="beta", approve=True),
+        ],
+    )
 
     first_store = LangGraphCheckpointStore(db)
     interrupted = await wf.run(team, checkpoint=first_store, run_id=run_id)
@@ -293,7 +325,23 @@ async def test_langgraph_checkpoint_store_resumes_workflow_across_restart(tmp_pa
     assert interrupted.pending_index == 1
 
     restarted_store = LangGraphCheckpointStore(db)
-    final = await wf.resume_from(restarted_store, run_id, team, decision=True)
+    final = await wf.resume_from(
+        restarted_store,
+        run_id,
+        team,
+        decision=True,
+        proof_bundle=ProofBundle(
+            summary="verified",
+            receipts=(
+                VerificationReceipt(
+                    command="pytest -q",
+                    exit_code=0,
+                    stdout_sha256="stdout",
+                    stderr_sha256="stderr",
+                ),
+            ),
+        ),
+    )
 
     assert final.status == "completed"
     assert [r.agent for r in final.results] == ["alpha", "beta"]

@@ -1,52 +1,42 @@
 # Improvement Backlog
 
 This backlog tracks implementation gaps and quality improvements for the current
-**Agent · Team · Workflow** architecture. The design decisions are finalized in
+**Team · Agent · Workflow** architecture. The design decisions are finalized in
 the `design/2026-06-06-*.md` specs; this page tracks the work still outstanding
 against those decisions.
 
-## Current Milestone: Agent Core
+## Current Milestone: Team-First Alpha Cut
 
-Status of built features (0.0.x):
+Status of major features (0.0.x alpha):
 
 | Feature | Status |
 |---|---|
-| `Agent.create(model, tools, instructions, output)` | Built |
+| `Team(scope=..., policy=...)` | Built |
+| `team.add_agent(...)` | Built |
 | `run / send().stream()` | Built |
 | `agent.card` | Built |
-| `Team` (registry + keyword matcher + same-tenant policy) | Built |
 | `memory="inprocess\|mem0\|graphiti"` | Built |
 | `workspace=` (file tools) | Built |
-| `gateway=` + `auth=oidc(...)` primary MCP path | Built |
+| `gateway=` + `auth=StaticToken` / custom `TokenSource` MCP path | Built |
 | `skills=[Skill(...)]` structured roster | Built |
+| `peers=` outbound A2A delegation (`RemotePeer`, `OfficialA2ATransport`) | Built |
+| broad `requires_skill` routing with `required_tags` fail-closed disambiguation | Built |
+| approval proof bundles and `approval_only=True` gates | Built |
+| `Workflow.code_change(...)` thin builder | Built |
+| `Team.local` / `team.add_model` / per-agent `model=` | Built |
 
-## Outstanding: Agent Core
+## Outstanding: Team and Agent Layer
 
-- `peers=` outbound A2A delegation targets
-- Full A2A serving (`expose=True` beyond card publish)
-- `match="semantic"` embedding-based Team matcher
+- Semantic matcher embedding cache (perf)
 - Memory guardrails: injection cap, deletion/export (GDPR), write policy
 - Workspace `run` allow-list configuration surface
+- More documented production route recipes for OpenCode/Zen, LiteLLM, and host-managed gateways
+- Documented recipes for OAuth and inbound A2A serving
 
 ## Outstanding: Workflow Layer
 
-- `Workflow(steps=[...])` authored playbook
-- `step()` helper + YAML loader
-- `Workflow.run_goal()` triage (reuse / plan / candidate)
-- Planner (`ai.structured` goal → playbook)
-- Playbook store + similarity matcher for triage
-- Durable engine wiring (LangGraph default; Temporal/Prefect adapters)
-- Approval pause/resume (`approve=True` step property)
-- Internal run ledger: `WorkflowRun`, `Checkpoint`, `Approval`
-
-## Authoritative Design Sources
-
-| Area | Spec |
-|---|---|
-| Agent API | [design/2026-06-06-agent-api-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-agent-api-design.md) |
-| Auth / identity | [design/2026-06-06-auth-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-auth-design.md) |
-| Team | [design/2026-06-06-team-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-team-design.md) |
-| Workflow | [design/2026-06-06-workflow-design.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-workflow-design.md) |
-| Review refinements | [design/2026-06-06-review-refinements.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-review-refinements.md) |
-| Vision / build order | [design/2026-06-06-coactra-vision.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-coactra-vision.md) |
-| Implementation plan | [design/2026-06-06-implementation-plan-agent-core.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-implementation-plan-agent-core.md) |
+- richer workflow-candidate review and promotion UX
+- reusable verification profile libraries on top of the typed verifier/check model
+- planner support for emitting verifier roles and richer workflow candidates
+- broader conformance tests for policy-enforced routing and resume semantics across adapters
+- optional bounded retry/rework policies layered above the single-pass code-change helper

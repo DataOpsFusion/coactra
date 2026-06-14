@@ -33,7 +33,7 @@ class _FakeAIClient:
 
     def ask(self, prompt: str, **kwargs):  # noqa: ANN001
         self.ask_calls.append((prompt, kwargs))
-        return '```json\n{"ok": true, "client": "%s"}\n```' % self.name
+        return f'```json\n{{"ok": true, "client": "{self.name}"}}\n```'
 
 
 @pytest.mark.asyncio

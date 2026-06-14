@@ -54,7 +54,7 @@ class ExecutionReceipt(BaseModel):
     submitted_at: datetime
 
     @classmethod
-    def from_order(cls, plan: ExecutionPlan, order: WorkOrder) -> "ExecutionReceipt":
+    def from_order(cls, plan: ExecutionPlan, order: WorkOrder) -> ExecutionReceipt:
         return cls(
             plan_id=plan.id,
             work_order_id=order.id,

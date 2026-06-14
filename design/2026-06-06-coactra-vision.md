@@ -1,54 +1,82 @@
-# Coactra — System Vision (alpha)
+# Coactra — System Vision
 
-**Date:** 2026-06-06  **Status:** all domains designed — Agent · Workflow · Team · workspace (+ memory, ai). Specs in `design/`. Ready for implementation planning.
+**Status:** current Team-first alpha architecture.
 
-The whole library is **three nouns**, plus an internal engine and two agent capabilities. Everything a developer touches goes through the `Agent` door.
+Coactra is a component-based orchestration fabric for agentic systems. It is
+not a new model SDK, memory store, workflow engine, or enterprise IAM system.
+It is the coordination, policy, and adapter layer that makes those ecosystems
+work together under one governed execution model.
 
-## The three nouns
+## Core stance
 
-| Noun | What it is | Today's code → rename | Status |
-|------|-----------|----------------------|--------|
-| **Team** | Who exists & how they relate — agents, hierarchy, who-may-talk, tenant, the capability roster | `coactra.team.directory` (+ drop `organization`) → `coactra.team` | ✅ `design/2026-06-06-team-design.md` |
-| **Agent** | One worker — thinks, uses tools + MCP, has memory; exposed via A2A | `coactra.agent` (the SDK `Agent`) | ✅ `design/2026-06-06-agent-api-design.md` |
-| **Workflow** | A playbook + the manager running it — steps, assign to agents, track to done, retries, approvals | `coactra.workflow` = `work` + `workflow` (+ drop `orchestration`) → `coactra.workflow` | ✅ `design/2026-06-06-workflow-design.md` |
+- Coactra owns composition, scope propagation, policy checks, execution records, and adapter contracts.
+- External systems own provider normalization, memory storage, workflow durability, transport protocols, and host authentication.
+- Every serious action is scoped, governed, and observable.
 
-Collapsed away: `work`, `jobs`, `orchestration`, `organization` were extra names for the above. "Durable / retries / approvals / a work order" = **properties of a Workflow run**, not separate domains.
+## Main public nouns
 
-### Supporting (not separate domains)
-- **ai** — internal engine: litellm routing + thinking-model handling. Users never import it; `Agent` and the planner use it. ✅ built.
-- **memory** — agent capability, `Agent.create(memory="graphiti")`. Pure connector over graphiti/mem0; **automatic** recall+remember (coactra never ranks/stores). ✅ designed (in the Agent spec).
-- **workspace** — agent capability, `Agent.create(workspace="./desk")`. Surfaces **as tools** (`read_file`/`write_file`/`list_files`/`run`); the model uses the desk as part of its task; `run` is allowlist-gated. Most optional capability — many agents won't set it. ✅ designed.
-- **auth** (cross-cutting) — coactra is an OAuth 2.1 client + MCP-gateway consumer: a **token's scopes** slice the agent's tools (no manual MCP list); **skills** are published as an A2A **Agent Card** (curated, no creds); token source is pluggable (OIDC fetch+refresh / SPIFFE later); fine-grained authz via a policy seam (OpenFGA/AuthZEN). Aligned to MCP OAuth 2.1 + A2A. ✅ `design/2026-06-06-auth-design.md`.
+- `Team` — the assembly and coordination root
+- `Agent` — a runtime actor owned by a Team or host
+- `Workflow` — a reusable process definition and execution facade
+- `Skill` — a packaged capability advertised and routed by id
+- `Scope` — the execution address
+- `Policy` / `Decision` — the enforcement seam
+- `Run` — the execution record
 
-## How they compose (the company model)
+## Team-first execution model
 
+The public assembly door is `Team`, not a standalone agent factory.
+
+```python
+from coactra import Policy, Scope, Team, Workflow
+
+team = Team(
+    scope=Scope.local(),
+    policy=Policy.permissive(),
+)
+agent = await team.add_agent(name="sre-agent", model_capability="fast-chat")
+run = await team.run(Workflow("deploy", steps=[...]))
 ```
-Team      = the org chart   → who's here, who-reports-to-whom, who-may-talk, tenant
-Agent     = an employee     → thinks, tools + MCP, memory   (the worker)
-Workflow  = a playbook + the manager running it
-            → plan/pick steps, assign each to an Agent from the Team,
-              track to done, retry, pause for approval, delegate across the Team (A2A)
-```
 
-A goal arrives → **Workflow** plans or picks a playbook → assigns each step to an **Agent** chosen from the **Team** → drives every step to done (retry/approve) → an Agent step may delegate to a teammate (A2A, same Team). That's the entire system.
+`Agent` remains a thin runtime shell over pydantic-ai, but it is constructed
+through `Team.add_agent(...)` in the current alpha contract.
 
-## Public surface (the one door)
+## Component map
 
-`from coactra import Agent` → `Agent.create(model, name, tenant, gateway=, auth=, tools=[local funcs], memory, workspace, peers, skills, instructions)` → `run / send().stream()`. **`gateway=`+`auth=` is the primary MCP path** (the token's scopes slice the tools); a bare `mcp(url)` is the exception. Full detail in `design/2026-06-06-agent-api-design.md`.
+- `Team` owns agent registration, skill catalogs, workflow catalogs, policy defaults, and routing.
+- `Agent` reasons, requests models, uses assigned skills, calls tools, and delegates under Team policy.
+- `Workflow` binds steps to exact `requires_skill` ids or explicit `agent=` overrides.
+- `Memory` is an adapter-backed capability, not a standalone product.
+- `Workspace` is an adapter-backed capability, not a standalone product.
+- `ModelResolver` chooses governed model routes.
+- Adapters connect Coactra contracts to LiteLLM, Pydantic AI, LangGraph, mem0, Graphiti, MCP, A2A, Temporal, and OpenFGA.
 
-## Build order
+## Public philosophy
 
-1. **Agent core** — top-level export, `mcp()` + tool expansion, memory connector *(spec done)*
-2. **workspace** — quick (surface as read/write/run tools)
-3. **Team** — policy (who-may-talk) + capability roster (`skills=`), unlocks A2A peers/discovery
-4. **Workflow** — the big one: how a playbook is defined and run across the Team
+- Few public nouns
+- Strong internal model
+- One execution path
+- No hidden permissionless mode
+- Team defines and assigns
+- Agent acts
+- Workflow defines process
+- Policy governs before side effects
+- Adapters are replaceable and do not define Coactra's identity
 
-## Brownfield note
+## What Coactra avoids
 
-The remaining package vocabulary cleanup is tracked in `design/IMPLEMENTATION_STATUS.md`. Alpha code should prefer the current root `Agent` / `Team` / `Workflow` API and avoid adding compatibility shims for removed paths.
+- building a new provider SDK abstraction from scratch
+- building a new durable workflow engine
+- building a memory database
+- inventing a new tool protocol
+- exposing enterprise directory internals as first-class app nouns
 
-## Additional specs
-- `2026-06-06-auth-design.md` — auth/identity: OAuth 2.1 client + gateway tool-slicing + A2A Agent Cards
-- `2026-06-06-operations-design.md` — observability/tracing (OpenTelemetry) + error handling
-- `IMPLEMENTATION_STATUS.md` — current implementation status and remaining cleanup
-- `2026-06-06-review-refinements.md` — v2 tightening from external review (lean Team · gateway-primary · structured skills · internal run-ledger · **candidate** playbooks not auto-save · memory guardrails · workspace gating)
+## Current reference docs
+
+- `design/2026-06-06-agent-api-design.md` — current Agent runtime contract
+- `design/2026-06-06-team-design.md` — Team-first coordination contract
+- `design/2026-06-06-workflow-design.md` — capability-routed workflow contract
+- `design/2026-06-06-auth-design.md` — gateway, token, and policy seam
+- `design/2026-06-06-review-refinements.md` — boundary and hardening refinements
+- `design/2026-06-09-team-first-alpha-work-orders.md` — migration/build order record
+- `design/IMPLEMENTATION_STATUS.md` — current implementation audit

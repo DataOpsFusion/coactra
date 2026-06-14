@@ -3,6 +3,7 @@
 Implements the ReasoningStore Protocol shape over a Chroma collection. Construction
 fails loudly if chromadb is not installed.
 """
+
 from __future__ import annotations
 
 import json
@@ -71,6 +72,6 @@ class ChromaStore:
         )
         candidates = [
             _from_metadata(meta, emb)
-            for meta, emb in zip(res["metadatas"][0], res["embeddings"][0])
+            for meta, emb in zip(res["metadatas"][0], res["embeddings"][0], strict=False)
         ]
         return rank_traces(vector, candidates, k, min_quality)

@@ -63,10 +63,10 @@ class AuditSink(Protocol):
 
 @runtime_checkable
 class ArtifactStore(Protocol):
-    def put(self, artifact: "Artifact", scope: Scope) -> "ArtifactRef":
+    def put(self, artifact: Artifact, scope: Scope) -> ArtifactRef:
         """Persist one artifact and return a backend-neutral reference."""
         ...
 
-    def get(self, reference: "ArtifactRef", scope: Scope) -> "Artifact":
+    def get(self, reference: ArtifactRef, scope: Scope) -> Artifact:
         """Read one artifact within scope."""
         ...

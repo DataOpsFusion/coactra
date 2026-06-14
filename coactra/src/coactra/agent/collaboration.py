@@ -1,32 +1,17 @@
-"""Collaboration policy over A2A — async stack only.
-
-A2A is mature (tasks/multi-turn/streaming/push/artifacts); it does NOT decide WHO may talk
-to WHOM, WHEN. That policy is the gap. CollaborationPolicy answers can_talk(src, dst,
-scope) purely in-process; AsyncPolicyGatedCollaborator gates a real async A2A transport
-behind it so a denied request never reaches the wire.
-
-DESIGN: collaboration targets are TENANT-QUALIFIED and DENIABLE. A target is an
-`AgentRef(tenant_id, agent_id)` (from `domain.refs`) — it carries its OWN tenant, so the
-policy can adjudicate cross-TENANT talk and DENY it. A bare-string agent id (e.g. a
-workflow `ask` step's `agent`) is lifted to an `AgentRef` in the caller's tenant.
-"""
+"""Policy-gated A2A collaboration helpers."""
 
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
 from coactra.agent.domain import AgentRef, Scope, as_ref
+from coactra.errors import PermissionDeniedError
+from coactra.policy import Policy, PolicyRequest
+from coactra.scope import Scope as CoreScope
 
 
-class CollaborationDenied(RuntimeError):
+class CollaborationDenied(PermissionDeniedError):
     """Raised when policy refuses a talk request before it reaches the transport."""
-
-
-@runtime_checkable
-class CollaborationPolicy(Protocol):
-    def can_talk(self, src: str | AgentRef, dst: str | AgentRef, scope: Scope) -> bool:
-        """Decide whether `src` may collaborate with `dst` within `scope`."""
-        ...
 
 
 @runtime_checkable
@@ -36,56 +21,11 @@ class AsyncA2ATransportPort(Protocol):
         ...
 
 
-class AllowSameTenant:
-    """Default CollaborationPolicy — denies cross-TENANT talk; within one tenant, gates the
-    WHO-MAY-TALK-TO-WHOM pair (deny-before-allow).
-
-    Two layered rules, in order:
-      1. Cross-tenant DENIAL (unconditional, evaluated FIRST): if source and destination
-         tenants differ, return False before any allow-set check. This is the deniable
-         cross-tenant boundary — only expressible because a target is an `AgentRef`
-         carrying its own tenant.
-      2. Intra-tenant who-may-talk-to-whom:
-           - `allowed is None` (default): permit any intra-tenant pair (open default).
-           - `allowed` given: permit only the listed `(src_agent_id, dst_agent_id)` pairs.
-    """
-
-    def __init__(self, allowed: set[tuple[str, str]] | None = None) -> None:
-        self._allowed = allowed
-
-    def can_talk(self, src: str | AgentRef, dst: str | AgentRef, scope: Scope) -> bool:
-        src_ref = as_ref(src, scope)
-        dst_ref = as_ref(dst, scope)
-        # (1) cross-tenant denial — deny-before-allow.
-        if src_ref.tenant_id != dst_ref.tenant_id:
-            return False
-        # (2) intra-tenant who-may-talk-to-whom.
-        if self._allowed is None:
-            return True
-        return (src_ref.agent_id, dst_ref.agent_id) in self._allowed
-
-
 class AsyncNullTransport:
     """Async default A2A transport — no wire configured; returns empty."""
 
-    async def send(self, dst: AgentRef, question: str, scope: Scope) -> str:
+    async def send(self, dst: AgentRef, question: str, scope: Scope) -> str:  # noqa: ARG002
         return ""
-
-
-def _allowed_target(
-    *,
-    policy: CollaborationPolicy,
-    scope: Scope,
-    me: str,
-    agent: str | AgentRef,
-) -> AgentRef:
-    me_ref = AgentRef(tenant_id=scope.tenant_id, agent_id=me)
-    dst_ref = as_ref(agent, scope)
-    if not policy.can_talk(me_ref, dst_ref, scope):
-        raise CollaborationDenied(
-            f"{me_ref.qualified_name} -> {dst_ref.qualified_name} denied by policy"
-        )
-    return dst_ref
 
 
 def _terminal_route(escalation: Any, chain: list[str]) -> str:
@@ -95,17 +35,13 @@ def _terminal_route(escalation: Any, chain: list[str]) -> str:
 
 
 class AsyncPolicyGatedCollaborator:
-    """Async counterpart for hosts backed by an async A2A SDK client.
-
-    The sync collaborator remains the workflow-compatible default. This form keeps the
-    same tenant-qualified deny-before-wire policy while awaiting an async transport.
-    """
+    """Async collaborator that gates every delegation request behind shared Policy."""
 
     def __init__(
         self,
         *,
         transport: AsyncA2ATransportPort,
-        policy: CollaborationPolicy,
+        policy: Policy,
         scope: Scope,
         me: str,
     ) -> None:
@@ -114,10 +50,28 @@ class AsyncPolicyGatedCollaborator:
         self._scope = scope
         self._me = me
 
-    async def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:
-        dst_ref = _allowed_target(
-            policy=self._policy, scope=self._scope, me=self._me, agent=agent
+    async def ask(self, agent: str | AgentRef, question: str, state: dict[str, Any]) -> str:  # noqa: ARG002
+        me_ref = AgentRef(tenant_id=self._scope.tenant_id, agent_id=self._me)
+        dst_ref = as_ref(agent, self._scope)
+        decision = await self._policy.check(
+            PolicyRequest(
+                principal=f"agent:{me_ref.agent_id}",
+                action="agent.delegate",
+                resource=f"agent:{dst_ref.qualified_name}",
+                scope=CoreScope(tenant_id=self._scope.tenant_id, namespace=self._scope.namespace),
+                component="agent",
+                context={
+                    "src_tenant": me_ref.tenant_id,
+                    "dst_tenant": dst_ref.tenant_id,
+                    "dst_agent": dst_ref.agent_id,
+                },
+            )
         )
+        if not decision.allowed:
+            raise CollaborationDenied(
+                decision.reason
+                or f"{me_ref.qualified_name} -> {dst_ref.qualified_name} denied by policy"
+            )
         return await self._transport.send(dst_ref, question, self._scope)
 
     def route(self, escalation: Any, chain: list[str]) -> str:

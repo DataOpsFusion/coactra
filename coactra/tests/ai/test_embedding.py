@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from coactra.ai.embedding import cosine, LiteLLMEmbedding
+from coactra.ai.embedding import LiteLLMEmbedding, cosine
 
 
 def test_cosine_identical_is_one():

@@ -31,11 +31,15 @@ def test_end_to_end_directory_walkthrough():
     store = org.SqliteOrgStore()
     store.add_tenant(org.Tenant(tenant_id="acme", name="Acme"))
 
-    platform = store.add_seat("acme", org.Seat(tenant_id="acme", role="platform", domain="infrastructure"))
+    platform = store.add_seat(
+        "acme", org.Seat(tenant_id="acme", role="platform", domain="infrastructure")
+    )
     manager = store.add_seat("acme", org.Seat(tenant_id="acme", role="manager"))
     store.reports_to("acme", platform.id, manager.id)
 
-    alice = store.add_member("acme", org.Member(tenant_id="acme", name="alice", kind=org.MemberKind.agent))
+    alice = store.add_member(
+        "acme", org.Member(tenant_id="acme", name="alice", kind=org.MemberKind.agent)
+    )
     store.assign("acme", member_id=alice.id, seat_id=platform.id)
 
     # who owns this?

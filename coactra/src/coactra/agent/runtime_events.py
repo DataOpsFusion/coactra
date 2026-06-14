@@ -1,7 +1,9 @@
 """Pydantic-ai stream event mapping."""
+
 from __future__ import annotations
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from pydantic_ai.messages import (
     FunctionToolCallEvent,
@@ -49,12 +51,15 @@ async def iter_call_tools_node_events(
             elif isinstance(ev, FunctionToolResultEvent):
                 part = ev.part
                 is_return = isinstance(part, ToolReturnPart)
-                yield ToolResult(
-                    run_id=run_id,
-                    seq=seq,
-                    id=getattr(part, "tool_call_id", "") or "",
-                    name=getattr(part, "tool_name", "") or "",
-                    result=getattr(part, "content", None) if is_return else None,
-                    error=None if is_return else str(getattr(part, "content", "")),
-                ), seq + 1
+                yield (
+                    ToolResult(
+                        run_id=run_id,
+                        seq=seq,
+                        id=getattr(part, "tool_call_id", "") or "",
+                        name=getattr(part, "tool_name", "") or "",
+                        result=getattr(part, "content", None) if is_return else None,
+                        error=None if is_return else str(getattr(part, "content", "")),
+                    ),
+                    seq + 1,
+                )
                 seq += 1

@@ -12,12 +12,14 @@ subject's bearer credential.
 
 from __future__ import annotations
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from pydantic import BaseModel, Field
 
+from coactra.errors import SecurityError
 
-class TokenPassthroughError(RuntimeError):
+
+class TokenPassthroughError(SecurityError):
     """Raised when a caller attempts to forward a raw subject token as the downstream
     credential — the one thing RFC 8693 / MCP OAuth forbids."""
 
@@ -50,13 +52,13 @@ class Hop(BaseModel):
 
     subject: str = Field(min_length=1)
     actor: str = Field(min_length=1)
-    prev: "Hop | None" = None
+    prev: Hop | None = None
 
-    def extend(self, *, subject: str, actor: str) -> "Hop":
+    def extend(self, *, subject: str, actor: str) -> Hop:
         """Return a NEW head hop appended after this one; this hop is left unchanged."""
         return Hop(subject=subject, actor=actor, prev=self)
 
-    def __iter__(self) -> Iterator["Hop"]:
+    def __iter__(self) -> Iterator[Hop]:
         """Walk the chain oldest-first (root subject -> ... -> this actor)."""
         node: Hop | None = self
         stack: list[Hop] = []

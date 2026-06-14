@@ -83,7 +83,7 @@ def test_store_still_creates_and_queries_tables_after_isolation():
 def test_tables_registered_on_private_metadata():
     from coactra.team.directory.models import org_metadata
 
-    assert ORG_TABLE_NAMES <= set(org_metadata.tables)
+    assert set(org_metadata.tables) >= ORG_TABLE_NAMES
 
 
 def test_engine_create_all_targets_private_metadata():

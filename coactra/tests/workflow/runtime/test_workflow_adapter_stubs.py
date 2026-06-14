@@ -11,8 +11,8 @@ from coactra.workflow import (
 from coactra.workflow.adapters.prefect import PrefectEngine
 from coactra.workflow.adapters.temporal import TemporalEngine
 from coactra.workflow.conformance import assert_workflow_engine_start_contract
-from coactra.workflow.runtime import RunContext
 from coactra.workflow.domain.models import Procedure, Step
+from coactra.workflow.runtime import RunContext
 
 
 def procedure():

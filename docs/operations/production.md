@@ -61,12 +61,12 @@ except Exception as exc:
 
 ## Scope consistency
 
-Use `coactra.scope.CoactraScope` when one application composes multiple packages. It documents the conversion rules and prevents tenant, namespace, agent, and session collisions.
+Use `coactra.Scope` when one application composes multiple packages. It documents the conversion rules and prevents tenant, namespace, agent, and session collisions.
 
 ```python
-from coactra.scope import CoactraScope
+from coactra import Scope
 
-scope = CoactraScope(
+scope = Scope(
     tenant_id="tenant-a",
     namespace="support",
     agent_id="triage-agent",
@@ -91,14 +91,14 @@ Use `AsyncKeycloakExchanger` or a cached async exchanger in async services. Avoi
 
 ## Adapter posture
 
-Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as integration seams, not production backends. Prefer the reference/implemented backends: `SqlWorkStore` over `InMemoryWorkStore`, sandboxed or remote workspaces over local exec, a persistent-checkpointer `DurableLangGraphEngine` with an explicit restart contract, and real token exchange over the in-process exchanger.
+Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as integration seams, not production backends. Prefer the reference/implemented backends: `SqlWorkStore` over `InMemoryWorkStore`, sandboxed or remote workspaces over local exec, an injected host/runtime `WorkflowEngine` for process-restart durability, and real token exchange over the in-process exchanger.
 
 ## Deployment checklist
 
 - Use `SqlWorkStore` for durable workflows.
 - Configure database backups and retention for work-order tables.
 - Use explicit tenant and namespace values for every request path.
-- Use `CoactraScope` in composed apps to avoid scope-field drift.
+- Use `Scope` in composed apps to avoid scope-field drift.
 - Disable local exec unless the worker is isolated and trusted.
 - Set workspace exec timeouts and output limits.
 - Use async token exchange in async services.
@@ -109,6 +109,4 @@ Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as in
 
 ## Capability registry and verification
 
-For production workflows that call tools, register capabilities up front and pass the registry into `DurableLangGraphEngine`. The registry validates that tool nodes reference real tools and that required inputs are present before execution.
-
-Use structured done criteria such as `success`, `not_error`, `equals`, and `cel` instead of checking only that a key exists. `run_workflow` records `_verification` with status, failures, and evidence.
+For production workflows that call tools, register capabilities up front in your host runtime or `WorkflowEngine` adapter. Validate tool names and required inputs before execution, and record verification evidence in the work ledger instead of relying on a best-effort in-memory run result.

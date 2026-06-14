@@ -1,4 +1,5 @@
 """Tenant-routed organization stores for hard physical silo isolation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -24,14 +25,17 @@ class TenantOrgStoreRouter(TenantRouter[OrgStore]):
         mandatory first ``tenant_id`` argument. The Protocol surface is bound as real
         methods by the loop below so isinstance(x, OrgStore) holds without faking it here.
         """
+
         def routed(tenant_id: str, *args: Any, **kwargs: Any):
             return getattr(self.for_tenant(tenant_id), name)(tenant_id, *args, **kwargs)
+
         return routed
 
 
 def _routed(name: str):
     def call(self, tenant_id: str, *args: Any, **kwargs: Any):
         return getattr(self.for_tenant(tenant_id), name)(tenant_id, *args, **kwargs)
+
     call.__name__ = name
     return call
 

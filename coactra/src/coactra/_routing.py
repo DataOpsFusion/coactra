@@ -1,13 +1,14 @@
 """Per-tenant lazy-cache base shared by capability routers."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
 
-class TenantRouter(Generic[T]):
+class TenantRouter[T]:
     """Build and cache exactly one physical backend ``T`` per tenant id."""
 
     def __init__(self, factory: Callable[[str], T]) -> None:

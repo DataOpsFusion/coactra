@@ -1,13 +1,13 @@
 .PHONY: test lint type docs compile test-examples test-base-install clean-install stale-scan live-check release-check
 
 test:
-	cd coactra && python3 -m pytest -q
+	cd coactra && python3 -m pytest -q -m 'not live'
 
 lint:
 	cd coactra && python3 -m ruff check src tests
 
 type:
-	cd coactra && python3 -m pyright
+	cd coactra && .venv/bin/pyright
 
 docs:
 	mkdocs build --strict

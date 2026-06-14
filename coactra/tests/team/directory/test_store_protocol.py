@@ -21,8 +21,7 @@ class _Dummy:
     def add_member(self, tenant_id: str, member: Member) -> Member:
         return member
 
-    def assign(self, tenant_id, member_id, seat_id, department_id=None) -> None:
-        ...
+    def assign(self, tenant_id, member_id, seat_id, department_id=None) -> None: ...
 
     def members(self, tenant_id: str) -> list[Member]:
         return []
@@ -30,14 +29,12 @@ class _Dummy:
     def add_department(self, tenant_id: str, department: Department) -> Department:
         return department
 
-    def reports_to(self, tenant_id, seat_id, reports_to_seat_id) -> None:
-        ...
+    def reports_to(self, tenant_id, seat_id, reports_to_seat_id) -> None: ...
 
     def manager_of(self, tenant_id: str, seat_id: int):
         return None
 
-    def set_escalation_route(self, tenant_id, from_seat_id, to_seat_id) -> None:
-        ...
+    def set_escalation_route(self, tenant_id, from_seat_id, to_seat_id) -> None: ...
 
     def escalate(self, tenant_id: str, seat_id: int):
         return None
@@ -58,7 +55,7 @@ class _Dummy:
     def children_of(self, tenant_id: str, node_id: int):
         return []
 
-    def node(self, tenant_id: str, id: int):
+    def node(self, tenant_id: str, id: int):  # noqa: A002
         return None
 
     def seat_of(self, tenant_id: str, member_id: int):
@@ -70,35 +67,29 @@ class _Dummy:
     def directory(self, tenant_id: str):
         return None
 
-    def grant_node(self, tenant_id: str, node_id: int, action: str) -> None:
-        ...
+    def grant_node(self, tenant_id: str, node_id: int, action: str) -> None: ...
 
-    def revoke_node(self, tenant_id: str, node_id: int, action: str) -> None:
-        ...
+    def revoke_node(self, tenant_id: str, node_id: int, action: str) -> None: ...
 
     def grants_of(self, tenant_id: str, node_id: int):
         return set()
 
-    def set_override(self, tenant_id, member_id, action, effect) -> None:
-        ...
+    def set_override(self, tenant_id, member_id, action, effect) -> None: ...
 
     def overrides_of(self, tenant_id: str, member_id: int):
         return {}
 
-    def set_member_status(self, tenant_id, member_id, status) -> None:
-        ...
+    def set_member_status(self, tenant_id, member_id, status) -> None: ...
 
-    def set_member_directory_fields(self, tenant_id, member_id, *, seniority, created_by, approved_by) -> None:
-        ...
+    def set_member_directory_fields(
+        self, tenant_id, member_id, *, seniority, created_by, approved_by
+    ) -> None: ...
 
-    def set_block_inheritance(self, tenant_id, node_id, value) -> None:
-        ...
+    def set_block_inheritance(self, tenant_id, node_id, value) -> None: ...
 
-    def place_member(self, tenant_id, member_id, node_id, seat_id) -> None:
-        ...
+    def place_member(self, tenant_id, member_id, node_id, seat_id) -> None: ...
 
-    def clear_override(self, tenant_id, member_id, action) -> None:
-        ...
+    def clear_override(self, tenant_id, member_id, action) -> None: ...
 
 
 def test_protocol_is_runtime_checkable():

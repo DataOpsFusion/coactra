@@ -64,8 +64,7 @@ class CapabilityValidationError(ValueError):
     def __init__(self, issues: list[CapabilityValidationIssue]) -> None:
         self.issues = issues
         joined = "; ".join(
-            f"{issue.node_id or '?'}:{issue.capability}: {issue.reason}"
-            for issue in issues
+            f"{issue.node_id or '?'}:{issue.capability}: {issue.reason}" for issue in issues
         )
         super().__init__(joined)
 
@@ -99,9 +98,7 @@ class InMemoryCapabilityRegistry:
         return list(self._items.values())
 
 
-def require_capability(
-    registry: CapabilityRegistry, server: str, tool: str
-) -> Capability:
+def require_capability(registry: CapabilityRegistry, server: str, tool: str) -> Capability:
     capability = registry.get(server, tool)
     if capability is None:
         raise CapabilityValidationError(
@@ -139,9 +136,7 @@ def validate_tool_call(
     return capability
 
 
-def validate_workflow_capabilities(
-    workflow: dict[str, Any], registry: CapabilityRegistry
-) -> None:
+def validate_workflow_capabilities(workflow: dict[str, Any], registry: CapabilityRegistry) -> None:
     """Validate tool nodes before graph compilation."""
     issues: list[CapabilityValidationIssue] = []
     for node in workflow.get("nodes", []):

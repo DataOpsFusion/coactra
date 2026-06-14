@@ -1,4 +1,4 @@
-"""LangGraphEngine — the ONE working default WorkflowEngine.
+"""LangGraphEngine — optional graph-backed Procedure runner.
 
 Control flow is DELEGATED to LangGraph natives, never re-implemented:
   task     -> a graph node running the registered callable
@@ -17,9 +17,9 @@ from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
+from coactra.workflow.domain.models import Procedure, RunResult, Step
 from coactra.workflow.runtime.engine import RunContext
 from coactra.workflow.runtime.handlers import Escalation
-from coactra.workflow.domain.models import Procedure, RunResult, Step
 
 TaskFn = Callable[[dict[str, Any]], dict[str, Any]]
 _PATH = "__path__"
@@ -131,9 +131,7 @@ class LangGraphEngine:
 
     # --- execution -------------------------------------------------------------------
 
-    def run(
-        self, procedure: Procedure, state: dict[str, Any], ctx: RunContext
-    ) -> RunResult:
+    def run(self, procedure: Procedure, state: dict[str, Any], ctx: RunContext) -> RunResult:
         compiled = self.compile(procedure, ctx)
         final = compiled.invoke({**state, _PATH: []})
         path = final.pop(_PATH, [])

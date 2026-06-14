@@ -3,6 +3,7 @@
 This module owns the pure data model used by the public Workflow facade. Agent
 runtime code consumes these types but does not define them.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,13 +13,12 @@ __all__ = [
     "Step",
     "Playbook",
     "StepResult",
+    "VerificationReceipt",
+    "ProofBundle",
     "Approval",
     "WorkflowRun",
 ]
 
-# ---------------------------------------------------------------------------
-# Step — frozen data (the definition unit)
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Step:
@@ -29,55 +29,58 @@ class Step:
     instruction:
         What the agent should do.
     agent:
-        Pin to an agent by name (mutually exclusive with *needs* in spirit,
-        but both may be provided — name-pin wins).
-    needs:
-        Route by capability: the Team's capability matcher selects the best
-        agent whose skills cover this need.
+        Pin to an agent by name. Name-pin wins over skill routing.
+    requires_skill:
+        Route by exact skill identifier: the Team selects an agent whose
+        effective skills include this value.
+    required_tags:
+        Optional tag selectors used to disambiguate broad skills.
     approve:
         If True, the runner pauses here and waits for a human decision before
         executing this step.
+    approval_only:
+        If True, this is a pure human gate: no agent runs after approval.
     """
 
     instruction: str
     agent: str | None = None
-    needs: str | None = None
+    requires_skill: str | None = None
+    required_tags: tuple[str, ...] = field(default_factory=tuple)
     approve: bool = False
+    approval_only: bool = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "required_tags", tuple(self.required_tags))
+        if self.approval_only and not self.approve:
+            raise ValueError("approval_only steps must also set approve=True")
 
 
 def step(
     instruction: str,
     *,
     agent: str | None = None,
-    needs: str | None = None,
+    requires_skill: str | None = None,
+    required_tags: tuple[str, ...] | list[str] = (),
     approve: bool = False,
+    approval_only: bool = False,
 ) -> Step:
-    """Build a :class:`Step`.  Instruction-first, keyword-only options."""
-    return Step(instruction=instruction, agent=agent, needs=needs, approve=approve)
+    """Build a :class:`Step`. Instruction-first, keyword-only options."""
+    return Step(
+        instruction=instruction,
+        agent=agent,
+        requires_skill=requires_skill,
+        required_tags=tuple(required_tags),
+        approve=approve,
+        approval_only=approval_only,
+    )
 
-
-# ---------------------------------------------------------------------------
-# Playbook — the definition (pure data)
-# ---------------------------------------------------------------------------
 
 @dataclass
 class Playbook:
-    """A named list of steps.  Canonical form is plain dict/YAML.
-
-    Parameters
-    ----------
-    name:
-        Playbook identifier.
-    steps:
-        Ordered list of :class:`Step` objects.
-    """
+    """A named list of steps. Canonical form is plain dict/YAML."""
 
     name: str
     steps: list[Step]
-
-    # ------------------------------------------------------------------
-    # Serialisation
-    # ------------------------------------------------------------------
 
     def to_dict(self) -> dict:
         """Convert to a plain dict (JSON-serialisable)."""
@@ -87,8 +90,10 @@ class Playbook:
                 {
                     "instruction": s.instruction,
                     "agent": s.agent,
-                    "needs": s.needs,
+                    "requires_skill": s.requires_skill,
+                    "required_tags": list(s.required_tags),
                     "approve": s.approve,
+                    "approval_only": s.approval_only,
                 }
                 for s in self.steps
             ],
@@ -101,8 +106,10 @@ class Playbook:
             Step(
                 instruction=s["instruction"],
                 agent=s.get("agent"),
-                needs=s.get("needs"),
+                requires_skill=s.get("requires_skill"),
+                required_tags=tuple(s.get("required_tags", ())),
                 approve=bool(s.get("approve", False)),
+                approval_only=bool(s.get("approval_only", False)),
             )
             for s in d.get("steps", [])
         ]
@@ -110,28 +117,56 @@ class Playbook:
 
     @classmethod
     def from_yaml(cls, text: str) -> Playbook:
-        """Parse a YAML string into a :class:`Playbook`.
+        """Parse a YAML string into a :class:`Playbook`."""
+        try:
+            import yaml
+        except ImportError:
+            from coactra.errors import MissingExtraError
 
-        ``pyyaml`` is imported lazily so the module stays import-light.
-        """
-        import yaml  # noqa: PLC0415 — lazy import to keep module light
+            raise MissingExtraError(
+                "Playbook.from_yaml() requires pyyaml; install with: pip install coactra[office]",
+                extra="office",
+            ) from None
 
         data = yaml.safe_load(text)
         return cls.from_dict(data)
 
-
-# ---------------------------------------------------------------------------
-# Run ledger types
-# ---------------------------------------------------------------------------
 
 @dataclass
 class StepResult:
     """A single entry in the run ledger."""
 
     instruction: str
-    agent: str          # resolved agent name; "" if unresolved
-    output: str         # agent output; "" if not run
-    status: str         # "done" | "failed" | "skipped"
+    agent: str
+    output: str
+    status: str
+
+
+@dataclass(frozen=True)
+class VerificationReceipt:
+    """Machine-checkable evidence that a verifier actually ran a check."""
+
+    command: str
+    exit_code: int
+    stdout_sha256: str = ""
+    stderr_sha256: str = ""
+    artifact_paths: tuple[str, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "artifact_paths", tuple(self.artifact_paths))
+
+
+@dataclass(frozen=True)
+class ProofBundle:
+    """Evidence bundle attached to a human approval decision."""
+
+    summary: str = ""
+    receipts: tuple[VerificationReceipt, ...] = field(default_factory=tuple)
+    artifact_paths: tuple[str, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "receipts", tuple(self.receipts))
+        object.__setattr__(self, "artifact_paths", tuple(self.artifact_paths))
 
 
 @dataclass
@@ -140,30 +175,13 @@ class Approval:
 
     step_index: int
     instruction: str
-    decision: bool      # True = approved, False = denied
+    decision: bool
+    proof_bundle: ProofBundle | None = None
 
 
 @dataclass
 class WorkflowRun:
-    """The result of one Workflow execution (complete, interrupted, or failed).
-
-    Attributes
-    ----------
-    name:
-        Playbook name.
-    status:
-        One of ``"completed"``, ``"interrupted"``, ``"failed"``, ``"denied"``.
-    results:
-        Ordered run ledger — one :class:`StepResult` per step that was
-        attempted or skipped.
-    pending_index:
-        Index of the step that caused an interruption (approve=True pause).
-        ``None`` when not interrupted.
-    approvals:
-        List of :class:`Approval` records for any approval decisions made.
-    _steps:
-        Internal reference to the full step list (for ``pending_step``).
-    """
+    """The result of one Workflow execution."""
 
     name: str
     status: str
@@ -175,7 +193,6 @@ class WorkflowRun:
 
     @property
     def pending_step(self) -> Step | None:
-        """Return the Step awaiting approval, or ``None``."""
         if self.pending_index is None:
             return None
         try:
@@ -184,5 +201,4 @@ class WorkflowRun:
             return None
 
     def output_texts(self) -> list[str]:
-        """Return the output string from every 'done' step in order."""
         return [r.output for r in self.results if r.status == "done"]

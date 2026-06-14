@@ -1,4 +1,5 @@
 """Tenant-routed memory backends for hard physical silo isolation."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

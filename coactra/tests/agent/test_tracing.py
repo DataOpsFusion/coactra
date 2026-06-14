@@ -3,8 +3,9 @@ from __future__ import annotations
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra.agent import Agent
+from coactra import Policy, Scope, Team
 from coactra.agent.workflow import Workflow, step
+from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 class RecordingSpan:
@@ -40,14 +41,27 @@ def _echo_model() -> FunctionModel:
     return FunctionModel(_reply)
 
 
-async def test_agent_run_emits_model_trace_span():
-    tracer = RecordingTracer()
-    agent = await Agent.create(
-        model=_echo_model(),
+async def _make_agent(*, tracer):
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="trace"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [
+                ModelRoute(
+                    capability="default", profile=ModelProfile(name="default", model=_echo_model())
+                )
+            ]
+        ),
+    )
+    return await team.add_agent(
         name="sre-agent",
-        tenant="acme",
         tracer=tracer,
     )
+
+
+async def test_agent_run_emits_model_trace_span():
+    tracer = RecordingTracer()
+    agent = await _make_agent(tracer=tracer)
 
     assert await agent.run("hello") == "model ok"
 
@@ -61,15 +75,9 @@ async def test_agent_run_emits_model_trace_span():
     ]
 
 
-
 async def test_agent_stream_emits_model_trace_span():
     tracer = RecordingTracer()
-    agent = await Agent.create(
-        model=_echo_model(),
-        name="sre-agent",
-        tenant="acme",
-        tracer=tracer,
-    )
+    agent = await _make_agent(tracer=tracer)
 
     run = await agent.send("hello")
     async for _event in run.stream():
@@ -95,7 +103,7 @@ class TracedTeam:
     def member(self, name: str):
         return TracedAgent() if name == "worker" else None
 
-    def match(self, needs: str):
+    def match_skill(self, skill_id: str):
         return TracedAgent()
 
 

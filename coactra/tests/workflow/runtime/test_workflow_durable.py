@@ -42,7 +42,9 @@ def test_pending_approval_store_is_scope_isolated_and_decidable():
     acme = Scope(tenant_id="acme")
     globex = Scope(tenant_id="globex")
     store = InMemoryApprovalStore()
-    approval = store.save(PendingApproval(thread_id="t-1", step_id="review", scope=acme, prompt="Ship?"))
+    approval = store.save(
+        PendingApproval(thread_id="t-1", step_id="review", scope=acme, prompt="Ship?")
+    )
 
     assert store.get(approval.id, globex) is None
     assert [item.id for item in store.pending(acme)] == [approval.id]
@@ -50,6 +52,7 @@ def test_pending_approval_store_is_scope_isolated_and_decidable():
     assert decided.status == "approved"
     assert decided.decided_by == "human:ops"
     assert store.pending(acme) == []
+
 
 def test_make_workflow_engine_local_runtime_wraps_runner_without_fake_resume():
     engine = make_workflow_engine("local", runner=Runner())

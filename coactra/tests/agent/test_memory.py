@@ -5,14 +5,13 @@ TDD: written RED (before the module exists), then GREEN once memory.py is implem
 
 from __future__ import annotations
 
-from coactra.memory import make_backend, Scope
-
-from coactra.agent.memory import bind_memory, MemoryBinding
-
+from coactra.agent.memory import MemoryBinding, bind_memory
+from coactra.memory import Scope, make_backend
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _scope(agent: str = "a") -> Scope:
     return Scope(tenant="test", agent=agent)
@@ -21,6 +20,7 @@ def _scope(agent: str = "a") -> Scope:
 # ---------------------------------------------------------------------------
 # 1. Basic remember → recall roundtrip
 # ---------------------------------------------------------------------------
+
 
 async def test_remember_and_recall_basic():
     """A stored fact can be recalled via a relevant query."""
@@ -40,6 +40,7 @@ async def test_remember_and_recall_basic():
 # ---------------------------------------------------------------------------
 # 2. max_recall cap
 # ---------------------------------------------------------------------------
+
 
 async def test_max_recall_cap():
     """recall returns at most max_recall items in the context string."""
@@ -64,6 +65,7 @@ async def test_max_recall_cap():
 # 3. Scope isolation
 # ---------------------------------------------------------------------------
 
+
 async def test_scope_isolation():
     """A fact stored under scope A is not visible under scope B."""
     scope_a = _scope("agent-a")
@@ -84,6 +86,7 @@ async def test_scope_isolation():
 # 4. write_policy veto — remember stores nothing when policy returns False
 # ---------------------------------------------------------------------------
 
+
 async def test_write_policy_veto():
     """A write_policy that always returns False prevents remember from storing."""
     scope = _scope("veto")
@@ -99,6 +102,7 @@ async def test_write_policy_veto():
 # ---------------------------------------------------------------------------
 # 5. write_policy allow — policy returning True stores normally
 # ---------------------------------------------------------------------------
+
 
 async def test_write_policy_allow():
     """A write_policy returning True allows the remember to proceed normally."""
@@ -116,6 +120,7 @@ async def test_write_policy_allow():
 # 6. bind_memory accepts a name string (auto-constructs the backend)
 # ---------------------------------------------------------------------------
 
+
 async def test_bind_memory_from_name():
     """bind_memory('inprocess', scope) constructs a backend and works correctly."""
     scope = _scope("namestr")
@@ -131,6 +136,7 @@ async def test_bind_memory_from_name():
 # 7. recall returns "" when nothing is stored
 # ---------------------------------------------------------------------------
 
+
 async def test_recall_empty():
     """recall returns an empty string when the backend has no matching memories."""
     scope = _scope("empty")
@@ -143,6 +149,7 @@ async def test_recall_empty():
 # ---------------------------------------------------------------------------
 # 8. source kwarg is accepted (best-effort provenance, no crash)
 # ---------------------------------------------------------------------------
+
 
 async def test_remember_source_accepted():
     """source= kwarg is accepted without error; fact is still recalled."""

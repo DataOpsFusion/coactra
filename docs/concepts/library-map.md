@@ -8,8 +8,9 @@ imports the modules it needs.
 > **CURRENT SHAPE:** a single `coactra` distribution; capabilities are selected via
 > extras (`pip install "coactra[memory,workflow]"`). The capability modules stay
 > decoupled; `coactra.agent` consumes them through ports and optional
-> `coactra.agent.integrations`. Run `make test` from the repository root for the full
-> suite. Maintainer design notes live under the `maintainers` section of this docs site.
+> `coactra.agent.integrations`. Run `make test` from the repository root for the
+> default non-live suite; live backend checks run through `make live-check`.
+> Maintainer design notes live under the `maintainers` section of this docs site.
 ## Installation
 
 One distribution, capabilities via extras:
@@ -104,7 +105,7 @@ Design stance that makes this both flexible AND codeable:
 
 Genuinely novel cores: **coactra.ai's reasoning-replay** and **the un-tangled composition
 itself**. The rest is "better seams over a crowded field" — worth building, but don't
-reinvent mem0/langgraph by accident.
+reinvent mem0 or workflow runtimes by accident.
 
 > **Note:** the workspace control layer ships only the reference `LocalFilesystemBackend`
 > today; provider integrations (Daytona/E2B/OpenHands, etc.) are intended seams, not
@@ -195,6 +196,6 @@ packages or compatibility wrappers for removed paths.
 |---|---|---|
 | coactra.workspace | LocalFilesystemBackend | File confinement; local exec is opt-in and **not a sandbox** — use a remote/sandboxed backend for untrusted commands. |
 | coactra.agent | KeycloakExchanger | RFC 8693 token exchange with no token passthrough; async variant available with `coactra[oauth]`. |
-| coactra.agent | OfficialA2ATransport | Official SDK bridge; import from `coactra.agent.adapters`. Inbound A2A services require a verifier in production. |
-| coactra.workflow | DurableLangGraphEngine / TemporalEngine / PrefectEngine | `WorkflowEngine` adapters; durable resume requires explicit checkpointer/runtime configuration. |
+| coactra.agent | OfficialA2ATransport | Minimal outbound A2A bridge via `coactra.agent.adapters`. Inbound serving: use `a2a-sdk` directly. |
+| coactra.workflow | small default WorkflowEngine / LangGraphEngine / TemporalEngine / PrefectEngine | Default Procedure start/resume stays small; hard durability comes from injected host/runtime adapters. |
 | coactra.workflow | DBOS / Temporal / Dapr dispatchers | Experimental thin dispatch bridges; the Coactra ledger remains the source of truth. |

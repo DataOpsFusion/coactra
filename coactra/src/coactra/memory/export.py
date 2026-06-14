@@ -37,7 +37,7 @@ class ExportReport(BaseModel):
         return not self.dropped_capabilities
 
     @classmethod
-    def from_ingest(cls, backend: object, *, transferred: int) -> "ExportReport":
+    def from_ingest(cls, backend: object, *, transferred: int) -> ExportReport:
         """Target-side report a backend's ``ingest`` returns.
 
         Records only what the target knows: how many items it wrote and its own name.
@@ -47,9 +47,7 @@ class ExportReport(BaseModel):
         return cls(transferred=transferred, target_backend=type(backend).__name__)
 
 
-async def export(
-    source: "MemoryBackend", target: "MemoryBackend", *, scope: Scope
-) -> ExportReport:
+async def export(source: MemoryBackend, target: MemoryBackend, *, scope: Scope) -> ExportReport:
     """Move a scope's recollections from ``source`` into ``target``, lossily and honestly."""
     src_caps = await source.capabilities()
     dst_caps = await target.capabilities()

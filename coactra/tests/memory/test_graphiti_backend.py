@@ -5,7 +5,7 @@ plural group_ids on search), (2) EntityEdge → Recollection mapping, (3) NO gra
 type leaks across the boundary (sentinel-edge proof).
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -132,7 +132,7 @@ async def test_remember_calls_add_episode_with_singular_group_id():
 
 async def test_recall_calls_search_with_plural_group_ids_and_num_results():
     fake = FakeGraphiti()
-    valid = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    valid = datetime(2026, 1, 2, tzinfo=UTC)
     fake._edges = [
         FakeEdge("A depends on B", "uuid-1", valid_at=valid, group_id=_group_id(SCOPE)),
         FakeEdge("B owns C", "uuid-2", group_id=_group_id(SCOPE)),
@@ -171,9 +171,7 @@ async def test_dump_searches_scope_group_and_maps_results():
 async def test_ingest_adds_episodes_and_reports_transferred():
     fake = FakeGraphiti()
     be = GraphitiBackend(client=fake)
-    report = await be.ingest(
-        [Recollection(text="ported edge"), Recollection(text="")], SCOPE
-    )
+    report = await be.ingest([Recollection(text="ported edge"), Recollection(text="")], SCOPE)
     # empty-text recollection is skipped; one episode written under the scope group_id.
     assert len(fake.add_calls) == 1
     assert fake.add_calls[0]["episode_body"] == "ported edge"

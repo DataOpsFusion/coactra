@@ -27,7 +27,7 @@ def test_end_to_end_open_write_run_handoff(tmp_path):
     ws = w.open_workspace(
         scope=scope,
         base_dir=tmp_path,
-        policy=w.CliPolicy(deny=["rm"]),
+        policy=w.CliPolicy(allow=["echo"], deny=["rm"]),
         allow_unsafe_local_exec=True,
     )
 
@@ -47,18 +47,15 @@ def test_end_to_end_open_write_run_handoff(tmp_path):
     assert "run step 2" in ws2.day_note()
 
 
-def test_unsafe_local_exec_without_policy_uses_safe_default(tmp_path):
+def test_unsafe_local_exec_without_policy_is_rejected(tmp_path):
     scope = w.Scope(tenant_id="acme", agent_id="planner")
-    ws = w.open_workspace(
-        scope=scope,
-        base_dir=tmp_path,
-        allow_unsafe_local_exec=True,
-    )
-
-    assert ws.run("echo allowed").ok
     try:
-        ws.run("rm something")
-    except w.PolicyError as exc:
-        assert "deny rule" in str(exc)
+        w.open_workspace(
+            scope=scope,
+            base_dir=tmp_path,
+            allow_unsafe_local_exec=True,
+        )
+    except ValueError as exc:
+        assert "explicit CliPolicy" in str(exc)
     else:  # pragma: no cover - safety assertion
-        raise AssertionError("rm should be denied by the safe default policy")
+        raise AssertionError("unsafe local exec should require an explicit policy")

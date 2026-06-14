@@ -6,7 +6,7 @@ import tempfile
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent
+from coactra import Team
 
 
 def existing_model(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
@@ -15,12 +15,15 @@ def existing_model(messages: list[ModelMessage], info: AgentInfo) -> ModelRespon
 
 async def main() -> None:
     with tempfile.TemporaryDirectory() as desk:
-        agent = await Agent.create(
+        team = Team.local(
             model=FunctionModel(existing_model),
+            tenant_id="acme",
+            namespace="acceptance",
+        )
+        agent = await team.add_agent(
             memory="inprocess",
             workspace=desk,
             name="support-agent",
-            tenant="acme",
         )
         try:
             print(await agent.run("remember this workspace handoff"))

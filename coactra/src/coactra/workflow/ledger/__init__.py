@@ -1,7 +1,6 @@
 """coactra.workflow.ledger - durable work orders for agent systems."""
 
 from coactra._version import distribution_version
-
 from coactra.workflow.ledger.backends import InMemoryWorkStore, SqlWorkStore
 from coactra.workflow.ledger.conformance import WorkStoreReport, check_work_store_contract
 from coactra.workflow.ledger.domain import (
@@ -44,7 +43,13 @@ from coactra.workflow.ledger.service import (
     WorkManager,
     WorkNotFoundError,
 )
-from coactra.workflow.ledger.store import AtomicWorkStore, ArtifactStore, AuditSink, ConflictError, WorkStore
+from coactra.workflow.ledger.store import (
+    ArtifactStore,
+    AtomicWorkStore,
+    AuditSink,
+    ConflictError,
+    WorkStore,
+)
 
 __all__ = [
     "__version__",

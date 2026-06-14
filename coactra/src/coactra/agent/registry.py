@@ -2,12 +2,14 @@
 
 This is intentionally small: it models discovery data and converts entries into
 RemotePeer configs. Durable or network-backed registries can implement the same
-protocol later without changing Agent.create.
+protocol later without changing Team.add_agent.
 """
+
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol, Sequence, Mapping, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from coactra.agent.peers import RemotePeer
 
@@ -43,7 +45,7 @@ class FleetEntry:
 
 @runtime_checkable
 class FleetRegistry(Protocol):
-    """Lookup interface used by Agent.create for named remote peers."""
+    """Lookup interface used by Team.add_agent for named remote peers."""
 
     def resolve(self, name: str, *, tenant: str | None = None) -> FleetEntry | None: ...
 
@@ -74,18 +76,20 @@ class InMemoryFleetRegistry:
         delegation_chain: Sequence[Mapping[str, Any]] | None = None,
         message_builder: Any | None = None,
     ) -> FleetEntry:
-        return self.add(FleetEntry(
-            name=name,
-            endpoint=endpoint,
-            tenant=tenant,
-            audience=audience,
-            card=card,
-            token_provider=token_provider,
-            client=client,
-            timeout=timeout,
-            delegation_chain=delegation_chain,
-            message_builder=message_builder,
-        ))
+        return self.add(
+            FleetEntry(
+                name=name,
+                endpoint=endpoint,
+                tenant=tenant,
+                audience=audience,
+                card=card,
+                token_provider=token_provider,
+                client=client,
+                timeout=timeout,
+                delegation_chain=delegation_chain,
+                message_builder=message_builder,
+            )
+        )
 
     def resolve(self, name: str, *, tenant: str | None = None) -> FleetEntry | None:
         if tenant is not None:

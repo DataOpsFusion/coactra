@@ -1,5 +1,6 @@
-from coactra.workflow import Orchestrator, Procedure, Step, WorkOrder, WorkScope
-from coactra.workflow import RunResult
+from coactra.workflow import Orchestrator, Procedure, RunResult, Step
+from coactra.workflow.ledger import WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Engine:
@@ -10,7 +11,9 @@ class Engine:
 def test_orchestrator_runs_registered_procedure_and_completes_work_order():
     scope = WorkScope(tenant_id="acme", namespace="support")
     orchestrator = Orchestrator(engine=Engine())
-    orchestrator.register(Procedure(name="incident", steps=[Step(id="inspect", kind="task")]), scope)
+    orchestrator.register(
+        Procedure(name="incident", steps=[Step(id="inspect", kind="task")]), scope
+    )
     order = orchestrator.submit(
         WorkOrder(scope=scope, title="Investigate INC-4821", procedure="incident")
     )

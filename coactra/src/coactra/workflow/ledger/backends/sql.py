@@ -7,7 +7,7 @@ the lifecycle owner; this store owns durable, multi-process-safe persistence.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from coactra.workflow.ledger.domain.events import EventEnvelope
@@ -17,7 +17,7 @@ from coactra.workflow.ledger.store import ConflictError
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _require_sqlalchemy():
@@ -38,9 +38,7 @@ def _require_sqlalchemy():
         )
         from sqlalchemy.exc import IntegrityError
     except ImportError as exc:  # pragma: no cover - environment dependent
-        raise ImportError(
-            "SqlWorkStore requires SQLAlchemy; install with coactra[sql]"
-        ) from exc
+        raise ImportError("SqlWorkStore requires SQLAlchemy; install with coactra[sql]") from exc
     return {
         "DateTime": DateTime,
         "Index": Index,
@@ -82,7 +80,7 @@ class SqlWorkStore:
             self._metadata.create_all(self._engine)
 
     @classmethod
-    def from_url(cls, url: str, **kwargs: Any) -> "SqlWorkStore":
+    def from_url(cls, url: str, **kwargs: Any) -> SqlWorkStore:
         """Construct from a SQLAlchemy URL, e.g. sqlite:///work.db or postgresql+psycopg://..."""
         return cls(url, **kwargs)
 
@@ -106,7 +104,12 @@ class SqlWorkStore:
             self._column("created_at", DateTime(timezone=True), nullable=False),
             self._column("updated_at", DateTime(timezone=True), nullable=False),
         )
-        Index("ix_coactra_work_orders_scope_status", table.c.tenant_id, table.c.namespace, table.c.status)
+        Index(
+            "ix_coactra_work_orders_scope_status",
+            table.c.tenant_id,
+            table.c.namespace,
+            table.c.status,
+        )
         Index(
             "ux_coactra_work_orders_idempotency",
             table.c.tenant_id,
@@ -134,7 +137,9 @@ class SqlWorkStore:
             self._column("event_json", Text, nullable=False),
             self._column("created_at", DateTime(timezone=True), nullable=False),
         )
-        Index("ix_coactra_work_events_subject", table.c.tenant_id, table.c.namespace, table.c.subject)
+        Index(
+            "ix_coactra_work_events_subject", table.c.tenant_id, table.c.namespace, table.c.subject
+        )
         return table
 
     def _column(self, *args: Any, **kwargs: Any):
@@ -167,14 +172,18 @@ class SqlWorkStore:
         insert = self._sa["insert"]
         IntegrityError = self._sa["IntegrityError"]
         with self._engine.begin() as conn:
-            current = conn.execute(
-                select(
-                    self._orders.c.version,
-                    self._orders.c.tenant_id,
-                    self._orders.c.namespace,
-                    self._orders.c.created_at,
-                ).where(self._orders.c.id == order.id)
-            ).mappings().first()
+            current = (
+                conn.execute(
+                    select(
+                        self._orders.c.version,
+                        self._orders.c.tenant_id,
+                        self._orders.c.namespace,
+                        self._orders.c.created_at,
+                    ).where(self._orders.c.id == order.id)
+                )
+                .mappings()
+                .first()
+            )
             if current is not None and (
                 current["tenant_id"] != order.scope.tenant_id
                 or current["namespace"] != order.scope.namespace
@@ -184,7 +193,8 @@ class SqlWorkStore:
                 actual = current["version"] if current is not None else 0
                 if actual != expected_version:
                     raise ConflictError(
-                        f"stale work order {order.id!r}: expected version {expected_version}, got {actual}"
+                        f"stale work order {order.id!r}: "
+                        f"expected version {expected_version}, got {actual}"
                     )
             new_version = (current["version"] + 1) if current is not None else 1
             stored = order.model_copy(deep=True, update={"version": new_version})
@@ -209,7 +219,9 @@ class SqlWorkStore:
                 else:
                     predicate = self._orders.c.id == stored.id
                     if expected_version is not None:
-                        predicate = self._sa["and_"](predicate, self._orders.c.version == expected_version)
+                        predicate = self._sa["and_"](
+                            predicate, self._orders.c.version == expected_version
+                        )
                     result = conn.execute(update(self._orders).where(predicate).values(**values))
                     if expected_version is not None and result.rowcount != 1:
                         raise ConflictError(
@@ -226,25 +238,33 @@ class SqlWorkStore:
     def get(self, work_id: str, scope: Scope) -> WorkOrder | None:
         select = self._sa["select"]
         with self._engine.begin() as conn:
-            row = conn.execute(
-                select(self._orders.c.order_json).where(
-                    self._orders.c.id == work_id,
-                    self._orders.c.tenant_id == scope.tenant_id,
-                    self._orders.c.namespace == scope.namespace,
+            row = (
+                conn.execute(
+                    select(self._orders.c.order_json).where(
+                        self._orders.c.id == work_id,
+                        self._orders.c.tenant_id == scope.tenant_id,
+                        self._orders.c.namespace == scope.namespace,
+                    )
                 )
-            ).mappings().first()
+                .mappings()
+                .first()
+            )
         return self._order_from_row(row) if row is not None else None
 
     def find_by_idempotency_key(self, key: str, scope: Scope) -> WorkOrder | None:
         select = self._sa["select"]
         with self._engine.begin() as conn:
-            row = conn.execute(
-                select(self._orders.c.order_json).where(
-                    self._orders.c.tenant_id == scope.tenant_id,
-                    self._orders.c.namespace == scope.namespace,
-                    self._orders.c.idempotency_key == key,
+            row = (
+                conn.execute(
+                    select(self._orders.c.order_json).where(
+                        self._orders.c.tenant_id == scope.tenant_id,
+                        self._orders.c.namespace == scope.namespace,
+                        self._orders.c.idempotency_key == key,
+                    )
                 )
-            ).mappings().first()
+                .mappings()
+                .first()
+            )
         return self._order_from_row(row) if row is not None else None
 
     def list(self, scope: Scope, *, status: WorkStatus | None = None) -> list[WorkOrder]:
@@ -283,15 +303,19 @@ class SqlWorkStore:
     def events(self, work_id: str, scope: Scope) -> list[EventEnvelope]:
         select = self._sa["select"]
         with self._engine.begin() as conn:
-            rows = conn.execute(
-                select(self._events.c.event_json)
-                .where(
-                    self._events.c.subject == work_id,
-                    self._events.c.tenant_id == scope.tenant_id,
-                    self._events.c.namespace == scope.namespace,
+            rows = (
+                conn.execute(
+                    select(self._events.c.event_json)
+                    .where(
+                        self._events.c.subject == work_id,
+                        self._events.c.tenant_id == scope.tenant_id,
+                        self._events.c.namespace == scope.namespace,
+                    )
+                    .order_by(self._events.c.id)
                 )
-                .order_by(self._events.c.id)
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
         return [EventEnvelope.model_validate_json(row["event_json"]) for row in rows]
 
     @staticmethod

@@ -26,7 +26,9 @@ class CapabilitySet(BaseModel):
 
     def satisfies(self, requirements: list[CapabilityRequirement]) -> bool:
         names = self.names()
-        return all(not requirement.required or requirement.name in names for requirement in requirements)
+        return all(
+            not requirement.required or requirement.name in names for requirement in requirements
+        )
 
 
 class SkillSpec(BaseModel):

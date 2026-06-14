@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, dev]
@@ -10,6 +13,7 @@ jobs:
   minimal-install:
     name: Base install smoke test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +34,7 @@ jobs:
   clean-install:
     name: Clean wheel install and examples
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +50,7 @@ jobs:
   tests:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -64,11 +70,12 @@ jobs:
 
       - name: Run tests
         working-directory: coactra
-        run: pytest -q
+        run: pytest -q -m 'not live'
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -91,6 +98,7 @@ jobs:
   docs:
     name: Docs
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -107,6 +115,7 @@ jobs:
   live-gate:
     name: Live backend gate inventory
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -125,6 +134,7 @@ jobs:
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -154,6 +164,7 @@ jobs:
   build:
     name: Wheel and metadata check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 

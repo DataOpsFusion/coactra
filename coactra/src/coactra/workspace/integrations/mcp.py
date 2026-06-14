@@ -6,9 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 
-def _select_scopes(
-    bound: Mapping[str, Any], selected: list[str] | None
-) -> list[tuple[str, Any]]:
+def _select_scopes(bound: Mapping[str, Any], selected: list[str] | None) -> list[tuple[str, Any]]:
     aliases = selected or ["agent"]
     unknown = sorted(set(aliases) - set(bound))
     if unknown:
@@ -27,7 +25,7 @@ def register_recall_tool(
 ) -> None:
     """Register allowlisted recall and optional publish tools backed by ``memory``.
 
-    ``scope`` remains the default agent scope for backward compatibility. Hosts may
+    ``scope`` is the default agent scope. Hosts may
     bind additional aliases such as ``department`` and ``company``; callers can select
     only those pre-bound aliases, never construct an arbitrary cross-tenant scope.
     """
@@ -37,15 +35,9 @@ def register_recall_tool(
     async def recall_facts(
         query: str,
         scopes: list[str] | None = None,
-        as_of: str | None = None,
         limit: int = 20,
     ) -> list[dict]:
-        """Recall facts from one or more allowlisted scopes.
-
-        ``as_of`` remains accepted for host compatibility but the current Coactra
-        memory API does not perform historical lookup.
-        """
-        del as_of
+        """Recall facts from one or more allowlisted scopes."""
         rows: list[dict] = []
         seen: set[tuple[str, str]] = set()
         selected = _select_scopes(bound, scopes)
@@ -59,9 +51,7 @@ def register_recall_tool(
                 row = {
                     "fact": recollection.text,
                     "uuid": recollection.source_id,
-                    "valid_at": str(recollection.when)
-                    if recollection.when is not None
-                    else "",
+                    "valid_at": str(recollection.when) if recollection.when is not None else "",
                 }
                 if len(bound) > 1:
                     row["scope"] = alias

@@ -5,6 +5,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PATTERNS = (
+    "Team([",
+    "needs=",
     "coactra.jobs",
     "from coactra.jobs",
     "import coactra.jobs",
@@ -29,8 +31,10 @@ SCAN_ROOTS = (
     "coactra/pyproject.toml",
 )
 ALLOWED = {
+    "coactra/scripts/check_no_legacy_paths.py",
     "coactra/tests/arch/test_boundaries.py",
     "docs/maintainers/alpha-release-checklist.md",
+    "design/2026-06-09-team-first-alpha-work-orders.md",
 }
 
 

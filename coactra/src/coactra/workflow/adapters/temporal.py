@@ -4,6 +4,7 @@ Temporal owns durable workflow history, retries, replay, workers, and signals. T
 adapter only translates Coactra's stable ``WorkflowEngine`` payloads to Temporal client
 calls so host workflow definitions can stay runtime-specific.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -60,15 +61,13 @@ class TemporalEngine:
         task_queue: str,
         namespace: str = "default",
         **connect_options: Any,
-    ) -> "TemporalEngine":
+    ) -> TemporalEngine:
         """Connect a Temporal client lazily and return a configured adapter."""
 
         try:
             from temporalio.client import Client
         except ImportError as exc:  # pragma: no cover - depends on optional extra
-            raise MissingExtraError(
-                "TemporalEngine.connect requires coactra[temporal]"
-            ) from exc
+            raise MissingExtraError("TemporalEngine.connect requires coactra[temporal]") from exc
         client = await Client.connect(target_host, namespace=namespace, **connect_options)
         return cls(client=client, workflow=workflow, task_queue=task_queue)
 

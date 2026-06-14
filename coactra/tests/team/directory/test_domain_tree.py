@@ -4,7 +4,6 @@ In-memory only — no store touches these tests. The aggregate is a tree node:
 a root carries the tenant, children are OUs, members are principals living on a node.
 """
 
-
 from coactra.team.directory import Organization
 from coactra.team.directory.domain import MemberKind
 

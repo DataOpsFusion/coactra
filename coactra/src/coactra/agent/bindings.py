@@ -1,8 +1,5 @@
-"""Agent facade binding helpers.
+"""Agent facade binding helpers."""
 
-These helpers keep Agent.create focused on composition. They normalize user-facing
-Agent.create inputs into runtime-ready skills, local tools, and additive MCP servers.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,11 +14,12 @@ from coactra.agent.learned import (
 )
 from coactra.agent.peers import RemotePeer, peer_tools
 from coactra.agent.skills import Skill, normalize_skills
+from coactra.policy import Policy
 
 
 @dataclass(frozen=True)
 class AgentBindings:
-    """Runtime-ready pieces derived from Agent.create inputs."""
+    """Runtime-ready pieces derived from Team-owned agent registration inputs."""
 
     skills: list[Skill]
     tools: list[Any]
@@ -40,8 +38,9 @@ def build_agent_bindings(
     registry: Any | None,
     name: str | None,
     tenant: str | None,
+    policy: Policy | None,
 ) -> AgentBindings:
-    """Normalize Agent.create inputs into skills, callable tools, and MCP tags."""
+    """Normalize Team.add_agent inputs into skills, callable tools, and MCP tags."""
     learned_procedures = normalize_learned_procedures(
         learned, allow_unreviewed=allow_unreviewed_learned
     )
@@ -55,7 +54,7 @@ def build_agent_bindings(
             tenant=tenant,
             scope=procedure_scope,
         ),
-        *bind_peer_tools(peers=peers, registry=registry, name=name, tenant=tenant),
+        *bind_peer_tools(peers=peers, registry=registry, name=name, tenant=tenant, policy=policy),
     ]
     return AgentBindings(skills=normalized_skills, tools=bound_tools, mcp_servers=mcp_servers)
 
@@ -66,9 +65,7 @@ def normalize_agent_skills(
     learned: Any,
     allow_unreviewed_learned: bool,
 ) -> list[Skill]:
-    procedures = normalize_learned_procedures(
-        learned, allow_unreviewed=allow_unreviewed_learned
-    )
+    procedures = normalize_learned_procedures(learned, allow_unreviewed=allow_unreviewed_learned)
     return agent_skills(skills, procedures)
 
 
@@ -94,10 +91,13 @@ def bind_peer_tools(
     registry: Any | None,
     name: str | None,
     tenant: str | None,
+    policy: Policy | None,
 ) -> list[Any]:
     """Build peer delegation tools from local agents, names, and remote entries."""
     if not peers:
         return []
+    if policy is None:
+        raise ValueError("peer delegation requires an explicit Policy")
 
     local_agents, named_peers, direct_remotes = classify_peers(peers)
     registry_remotes, unresolved_names = resolve_named_remotes(
@@ -111,6 +111,7 @@ def bind_peer_tools(
             peer_tools(
                 [p._name for p in local_agents],
                 resolve=resolver,
+                policy=policy,
                 me=name,
                 tenant=tenant,
             )
@@ -120,6 +121,7 @@ def bind_peer_tools(
             peer_tools(
                 unresolved_names,
                 resolve=lambda _name: None,
+                policy=policy,
                 me=name,
                 tenant=tenant,
             )
@@ -127,11 +129,14 @@ def bind_peer_tools(
     for remote in [*direct_remotes, *registry_remotes]:
         tools.extend(
             peer_tools(
-                [AgentRef(
-                    tenant_id=remote.tenant or tenant or "default",
-                    agent_id=remote.name,
-                )],
+                [
+                    AgentRef(
+                        tenant_id=remote.tenant or tenant or "default",
+                        agent_id=remote.name,
+                    )
+                ],
                 resolve=lambda _name: None,
+                policy=policy,
                 transport=remote.transport(),
                 me=name,
                 tenant=tenant,

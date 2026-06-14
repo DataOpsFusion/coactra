@@ -1,13 +1,11 @@
-"""Capability matcher for Team — keyword (default) and semantic modes.
+"""Fuzzy member ranking helpers for future skill-query adapters.
 
-Pure-data helpers; no pydantic-ai / network imports at module level.
-
-Public API
-----------
-- ``match_agent(needs, members, *, mode)`` — find the best-matching member
-  by skill overlap (keyword) or cosine similarity (semantic).
-- ``_get_embedder``                         — internal hook; monkeypatch in tests.
+The Team-first alpha path routes workflow steps by exact ``requires_skill`` ids
+through ``Team.match_skill()``. This module remains as an internal helper for
+future fuzzy or semantic skill-query adapters; it is not part of the preferred
+public execution path.
 """
+
 from __future__ import annotations
 
 import re
@@ -16,34 +14,24 @@ from typing import Any
 __all__ = ["match_agent"]
 
 
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-
 def _tokenize(text: str) -> set[str]:
     """Lowercase, split on whitespace and punctuation, return non-empty tokens."""
-    return {t for t in re.split(r"[\s\W]+", text.lower()) if t}
+    return {token for token in re.split(r"[\s\W]+", text.lower()) if token}
 
 
 def _skill_tokens(member: Any) -> set[str]:
-    """Return all keyword tokens from a member's skills.
-
-    Reads ``_skills`` (list of Skill) directly from the Agent's private attr;
-    falls back to the public ``card`` property when ``_skills`` is absent
-    (future-proofing for duck-typed members).
-    """
+    """Return keyword tokens from a member's effective skills."""
     tokens: set[str] = set()
 
     skills = getattr(member, "_skills", None)
     if skills is not None:
-        for sk in skills:
-            tokens |= _tokenize(sk.id)
-            tokens |= _tokenize(sk.description)
-            for tag in sk.tags:
+        for skill in skills:
+            tokens |= _tokenize(skill.id)
+            tokens |= _tokenize(skill.description)
+            for tag in skill.tags:
                 tokens |= _tokenize(tag)
         return tokens
 
-    # Fallback: read from Agent Card dict
     card = getattr(member, "card", None)
     if isinstance(card, dict):
         for entry in card.get("skills", []):
@@ -60,11 +48,11 @@ def _skill_text(member: Any) -> str:
 
     skills = getattr(member, "_skills", None)
     if skills is not None:
-        for sk in skills:
-            parts.append(sk.id)
-            if sk.description:
-                parts.append(sk.description)
-            parts.extend(sk.tags)
+        for skill in skills:
+            parts.append(skill.id)
+            if skill.description:
+                parts.append(skill.description)
+            parts.extend(skill.tags)
         return " ".join(parts)
 
     card = getattr(member, "card", None)
@@ -73,48 +61,35 @@ def _skill_text(member: Any) -> str:
             parts.append(entry.get("id", ""))
             parts.append(entry.get("description", ""))
             parts.extend(entry.get("tags", []))
-    return " ".join(p for p in parts if p)
+    return " ".join(part for part in parts if part)
 
 
 def _get_embedder():
-    """Return a callable(text) -> list[float].  Lazily imports coactra.ai.
-
-    This function is a named hook so tests can monkeypatch it without touching
-    the heavy import machinery.
-    """
+    """Return a callable(text) -> list[float]."""
     try:
         from coactra.ai.completion.embedding import LiteLLMEmbedding
     except ImportError as exc:
         raise ImportError(
-            "Semantic matching requires coactra[ai]; "
-            "install with: pip install coactra[ai]"
+            "Semantic matching requires coactra[ai]; install with: pip install coactra[ai]"
         ) from exc
     return LiteLLMEmbedding()
 
 
-# ---------------------------------------------------------------------------
-# Keyword matcher
-# ---------------------------------------------------------------------------
-
-def _keyword_match(needs: str, members: list[Any]) -> Any | None:
-    """Return the member with the highest token-overlap score vs *needs*.
-
-    Ties → first member in list wins.  Zero overlap → None.
-    """
-    needs_tokens = _tokenize(needs)
-    if not needs_tokens:
+def _keyword_match(query: str, members: list[Any]) -> Any | None:
+    """Return the member with the highest token-overlap score vs *query*."""
+    query_tokens = _tokenize(query)
+    if not query_tokens:
         return None
 
     best_member = None
     best_score = 0
 
     for member in members:
-        # Trivial match: exact name
         name = getattr(member, "_name", None)
-        if name is not None and name in needs:
+        if isinstance(name, str) and name in query:
             return member
 
-        score = len(needs_tokens & _skill_tokens(member))
+        score = len(query_tokens & _skill_tokens(member))
         if score > best_score:
             best_score = score
             best_member = member
@@ -122,19 +97,12 @@ def _keyword_match(needs: str, members: list[Any]) -> Any | None:
     return best_member if best_score > 0 else None
 
 
-# ---------------------------------------------------------------------------
-# Semantic matcher
-# ---------------------------------------------------------------------------
+def _semantic_match(query: str, members: list[Any], *, embedder: Any = None) -> Any | None:
+    """Return the member whose skills text is nearest to *query* by cosine similarity."""
+    from coactra.ai.completion.embedding import cosine
 
-def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> Any | None:
-    """Return the member whose skills text is nearest to *needs* by cosine sim.
-
-    Raises ``ImportError`` if coactra[ai]/numpy is unavailable.
-    """
-    from coactra.ai.completion.embedding import cosine  # always available if [ai] installed
-
-    embedder = embedder or _get_embedder()  # may raise ImportError → surfaces to caller
-    needs_vec = embedder(needs)
+    embedder = embedder or _get_embedder()
+    query_vec = embedder(query)
 
     best_member = None
     best_sim = -1.0
@@ -144,7 +112,7 @@ def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> 
         if not text.strip():
             continue
         member_vec = embedder(text)
-        sim = cosine(needs_vec, member_vec)
+        sim = cosine(query_vec, member_vec)
         if sim > best_sim:
             best_sim = sim
             best_member = member
@@ -152,42 +120,19 @@ def _semantic_match(needs: str, members: list[Any], *, embedder: Any = None) -> 
     return best_member
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 def match_agent(
-    needs: str,
+    query: str,
     members: list[Any],
     *,
     mode: str = "keyword",
     embedder: Any = None,
 ) -> Any | None:
-    """Return the member whose skills best match *needs*, or ``None``.
-
-    Parameters
-    ----------
-    needs:
-        Natural-language description of the capability needed (e.g.
-        ``"rotate the cert"``).
-    members:
-        List of Agent instances (or any object with ``_name``, ``_skills``,
-        and/or ``card``).
-    mode:
-        ``"keyword"`` (default) — token/substring overlap, deterministic,
-        no model call.  ``"semantic"`` — cosine similarity via
-        ``coactra.ai`` embeddings; raises ``ImportError`` if unavailable.
-
-    Returns
-    -------
-    The best-matching member, or ``None`` when nothing matches.
-    """
+    """Return the member whose effective skills best match *query*, or ``None``."""
     if not members:
         return None
 
     if mode == "keyword":
-        return _keyword_match(needs, members)
-    elif mode == "semantic":
-        return _semantic_match(needs, members, embedder=embedder)
-    else:
-        raise ValueError(f"Unknown match mode {mode!r}; expected 'keyword' or 'semantic'")
+        return _keyword_match(query, members)
+    if mode == "semantic":
+        return _semantic_match(query, members, embedder=embedder)
+    raise ValueError(f"Unknown match mode {mode!r}; expected 'keyword' or 'semantic'")
