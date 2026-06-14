@@ -33,9 +33,7 @@ def _spec() -> CompanySpec:
             RoleSpec(id="platform", allowed_tools=("mcp-docker.*", "mcp-kubernetes.*")),
         ),
         departments=(
-            DepartmentSpec(
-                id="infra", name="Infrastructure", allowed_tools=("mcp-vault.*",)
-            ),
+            DepartmentSpec(id="infra", name="Infrastructure", allowed_tools=("mcp-vault.*",)),
             DepartmentSpec(
                 id="hosting",
                 name="Hosting",
@@ -96,9 +94,7 @@ def test_bootstrap_company_is_idempotent_for_members():
     bootstrap_company(_spec(), store=store)
     bootstrap_company(_spec(), store=store)
     org = load_org("dave-technologies", store=store)
-    assert [member.name for member in org.members(recursive=True)].count(
-        "platform-agent"
-    ) == 1
+    assert [member.name for member in org.members(recursive=True)].count("platform-agent") == 1
 
 
 def test_company_spec_rejects_unknown_department_role_and_report_target():
@@ -126,9 +122,7 @@ def test_company_spec_rejects_unknown_department_role_and_report_target():
             name="X",
             departments=(DepartmentSpec("ops", "Ops"),),
             roles=(RoleSpec("manager"),),
-            agents=(
-                AgentSpec("a", department_id="ops", role="manager", reports_to="ghost"),
-            ),
+            agents=(AgentSpec("a", department_id="ops", role="manager", reports_to="ghost"),),
         ).validate()
 
 

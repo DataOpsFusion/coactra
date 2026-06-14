@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from pprint import pprint
 
-from coactra.workflow import Orchestrator, Procedure, Step, WorkOrder, WorkScope
-from coactra.workflow import RunResult
+from coactra.workflow import Orchestrator, Procedure, RunResult, Step
+from coactra.workflow.ledger import WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")
 

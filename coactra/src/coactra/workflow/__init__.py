@@ -10,49 +10,22 @@ from importlib import import_module
 from typing import Any
 
 from coactra._version import distribution_version
+from coactra.workflow.domain.models import Procedure, RunResult, Step
+from coactra.workflow.domain.scope import Scope
+from coactra.workflow.induction import ReasoningTrace, induce, update
 from coactra.workflow.playbook import (
     Approval,
     Playbook,
-    Step as PlaybookStep,
+    ProofBundle,
     StepResult,
-    WorkflowRun as PlaybookRun,
+    VerificationReceipt,
     step,
 )
-
-from coactra.workflow.runtime import (
-    ApprovalStatus,
-    ApprovalStore,
-    AsyncProcedureRunnerAdapter,
-    InMemoryApprovalStore,
-    PendingApproval,
-    ProcedureRunner,
-    RunContext,
-    WorkflowEngine,
-    WorkflowInterrupt,
-    WorkflowNotResumableError,
-    WorkflowRun,
-    WorkflowRunStatus,
-    WorkflowRuntime,
-    make_default_workflow_engine,
-    make_workflow_engine,
-    Capability,
-    CapabilityRegistry,
-    CapabilityValidationError,
-    CapabilityValidationIssue,
-    InMemoryCapabilityRegistry,
-    ToolInvoker,
-    VerificationResult,
+from coactra.workflow.playbook import (
+    Step as PlaybookStep,
 )
-from coactra.workflow.runtime.handlers import (
-    Approver,
-    AutoApprove,
-    Collaborator,
-    Escalation,
-    EscalationRouter,
-    EscalationUnresolved,
-    NullCollaborator,
-    RejectAll,
-    TerminalHumanRouter,
+from coactra.workflow.playbook import (
+    WorkflowRun as PlaybookRun,
 )
 from coactra.workflow.promotion import (
     CandidateStatus,
@@ -60,7 +33,7 @@ from coactra.workflow.promotion import (
     ProcedureCandidate,
     ProcedureVersion,
 )
-from coactra.workflow.induction import ReasoningTrace, induce, update
+from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
 
 try:
     from coactra.workflow.backends.langgraph import LangGraphEngine
@@ -75,14 +48,7 @@ except ImportError as exc:  # pragma: no cover - only when langgraph is not inst
 
 
 try:
-    from coactra.workflow.backends.durable_langgraph import (
-        DurableLangGraphEngine,
-        build_graph,
-        check_done_criteria,
-        document_from_procedure,
-        run_workflow,
-        verify_done_criteria,
-    )
+    from coactra.workflow.backends.durable_langgraph import DurableLangGraphEngine
 except ImportError as exc:  # pragma: no cover - only when optional deps are missing
     _DURABLE_LANGGRAPH_IMPORT_ERROR = exc
 
@@ -92,77 +58,67 @@ except ImportError as exc:  # pragma: no cover - only when optional deps are mis
                 "DurableLangGraphEngine requires the langgraph dependency"
             ) from _DURABLE_LANGGRAPH_IMPORT_ERROR
 
-    def _missing_durable_langgraph(*args, **kwargs):
-        raise ImportError(
-            "Durable LangGraph helpers require the langgraph dependency"
-        ) from _DURABLE_LANGGRAPH_IMPORT_ERROR
-
-    build_graph = _missing_durable_langgraph
-    check_done_criteria = _missing_durable_langgraph
-    document_from_procedure = _missing_durable_langgraph
-    run_workflow = _missing_durable_langgraph
-    verify_done_criteria = _missing_durable_langgraph
-
-
-from coactra.workflow.domain.models import Procedure, RunResult, Step
-from coactra.workflow.domain.scope import Scope
-from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
-from coactra.workflow.routing import (
-    TenantProcedureStoreRouter,
-    TenantWorkflowEngineRouter,
-)
-from coactra.workflow.ledger import (
-    AgentSpec,
-    ApprovalRequest,
-    Artifact,
-    ArtifactPart,
-    ArtifactRef,
-    Assignment,
-    Attempt,
-    AttemptStatus,
-    AuditContext,
-    Budget,
-    CapabilityDescriptor,
-    CapabilityRequirement,
-    CapabilitySet,
-    Checkpoint,
-    Deadline,
-    Decision,
-    DecisionOutcome,
-    ElicitationRequest,
-    EventEnvelope,
-    ExecutionPlan,
-    ExecutionReceipt,
-    InMemoryWorkStore,
-    InvalidTransitionError,
-    Lease,
-    LeaseError,
-    Provenance,
-    ResumeToken,
-    RetryPolicy,
-    Scope as WorkScope,
-    SkillSpec,
-    SqlWorkStore,
-    TenantWorkStoreRouter,
-    WorkError,
-    WorkManager,
-    WorkNotFoundError,
-    WorkOrder,
-    WorkStatus,
-    WorkStore,
-    WorkStoreReport,
-    check_work_store_contract,
-)
-from coactra.workflow.ledger_facade import (
-    DurableOrchestrationResult,
-    DurableOrchestrator,
-    OrchestrationResult,
-    Orchestrator,
-    ProcedureNotFoundError,
-    WorkflowEngineRequiredError,
-)
 
 __version__ = distribution_version()
+
+_LAZY_RUNTIME_EXPORTS = frozenset(
+    {
+        "ApprovalStatus",
+        "ApprovalStore",
+        "AsyncProcedureRunnerAdapter",
+        "InMemoryApprovalStore",
+        "PendingApproval",
+        "ProcedureRunner",
+        "RunContext",
+        "WorkflowEngine",
+        "WorkflowInterrupt",
+        "WorkflowNotResumableError",
+        "WorkflowRun",
+        "WorkflowRunStatus",
+        "WorkflowRuntime",
+        "make_default_workflow_engine",
+        "make_workflow_engine",
+        "Capability",
+        "CapabilityRegistry",
+        "CapabilityValidationError",
+        "CapabilityValidationIssue",
+        "InMemoryCapabilityRegistry",
+        "ToolInvoker",
+        "VerificationResult",
+    }
+)
+
+_LAZY_HANDLER_EXPORTS = frozenset(
+    {
+        "Approver",
+        "AutoApprove",
+        "Collaborator",
+        "Escalation",
+        "EscalationRouter",
+        "EscalationUnresolved",
+        "NullCollaborator",
+        "RejectAll",
+        "TerminalHumanRouter",
+    }
+)
+
+_LAZY_ROUTING_EXPORTS = frozenset(
+    {
+        "TenantProcedureStoreRouter",
+        "TenantWorkflowEngineRouter",
+    }
+)
+
+_LAZY_LEDGER_FACADE_EXPORTS = frozenset(
+    {
+        "DurableOrchestrationResult",
+        "DurableOrchestrator",
+        "OrchestrationResult",
+        "Orchestrator",
+        "ProcedureNotFoundError",
+        "WorkflowEngineRequiredError",
+    }
+)
 
 __all__ = [
     "__version__",
@@ -171,6 +127,8 @@ __all__ = [
     "PlaybookStep",
     "step",
     "StepResult",
+    "VerificationReceipt",
+    "ProofBundle",
     "Approval",
     "PlaybookRun",
     "Scope",
@@ -178,13 +136,6 @@ __all__ = [
     "Procedure",
     "RunResult",
     "RunContext",
-    "Capability",
-    "CapabilityRegistry",
-    "CapabilityValidationError",
-    "CapabilityValidationIssue",
-    "InMemoryCapabilityRegistry",
-    "ToolInvoker",
-    "VerificationResult",
     "ProcedureRunner",
     "WorkflowEngine",
     "WorkflowRun",
@@ -201,11 +152,6 @@ __all__ = [
     "InMemoryApprovalStore",
     "LangGraphEngine",
     "DurableLangGraphEngine",
-    "build_graph",
-    "run_workflow",
-    "document_from_procedure",
-    "check_done_criteria",
-    "verify_done_criteria",
     "ReasoningTrace",
     "induce",
     "update",
@@ -226,56 +172,28 @@ __all__ = [
     "InMemoryProcedurePromotionStore",
     "TenantProcedureStoreRouter",
     "TenantWorkflowEngineRouter",
-    "AgentSpec",
-    "ApprovalRequest",
-    "Artifact",
-    "ArtifactPart",
-    "ArtifactRef",
-    "Assignment",
-    "Attempt",
-    "AttemptStatus",
-    "AuditContext",
-    "Budget",
-    "CapabilityDescriptor",
-    "CapabilityRequirement",
-    "CapabilitySet",
-    "Checkpoint",
-    "Deadline",
-    "Decision",
-    "DecisionOutcome",
     "DurableOrchestrationResult",
     "DurableOrchestrator",
-    "ElicitationRequest",
-    "EventEnvelope",
-    "ExecutionPlan",
-    "ExecutionReceipt",
-    "InMemoryWorkStore",
-    "InvalidTransitionError",
-    "Lease",
-    "LeaseError",
     "OrchestrationResult",
     "Orchestrator",
     "ProcedureNotFoundError",
-    "Provenance",
-    "ResumeToken",
-    "RetryPolicy",
-    "SkillSpec",
-    "SqlWorkStore",
-    "TenantWorkStoreRouter",
-    "WorkError",
-    "WorkManager",
-    "WorkNotFoundError",
-    "WorkOrder",
-    "WorkScope",
-    "WorkStatus",
-    "WorkStore",
-    "WorkStoreReport",
     "WorkflowEngineRequiredError",
-    "check_work_store_contract",
 ]
 
 
 def __getattr__(name: str) -> Any:
     if name == "Workflow":
         return getattr(import_module("coactra.agent.workflow"), name)
+    if name in _LAZY_RUNTIME_EXPORTS:
+        runtime = import_module("coactra.workflow.runtime")
+        return getattr(runtime, name)
+    if name in _LAZY_HANDLER_EXPORTS:
+        handlers = import_module("coactra.workflow.runtime.handlers")
+        return getattr(handlers, name)
+    if name in _LAZY_ROUTING_EXPORTS:
+        routing = import_module("coactra.workflow.routing")
+        return getattr(routing, name)
+    if name in _LAZY_LEDGER_FACADE_EXPORTS:
+        ledger_facade = import_module("coactra.workflow.ledger_facade")
+        return getattr(ledger_facade, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,4 +1,5 @@
 """Default ReasoningStore: in-process, tenant-partitioned, bounded + quality-filtered."""
+
 from __future__ import annotations
 
 from coactra.ai.replay.models import ReasoningTrace

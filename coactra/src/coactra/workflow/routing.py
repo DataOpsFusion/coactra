@@ -1,4 +1,5 @@
 """Tenant-routed orchestration backends for hard physical silo isolation."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -39,7 +40,9 @@ class TenantWorkflowEngineRouter(TenantRouter[WorkflowEngine]):
         self._tenant_by_thread: dict[str, str] = {}
 
     async def start(self, procedure, state, ctx, *, thread_id=None) -> WorkflowRun:
-        run = await self.for_tenant(ctx.scope.tenant_id).start(procedure, state, ctx, thread_id=thread_id)
+        run = await self.for_tenant(ctx.scope.tenant_id).start(
+            procedure, state, ctx, thread_id=thread_id
+        )
         self._tenant_by_thread[run.thread_id] = ctx.scope.tenant_id
         return run
 

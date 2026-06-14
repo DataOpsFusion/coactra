@@ -19,6 +19,7 @@ import tempfile
 from collections.abc import Mapping, Sequence
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.models import CapabilityManifest, ExecOptions, ExecResult
@@ -139,7 +140,7 @@ class Workspace:
         for path in self.list():
             if not path.startswith(prefix):
                 continue
-            relative = path[len(prefix):]
+            relative = path[len(prefix) :]
             if "/" in relative:
                 continue
             try:
@@ -173,6 +174,12 @@ class Workspace:
         if self._ephemeral:
             shutil.rmtree(self.root, ignore_errors=True)
 
+    def __enter__(self) -> Workspace:
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()
+
 
 def open_workspace(
     *,
@@ -187,7 +194,7 @@ def open_workspace(
     Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
     ephemeral=True uses a throwaway temp dir cleaned up on close(). Local subprocesses are
     not jailed; pass allow_unsafe_local_exec=True only for trusted local development.
-    When local exec is enabled without an explicit policy, a conservative allowlist is used.
+    Local command execution requires an explicit policy.
     """
     from coactra.workspace.backends.local import LocalFilesystemBackend
 
@@ -196,7 +203,7 @@ def open_workspace(
     else:
         base = base_dir or ".fleet-workspaces"
     if allow_unsafe_local_exec and policy is None:
-        policy = CliPolicy.safe_default()
+        raise ValueError("allow_unsafe_local_exec=True requires an explicit CliPolicy")
     backend = LocalFilesystemBackend(
         base_dir=base,
         allow_unsafe_exec=allow_unsafe_local_exec,

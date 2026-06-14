@@ -5,6 +5,7 @@ candidate's *verified* track record. Proven traces (high quality) earn a lower b
 traces that have failed must clear a higher bar. The boundary moves as outcomes
 accumulate via ReasoningTrace.record(...)/quality.
 """
+
 from __future__ import annotations
 
 from coactra.ai.replay.models import ReasoningTrace

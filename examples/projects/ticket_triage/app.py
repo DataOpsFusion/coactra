@@ -1,4 +1,4 @@
-"""Ticket triage with Agent, Memory, and durable work."""
+"""Ticket triage with Team, Memory, and durable work."""
 
 from __future__ import annotations
 
@@ -9,10 +9,11 @@ from pprint import pprint
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Agent, Skill
-from coactra.workflow import WorkScope, WorkManager, WorkOrder
-from coactra.workflow.ledger import Artifact, ArtifactPart
-from coactra.memory import Memory, Scope as MemoryScope, make_backend
+from coactra import Skill, Team
+from coactra.memory import Memory, make_backend
+from coactra.memory import Scope as MemoryScope
+from coactra.workflow.ledger import Artifact, ArtifactPart, WorkManager, WorkOrder
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 WORK_SCOPE = WorkScope(tenant_id="acme", namespace="support-tickets")
 MEMORY_SCOPE = MemoryScope(tenant="acme", namespace="support", agent="helpdesk")
@@ -24,7 +25,9 @@ def ticket_key(ticket_id: str) -> str:
 
 
 def triage_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
-    return ModelResponse(parts=[TextPart("Rotate the API key, restart the worker, and verify auth logs.")])
+    return ModelResponse(
+        parts=[TextPart("Rotate the API key, restart the worker, and verify auth logs.")]
+    )
 
 
 def build_memory() -> Memory:
@@ -59,12 +62,12 @@ async def triage_ticket(
 ) -> dict[str, object]:
     memory = memory or build_memory()
     work = work or WorkManager()
-    agent = await Agent.create(
-        model=FunctionModel(triage_model),
+    team = Team.local(model=FunctionModel(triage_model), tenant_id="acme", namespace="support")
+    agent = await team.add_agent(
         name="helpdesk-agent",
-        tenant="acme",
         auth="dev-token",
         skills=[Skill(id="support.triage", description="Triage support tickets")],
+        expose=True,
     )
 
     prior = recall_fix(memory, issue)

@@ -1,9 +1,10 @@
 """Default durable workflow runtime selection.
 
-Coactra owns the stable ``WorkflowEngine`` boundary. LangGraph is the default
-agentic runtime when installed; Temporal and Prefect are explicit named adapters
-for harder durable-execution deployments.
+Coactra owns the stable ``WorkflowEngine`` boundary. It ships a small default
+engine; LangGraph, Temporal, and Prefect are explicit adapters for graph
+execution or harder durable-execution deployments.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -20,9 +21,9 @@ WorkflowRuntime = Literal["default", "langgraph", "local", "temporal", "prefect"
 def make_default_workflow_engine(**kwargs: Any) -> WorkflowEngine:
     """Build the default durable workflow engine.
 
-    The default is the checkpointed LangGraph adapter because Coactra workflows
-    are agent/tool/human-interrupt shaped. Install ``coactra[langgraph]``
-    for this path, or inject another ``WorkflowEngine`` explicitly.
+    The default is Coactra's small in-process durable engine. Hosts that need
+    Temporal, Prefect, or LangGraph-scale execution can inject another
+    ``WorkflowEngine`` explicitly.
     """
 
     return make_workflow_engine("langgraph", **kwargs)
@@ -50,8 +51,8 @@ def make_workflow_engine(
             )
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise ImportError(
-                "the default workflow runtime requires coactra[langgraph]; "
-                "install that extra or inject a WorkflowEngine explicitly"
+                "the default workflow runtime is unavailable; "
+                "inject a WorkflowEngine explicitly"
             ) from exc
         return DurableLangGraphEngine(**kwargs)
 
@@ -60,7 +61,7 @@ def make_workflow_engine(
             raise ValueError('runtime="local" requires runner=...')
         if kwargs:
             names = ", ".join(sorted(kwargs))
-            raise TypeError(f'unsupported local runtime options: {names}')
+            raise TypeError(f"unsupported local runtime options: {names}")
         return AsyncProcedureRunnerAdapter(runner)
 
     if selected == "temporal":

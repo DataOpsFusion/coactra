@@ -17,6 +17,7 @@ considered authoritative and returned by ``find()``.
 ``promote(name)`` — transition a candidate to promoted status.
 ``save_candidate(playbook)`` — register a new candidate playbook.
 """
+
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
@@ -29,6 +30,7 @@ __all__ = ["PlaybookStore", "InMemoryPlaybookStore"]
 # ---------------------------------------------------------------------------
 # Protocol
 # ---------------------------------------------------------------------------
+
 
 @runtime_checkable
 class PlaybookStore(Protocol):
@@ -66,6 +68,7 @@ _PROMOTED = "promoted"
 def _tokenise(text: str) -> set[str]:
     """Split *text* on whitespace and hyphens, lowercase all tokens."""
     import re
+
     return {t.lower() for t in re.split(r"[\s\-]+", text) if t}
 
 

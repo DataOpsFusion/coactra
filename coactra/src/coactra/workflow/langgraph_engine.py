@@ -1,4 +1,4 @@
-"""Compatibility import for the default LangGraph backend."""
+"""Compatibility import for the optional LangGraph backend."""
 
 from coactra.workflow.backends.langgraph import LangGraphEngine
 

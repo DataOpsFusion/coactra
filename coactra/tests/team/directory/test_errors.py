@@ -1,6 +1,6 @@
+from coactra.errors import ConfigError
 from coactra.team.directory import CrossTenantError
 from coactra.team.directory.errors import MissingExtraError
-from coactra.errors import ConfigError
 
 
 def test_cross_tenant_error_is_value_error():

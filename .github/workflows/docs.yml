@@ -1,5 +1,8 @@
 name: Docs
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, dev]
@@ -15,9 +18,6 @@ on:
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
@@ -26,6 +26,7 @@ jobs:
   build:
     name: Build docs
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository

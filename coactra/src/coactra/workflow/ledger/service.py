@@ -134,7 +134,9 @@ class WorkManager:
         order.status = WorkStatus.claimed
         order.assignment = Assignment(worker=worker, assigned_at=now)
         order.lease = lease
-        saved = self._save_and_emit(order, "coactra.workflow.claimed", worker=worker, lease_id=lease.id)
+        saved = self._save_and_emit(
+            order, "coactra.workflow.claimed", worker=worker, lease_id=lease.id
+        )
         return saved.lease  # type: ignore[return-value]
 
     def heartbeat(self, lease: Lease, scope: Scope, *, lease_seconds: int = 300) -> Lease:
@@ -213,9 +215,8 @@ class WorkManager:
             raise InvalidTransitionError("only paused work can be resumed")
         if order.pending_request is not None:
             raise InvalidTransitionError("resolve the pending request before resuming")
-        if token is not None:
-            if order.checkpoint is None or order.checkpoint.token != token:
-                raise InvalidTransitionError("resume token does not match latest checkpoint")
+        if token is not None and (order.checkpoint is None or order.checkpoint.token != token):
+            raise InvalidTransitionError("resume token does not match latest checkpoint")
         order.status = WorkStatus.queued
         order.lease = None
         order.assignment = None
@@ -264,7 +265,9 @@ class WorkManager:
         order.status = WorkStatus.completed
         order.lease = None
         order.assignment = None
-        return self._save_and_emit(order, "coactra.workflow.completed", artifact_ids=[a.id for a in artifacts])
+        return self._save_and_emit(
+            order, "coactra.workflow.completed", artifact_ids=[a.id for a in artifacts]
+        )
 
     def fail(self, lease: Lease, scope: Scope, *, error: str, retry: bool = True) -> WorkOrder:
         order = self.get(lease.work_id, scope)
@@ -404,7 +407,9 @@ class WorkManager:
         if order.status in TERMINAL_STATUSES:
             raise InvalidTransitionError(f"work order is already {order.status.value}")
 
-    def _require_lease(self, order: WorkOrder, lease: Lease, *, allow_expired: bool = False) -> Lease:
+    def _require_lease(
+        self, order: WorkOrder, lease: Lease, *, allow_expired: bool = False
+    ) -> Lease:
         current = order.lease
         if current is None or current.id != lease.id or current.worker != lease.worker:
             raise LeaseError("lease does not own this work order")

@@ -1,9 +1,10 @@
 """Durable approval records for interrupt-and-resume workflow engines."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
@@ -12,10 +13,10 @@ from coactra.workflow.domain.scope import Scope
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class ApprovalStatus(str, Enum):
+class ApprovalStatus(StrEnum):
     pending = "pending"
     approved = "approved"
     rejected = "rejected"

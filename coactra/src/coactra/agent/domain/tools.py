@@ -35,5 +35,5 @@ class MCPServer(BaseModel):
 
 
 def mcp(url: str, *, name: str | None = None, auth: object | None = None) -> MCPServer:
-    """Tag a remote MCP server so Agent.create(tools=[...]) expands it as a toolset."""
+    """Tag a remote MCP server so Team-built agents can expand it as a toolset."""
     return MCPServer(url=url, name=name, auth=auth)

@@ -12,8 +12,9 @@ Coactra is a library suite. The host application remains responsible for product
 
 ## A2A Services
 
-- Outbound A2A calls should go through collaboration policy before reaching the transport.
+- Outbound A2A calls should go through `Policy.check(...)` before reaching the transport.
 - Cross-tenant calls should be denied by default.
+- Inbound A2A serving is host-owned: wire the official `a2a-sdk` server APIs and call `await agent.run(message)` in your handler.
 - Inbound A2A services should require a verifier in production.
 - A2A request handlers should authorize requested capability, subject, audience, and tenant before invoking host runtime behavior.
 

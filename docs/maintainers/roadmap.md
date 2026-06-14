@@ -1,36 +1,48 @@
 # Roadmap
 
-The implementation roadmap follows the build order: **Agent core → workspace →
-Team → Workflow**. Each milestone ships independently; the public surface grows
-incrementally as each layer is built.
+The implementation roadmap now follows the alpha-breaking Team-first order:
+**Team spine -> skill-routed workflow -> model resolution -> broader adapters and
+durability**.
 
 **Build order:**
 
-1. **Agent core** — `from coactra import Agent`; `Agent.create(model, tools, memory, workspace, skills, peers, instructions)`; `run / send().stream()`; `agent.card`; litellm routing + thinking-model handling. *(built)*
-2. **workspace** — `Agent.create(workspace=)` surfaces as `read_file`/`write_file`/`list_files`/`run` tools; allow-list gating for `run`.
-3. **Team** — `Team([...])` registry; keyword matcher; same-tenant policy; `match="semantic"` via ai embeddings; `peers=` outbound A2A delegation.
-4. **Workflow** — `Workflow(steps=[...])` + `step()`; triage (`run_goal`); durable engine (LangGraph default); approval pauses; planner + candidate playbooks.
+1. **Team spine** - `Team(scope=..., policy=...)`; explicit catalogs for agents, skills, and workflows; `add_agent()` and `run()` as the main assembly/runtime verbs.
+2. **workspace + memory + peers through Team** - runtime agents still expose file tools, memory bindings, MCP gateway tools, and outbound delegation, but Team owns the construction path.
+3. **Workflow** - `Workflow(steps=[...])` + `step()` using broad `requires_skill` ids, `required_tags`, approval evidence, and policy gates.
+4. **Model resolution** - `team.add_model(...)` and the internal resolver select governed model routes; LiteLLM stays an adapter, not Coactra's identity.
+5. **Durability and external policy** - Temporal/OpenFGA and optional LangGraph integrations remain adapters layered under the same execution model.
 
 **What is built today:**
 
-- `Agent.create(model, name, tenant, gateway, auth, tools, memory, workspace, skills, peers, learned, instructions, output)`
 - `run / send().stream()`
-- `agent.card` and `serve_agent` / `agent.serve()`
-- `Team` (registry + keyword matcher + same-tenant policy)
+- `agent.card` (curated discovery metadata)
+- `Team(scope=..., policy=...)` with explicit catalogs and `add_agent(...)`
 - `peers=` with local Agent objects, string placeholders, and `RemotePeer(...)`
 - `Workflow` / `step()` / `Workflow.run_goal()` with approval pause/resume and checkpoint-store resume
+- broad `requires_skill` workflow routing with `required_tags` disambiguation and fail-closed ambiguity
+- `ProofBundle` / `VerificationReceipt` approval evidence and `approval_only=True` pure human gates
+- `Workflow.code_change(...)` as a thin implement/verify/review builder
+- `team.add_model(...)` as the public route seam with resolver internals behind it
+- Outbound A2A via `coactra.agent.adapters.OfficialA2ATransport`
+
+**Delegated to host / external libraries:**
+
+- pydantic-ai `Model` instances and provider strings, plus eventual LiteLLM-backed route execution
+- OAuth client-credentials fetch/refresh (`authlib`, `httpx-oauth`)
+- Inbound A2A Starlette apps (`a2a-sdk` server APIs)
 
 **Still directional:**
 
 - Fleet registry/discovery for remote A2A endpoints
 - OpenFGA/AuthZEN policy adapters
 - Automatic learning loop around reflection, promotion, replay, and advertisement
+- Workflow candidate promotion that emits typed verifier-role metadata directly
 
 The authoritative source for the phased plan, milestone gates, and implementation
 details is the implementation plan spec:
 
-**[design/2026-06-06-implementation-plan-agent-core.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-implementation-plan-agent-core.md)**
+**[design/2026-06-09-team-first-alpha-work-orders.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-09-team-first-alpha-work-orders.md)**
 
-The system vision that sets the three-noun target:
+The system vision that sets the Team-first target:
 
 **[design/2026-06-06-coactra-vision.md](https://github.com/DataOpsFusion/coactra/blob/main/design/2026-06-06-coactra-vision.md)**

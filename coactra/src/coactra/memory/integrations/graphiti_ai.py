@@ -82,7 +82,7 @@ def _loads_json_object(text: str) -> dict[str, Any]:
         start = candidate.find("{")
         end = candidate.rfind("}")
         if start < 0 or end <= start:
-            raise ValueError("Graphiti expected a JSON object from coactra.ai.ask")
+            raise ValueError("Graphiti expected a JSON object from coactra.ai.ask") from None
         parsed = json.loads(candidate[start : end + 1])
     if not isinstance(parsed, dict):
         raise ValueError("Graphiti expected a JSON object from coactra.ai.ask")
@@ -153,9 +153,7 @@ class GraphitiAIClient(LLMClient):
         )
         defaults = dict(client_defaults)
         defaults.setdefault("temperature", temperature)
-        need_client_cls = ai_client is None or (
-            small_ai_client is None and small_model is not None
-        )
+        need_client_cls = ai_client is None or (small_ai_client is None and small_model is not None)
         client_cls = _coactra_client_cls() if need_client_cls else None
         if ai_client is None:
             if model is None:

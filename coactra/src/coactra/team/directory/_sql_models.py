@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 try:
-    from sqlalchemy import Column, JSON, MetaData
+    from sqlalchemy import JSON, Column, MetaData
     from sqlalchemy.orm import registry as _Registry
     from sqlmodel import Field, SQLModel
 except ImportError as exc:  # pragma: no cover - base install gate
     from coactra.errors import MissingExtraError
 
     raise MissingExtraError(
-        "directory SQLModel entities require coactra[team]; "
-        "install with: pip install coactra[team]"
+        "directory SQLModel entities require coactra[team]; install with: pip install coactra[team]"
     ) from exc
 
 # Private MetaData / registry for this library's tables.
@@ -38,7 +37,7 @@ class OrgModel(SQLModel, registry=org_registry):
     metadata = org_metadata
 
 
-class MemberKind(str, Enum):
+class MemberKind(StrEnum):
     human = "human"
     service = "service"
     agent = "agent"
@@ -78,7 +77,7 @@ class Seat(OrgModel, table=True):
     permissions: list[str] = Field(default_factory=list, sa_column=Column(JSON))
 
 
-class MemberStatus(str, Enum):
+class MemberStatus(StrEnum):
     active = "active"
     suspended = "suspended"
     archived = "archived"
@@ -118,7 +117,7 @@ class ReportingEdge(OrgModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     tenant_id: str = Field(index=True, foreign_key="tenant.tenant_id")
-    seat_id: int          # the subordinate seat
+    seat_id: int  # the subordinate seat
     reports_to_seat_id: int  # the seat it escalates to
 
 

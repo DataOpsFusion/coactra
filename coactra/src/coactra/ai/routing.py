@@ -1,4 +1,5 @@
 """Tenant-routed reasoning stores for hard physical silo isolation."""
+
 from __future__ import annotations
 
 from typing import Any

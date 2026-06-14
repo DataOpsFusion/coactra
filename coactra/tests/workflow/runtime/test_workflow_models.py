@@ -59,7 +59,9 @@ def test_run_result_holds_path_and_output():
 
 
 def test_step_reports_explicit_targets() -> None:
-    step = Step(id="route", kind="branch", condition="ok", if_true="yes", if_false="no", next="done")
+    step = Step(
+        id="route", kind="branch", condition="ok", if_true="yes", if_false="no", next="done"
+    )
 
     assert step.target_ids() == ("done", "yes", "no")
 

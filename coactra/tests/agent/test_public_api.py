@@ -32,8 +32,6 @@ def test_public_surface_is_stable_root_api():
         "check_token_exchanger_contract",
         "InProcessExchanger",
         # async collaboration
-        "CollaborationPolicy",
-        "AllowSameTenant",
         "AsyncA2ATransportPort",
         "AsyncNullTransport",
         "AsyncPolicyGatedCollaborator",
@@ -55,6 +53,7 @@ def test_public_surface_is_stable_root_api():
         "Status",
         "AgentRuntimePort",
         "PydanticAIRuntime",
+        "MCPServer",
         "mcp",
     }
     assert set(a.__all__) == expected

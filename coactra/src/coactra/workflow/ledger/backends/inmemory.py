@@ -23,9 +23,12 @@ class InMemoryWorkStore:
             actual = current.version if current is not None else 0
             if actual != expected_version:
                 raise ConflictError(
-                    f"stale work order {order.id!r}: expected version {expected_version}, got {actual}"
+                    f"stale work order {order.id!r}: "
+                    f"expected version {expected_version}, got {actual}"
                 )
-        stored = order.model_copy(deep=True, update={"version": (current.version + 1) if current else 1})
+        stored = order.model_copy(
+            deep=True, update={"version": (current.version + 1) if current else 1}
+        )
         self._orders[stored.id] = stored
         return stored.model_copy(deep=True)
 

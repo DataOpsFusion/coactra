@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from coactra.workflow import WorkScope, WorkOrder
 from coactra.workflow.ledger import (
     AgentSpec,
     Artifact,
@@ -10,6 +9,7 @@ from coactra.workflow.ledger import (
     ArtifactRef,
     EventEnvelope,
     SkillSpec,
+    WorkOrder,
 )
 from coactra.workflow.ledger.adapters import (
     DaprDispatcher,
@@ -21,6 +21,7 @@ from coactra.workflow.ledger.adapters import (
     to_a2a_artifact,
     to_cloudevent,
 )
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Struct:
@@ -214,6 +215,7 @@ def test_cloudevents_converter_uses_sdk_constructor(monkeypatch):
     assert converted.attributes["specversion"] == "1.0"
     assert converted.data == {}
 
+
 class Span:
     def __init__(self):
         self.events = []
@@ -342,9 +344,7 @@ def test_fsspec_artifact_store_rejects_nested_reference_paths():
     fs = MemoryFS()
     store = FsspecArtifactStore("memory://coactra", fs=fs)
     scope = WorkScope(tenant_id="acme", namespace="support")
-    reference = ArtifactRef(
-        uri="memory://coactra/acme/support/artifacts/../private/report.json"
-    )
+    reference = ArtifactRef(uri="memory://coactra/acme/support/artifacts/../private/report.json")
 
     with pytest.raises(ValueError, match="scoped artifact envelope"):
         store.get(reference, scope)

@@ -95,9 +95,7 @@ class SqliteOrgStore:
             if seat_id is not None:
                 self._require_in_tenant(s, Seat, seat_id, tenant_id, "seat_id")
             if department_id is not None:
-                self._require_in_tenant(
-                    s, Department, department_id, tenant_id, "department_id"
-                )
+                self._require_in_tenant(s, Department, department_id, tenant_id, "department_id")
             s.add(
                 Membership(
                     tenant_id=tenant_id,
@@ -216,14 +214,10 @@ class SqliteOrgStore:
             s.refresh(policy_ref)
             return policy_ref
 
-    def policy_ref(
-        self, tenant_id: str, name: str, version: int | None = None
-    ) -> PolicyRef | None:
+    def policy_ref(self, tenant_id: str, name: str, version: int | None = None) -> PolicyRef | None:
         """version=None => the current (highest) version; otherwise that exact version."""
         with Session(self._engine) as s:
-            stmt = select(PolicyRef).where(
-                PolicyRef.tenant_id == tenant_id, PolicyRef.name == name
-            )
+            stmt = select(PolicyRef).where(PolicyRef.tenant_id == tenant_id, PolicyRef.name == name)
             if version is not None:
                 stmt = stmt.where(PolicyRef.version == version)
             else:
@@ -254,7 +248,7 @@ class SqliteOrgStore:
                 ).all()
             )
 
-    def node(self, tenant_id: str, id: int) -> Department | None:
+    def node(self, tenant_id: str, id: int) -> Department | None:  # noqa: A002
         with Session(self._engine) as s:
             dept = s.get(Department, id)
             if dept is None or dept.tenant_id != tenant_id:
@@ -289,15 +283,9 @@ class SqliteOrgStore:
             frontier = new
         return ids
 
-    def memberships(
-        self, tenant_id: str, node_id: int, recursive: bool = False
-    ) -> list[Member]:
+    def memberships(self, tenant_id: str, node_id: int, recursive: bool = False) -> list[Member]:
         with Session(self._engine) as s:
-            scope = (
-                self._descendant_ids(s, tenant_id, node_id)
-                if recursive
-                else {node_id}
-            )
+            scope = self._descendant_ids(s, tenant_id, node_id) if recursive else {node_id}
             rows = s.exec(
                 select(Member)
                 .join(Membership, Membership.member_id == Member.id)
@@ -310,28 +298,18 @@ class SqliteOrgStore:
 
     def directory(self, tenant_id: str) -> Directory:
         with Session(self._engine) as s:
-            nodes = list(
-                s.exec(
-                    select(Department).where(Department.tenant_id == tenant_id)
-                ).all()
-            )
-            members = list(
-                s.exec(select(Member).where(Member.tenant_id == tenant_id)).all()
-            )
+            nodes = list(s.exec(select(Department).where(Department.tenant_id == tenant_id)).all())
+            members = list(s.exec(select(Member).where(Member.tenant_id == tenant_id)).all())
             seat_by_member: dict[int, Seat] = {}
             node_by_member: dict[int, int | None] = {}
-            for ms in s.exec(
-                select(Membership).where(Membership.tenant_id == tenant_id)
-            ).all():
+            for ms in s.exec(select(Membership).where(Membership.tenant_id == tenant_id)).all():
                 node_by_member[ms.member_id] = ms.department_id
                 if ms.seat_id is not None:
                     seat = s.get(Seat, ms.seat_id)
                     if seat is not None:
                         seat_by_member[ms.member_id] = seat
             grants_by_node: dict[int, set[str]] = {}
-            for g in s.exec(
-                select(NodeGrant).where(NodeGrant.tenant_id == tenant_id)
-            ).all():
+            for g in s.exec(select(NodeGrant).where(NodeGrant.tenant_id == tenant_id)).all():
                 grants_by_node.setdefault(g.node_id, set()).add(g.action)
             overrides_by_member: dict[int, dict[str, str]] = {}
             for o in s.exec(
@@ -345,7 +323,9 @@ class SqliteOrgStore:
             escalation_routes = list(
                 s.exec(select(EscalationRoute).where(EscalationRoute.tenant_id == tenant_id)).all()
             )
-            policy_refs = list(s.exec(select(PolicyRef).where(PolicyRef.tenant_id == tenant_id)).all())
+            policy_refs = list(
+                s.exec(select(PolicyRef).where(PolicyRef.tenant_id == tenant_id)).all()
+            )
             return Directory(
                 tenant_id=tenant_id,
                 nodes=nodes,
@@ -401,9 +381,7 @@ class SqliteOrgStore:
             ).all()
             return set(rows)
 
-    def set_override(
-        self, tenant_id: str, member_id: int, action: str, effect: str
-    ) -> None:
+    def set_override(self, tenant_id: str, member_id: int, action: str, effect: str) -> None:
         with Session(self._engine) as s:
             self._require_in_tenant(
                 s, Member, member_id, tenant_id, "member_id", suffix="; override refused"
@@ -449,7 +427,13 @@ class SqliteOrgStore:
             s.commit()
 
     def set_member_directory_fields(
-        self, tenant_id: str, member_id: int, *, seniority: int, created_by: str | None, approved_by: str | None
+        self,
+        tenant_id: str,
+        member_id: int,
+        *,
+        seniority: int,
+        created_by: str | None,
+        approved_by: str | None,
     ) -> None:
         with Session(self._engine) as s:
             member = self._require_in_tenant(s, Member, member_id, tenant_id, "member_id")

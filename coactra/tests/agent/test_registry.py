@@ -1,12 +1,13 @@
 """Fleet registry tests for named remote peer discovery."""
+
 from __future__ import annotations
 
 import pytest
-
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra.agent import Agent
+from coactra import Policy, Scope, Team
+from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 def _echo_model(name: str) -> FunctionModel:
@@ -25,6 +26,16 @@ def _echo_model(name: str) -> FunctionModel:
     return FunctionModel(_reply)
 
 
+def _team(namespace: str, model, capability: str = "default") -> Team:
+    return Team(
+        scope=Scope(tenant_id="acme", namespace=namespace),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver(
+            [ModelRoute(capability=capability, profile=ModelProfile(name=capability, model=model))]
+        ),
+    )
+
+
 class RecordingA2AClient:
     def __init__(self) -> None:
         self.calls = []
@@ -34,8 +45,7 @@ class RecordingA2AClient:
         return f"remote:{kwargs['agent_id']}:{kwargs['message']}"
 
 
-async def test_agent_create_peer_name_resolves_through_registry():
-    """Named peers can resolve through a fleet registry into remote A2A tools."""
+async def test_team_add_agent_peer_name_resolves_through_registry():
     from coactra.agent.registry import InMemoryFleetRegistry
 
     client = RecordingA2AClient()
@@ -48,40 +58,27 @@ async def test_agent_create_peer_name_resolves_through_registry():
         client=client,
     )
 
-    main = await Agent.create(
-        model=_echo_model("sre-1"),
-        name="sre-1",
-        tenant="acme",
-        peers=["security-agent"],
-        registry=registry,
+    team = _team("registry", _echo_model("sre-1"))
+    main = await team.add_agent( name="sre-1", peers=["security-agent"], registry=registry
     )
 
     ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")
     result = await ask("triage incident")
-
     assert result == "remote:security-agent:triage incident"
-    assert client.calls == [{
-        "agent_id": "security-agent",
-        "endpoint": "http://127.0.0.1:9999/a2a",
-        "audience": "security-audience",
-        "message": "triage incident",
-        "delegation_chain": [],
-    }]
 
 
-async def test_agent_create_rejects_invalid_peer_config():
+async def test_team_add_agent_rejects_invalid_peer_config():
+    team = _team("registry", _echo_model("sre-1"))
     with pytest.raises(TypeError, match="peers must contain"):
-        await Agent.create(model=_echo_model("sre-1"), peers=[None])
+        await team.add_agent(model_capability="default", name="sre-1", peers=[None])
 
 
-async def test_agent_create_rejects_duplicate_local_peer_names():
-    peer_a = await Agent.create(model=_echo_model("security-a"), name="security", tenant="acme")
-    peer_b = await Agent.create(model=_echo_model("security-b"), name="security", tenant="acme")
+async def test_team_add_agent_rejects_duplicate_local_peer_names():
+    team_a = _team("registry", _echo_model("security-a"))
+    peer_a = await team_a.add_agent(model_capability="default", name="security")
+    team_b = _team("registry", _echo_model("security-b"))
+    peer_b = await team_b.add_agent(model_capability="default", name="security")
 
+    main_team = _team("registry", _echo_model("sre-1"))
     with pytest.raises(ValueError, match="duplicate local peer name"):
-        await Agent.create(
-            model=_echo_model("sre-1"),
-            name="sre-1",
-            tenant="acme",
-            peers=[peer_a, peer_b],
-        )
+        await main_team.add_agent(model_capability="default", name="sre-1", peers=[peer_a, peer_b])

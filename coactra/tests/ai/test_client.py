@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel
 
-from coactra.ai.client import ask, structured, LiteLLMCompleter, make_completer, Client
+from coactra.ai.client import Client, LiteLLMCompleter, ask, make_completer, structured
 
 
 def test_ask_passes_through_to_completer():
@@ -55,8 +55,12 @@ def test_completer_falls_back_to_reasoning_field():
 
 
 def test_completer_reasoning_in_model_extra():
-    msg = SimpleNamespace(content="", reasoning_content=None, reasoning=None,
-                          model_extra={"reasoning_content": "from model_extra"})
+    msg = SimpleNamespace(
+        content="",
+        reasoning_content=None,
+        reasoning=None,
+        model_extra={"reasoning_content": "from model_extra"},
+    )
     resp = {"choices": [{"message": msg}]}
     with patch("coactra.ai.completion.client.litellm.completion", return_value=resp):
         out = LiteLLMCompleter().complete("openai/x", [{"role": "user", "content": "x"}])
@@ -88,7 +92,9 @@ def test_structured_defaults_to_json_mode():
 
     fake_client = MagicMock()
     fake_client.chat.completions.create.return_value = Person(name="Ada")
-    with patch("coactra.ai.completion.client.instructor.from_litellm", return_value=fake_client) as ffl:
+    with patch(
+        "coactra.ai.completion.client.instructor.from_litellm", return_value=fake_client
+    ) as ffl:
         structured(Person, "who?", model="openai/qwen3.6-plus")
     # default mode must be JSON (thinking-model-safe)
     _, kwargs = ffl.call_args
@@ -130,7 +136,7 @@ def test_structured_tools_reraises_non_tool_choice_error():
     with patch("coactra.ai.completion.client.instructor.from_litellm", return_value=tools_client):
         try:
             structured(Person, "who?", model="openai/x", mode=_inst.Mode.TOOLS)
-            assert False, "should have re-raised"
+            raise AssertionError("should have re-raised")
         except Exception as e:
             assert "unrelated" in str(e)
 

@@ -1,8 +1,9 @@
 """Default EmbeddingFn over litellm.embedding + numpy cosine."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:  # annotation only — no runtime dep on replay.models (avoids a cycle)
     from coactra.ai.replay.models import ReasoningTrace

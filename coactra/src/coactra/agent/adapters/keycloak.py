@@ -4,6 +4,7 @@ The raw subject token is sent only to the authorization server's token endpoint.
 returned ``ExchangedIdentity`` stores the fresh exchanged access token and the immutable
 actor chain; it never stores or forwards the original bearer credential.
 """
+
 from __future__ import annotations
 
 import base64
@@ -67,7 +68,9 @@ def _post_form_stdlib(url: str, form: dict[str, str], headers: dict[str, str]) -
         raise TokenExchangeError(f"token exchange failed: {exc}") from exc
 
 
-async def _post_form_async(url: str, form: dict[str, str], headers: dict[str, str]) -> dict[str, Any]:
+async def _post_form_async(
+    url: str, form: dict[str, str], headers: dict[str, str]
+) -> dict[str, Any]:
     try:
         import httpx
     except ImportError as exc:  # pragma: no cover - optional extra path
@@ -132,9 +135,11 @@ class KeycloakExchanger:
             scopes=grant.requested_scopes,
         )
         chain: Hop | None = None
-        for actor in [*grant.delegation_chain, grant.actor]:
+        actors = [actor for actor in [*grant.delegation_chain, grant.actor] if actor]
+        for actor in actors:
             chain = Hop(subject=actor, actor=actor, prev=chain)
-        assert chain is not None
+        if chain is None:
+            raise TokenExchangeError("delegation grant must include an actor")
         return ExchangedIdentity(
             token=token,
             subject=grant.actor,
@@ -170,7 +175,9 @@ class KeycloakExchanger:
         if scopes:
             form["scope"] = " ".join(scopes)
         target_audience = audience or self._audience
-        actor_token = self._actor_token_factory() if self._actor_token_factory else self._actor_token
+        actor_token = (
+            self._actor_token_factory() if self._actor_token_factory else self._actor_token
+        )
         if actor_token:
             form["actor_token"] = actor_token
             form["actor_token_type"] = _ACCESS_TOKEN
@@ -229,9 +236,11 @@ class AsyncKeycloakExchanger:
             scopes=grant.requested_scopes,
         )
         chain: Hop | None = None
-        for actor in [*grant.delegation_chain, grant.actor]:
+        actors = [actor for actor in [*grant.delegation_chain, grant.actor] if actor]
+        for actor in actors:
             chain = Hop(subject=actor, actor=actor, prev=chain)
-        assert chain is not None
+        if chain is None:
+            raise TokenExchangeError("delegation grant must include an actor")
         return ExchangedIdentity(
             token=token,
             subject=grant.actor,

@@ -1,7 +1,9 @@
 """Public runtime protocols for agent execution."""
+
 from __future__ import annotations
 
-from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
+from collections.abc import AsyncIterator, Callable
+from typing import Any, Protocol, runtime_checkable
 
 from coactra.agent.events import Event, RunResult
 

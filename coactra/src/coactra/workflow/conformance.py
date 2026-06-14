@@ -1,4 +1,5 @@
 """Reusable conformance checks for ``WorkflowEngine`` implementations."""
+
 from __future__ import annotations
 
 from coactra.workflow.domain.models import Procedure, Step

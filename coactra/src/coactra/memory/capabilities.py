@@ -11,10 +11,10 @@ from enum import Enum, auto
 
 
 class Capability(Enum):
-    STORE = auto()             # can persist/retrieve items at all (baseline)
-    LEXICAL_RECALL = auto()    # token/substring matching
+    STORE = auto()  # can persist/retrieve items at all (baseline)
+    LEXICAL_RECALL = auto()  # token/substring matching
     VECTOR_EMBEDDING = auto()  # semantic similarity via embeddings
-    GRAPH_EDGES = auto()       # typed relationships between items
-    MEMORY_BLOCK = auto()      # Letta-style self-edited blocks
-    TEMPORAL = auto()          # bitemporal validity (Graphiti-style)
-    PROVENANCE = auto()        # preserves item lineage
+    GRAPH_EDGES = auto()  # typed relationships between items
+    MEMORY_BLOCK = auto()  # Letta-style self-edited blocks
+    TEMPORAL = auto()  # bitemporal validity (Graphiti-style)
+    PROVENANCE = auto()  # preserves item lineage

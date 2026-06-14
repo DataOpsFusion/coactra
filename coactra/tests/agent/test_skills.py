@@ -2,14 +2,15 @@
 
 TDD order: RED (import fails), then GREEN after skills.py is written.
 """
+
 from __future__ import annotations
 
 from coactra.agent.skills import Skill, build_agent_card, normalize_skills
 
-
 # ---------------------------------------------------------------------------
 # 1. normalize_skills — string shorthand
 # ---------------------------------------------------------------------------
+
 
 def test_normalize_skills_from_string() -> None:
     """A plain string becomes a single Skill with id='general'."""
@@ -23,6 +24,7 @@ def test_normalize_skills_from_string() -> None:
 # ---------------------------------------------------------------------------
 # 2. normalize_skills — list of Skill + dict; tags/scopes preserved as tuples
 # ---------------------------------------------------------------------------
+
 
 def test_normalize_skills_from_list() -> None:
     """List of Skill and dict objects normalises to 2 Skills with tuple tags/scopes."""
@@ -51,6 +53,7 @@ def test_normalize_skills_from_list() -> None:
 # ---------------------------------------------------------------------------
 # 3. build_agent_card — A2A shape, curated only, NO credentials/tokens/tools
 # ---------------------------------------------------------------------------
+
 
 def test_build_agent_card_shape_and_security() -> None:
     """Agent Card contains curated skill metadata; has no creds, no raw tool schema."""

@@ -1,10 +1,18 @@
 """Tests for top-level coactra imports and output= alias."""
-from pydantic_ai.models.function import FunctionModel, AgentInfo
-from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+
 from pydantic import BaseModel
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
-from coactra import Agent, RemotePeer, Run, mcp  # noqa: F401  — top-level import under test
+import coactra
+from coactra import (
+    Agent,
+    RemotePeer,
+    Run,
+    Scope,
+)  # noqa: F401
+from coactra.agent import MCPServer, mcp
 
 
 def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
@@ -15,42 +23,48 @@ class MyOutput(BaseModel):
     answer: str
 
 
+async def _make_agent(*, model, tools=None):
+    return await Agent.create(model=model, tools=tools, name="agent-under-test")
+
+
 async def test_toplevel_import():
-    """from coactra import Agent, Run must work."""
     assert Agent is not None
     assert RemotePeer is not None
     assert Run is not None
-    assert mcp is not None
+    assert Scope is not None
+    assert coactra.__version__
 
 
 async def test_toplevel_run():
-    """Agent imported from coactra top-level runs offline."""
-    agent = await Agent.create(model=FunctionModel(_final))
+    agent = await _make_agent(model=FunctionModel(_final))
     result = await agent.run("hi")
     assert result == "hello"
     await agent.aclose()
 
 
 async def test_output_alias():
-    """`output=` kwarg is accepted and returns a typed object."""
-    agent = await Agent.create(model=TestModel())
+    agent = await _make_agent(model=TestModel())
     result = await agent.run("give me an answer", output=MyOutput)
     assert isinstance(result, MyOutput)
     await agent.aclose()
 
 
 def test_mcp_helper_creates_remote_tool_tag():
-    """mcp(url) is the public tag for additive remote MCP servers."""
     server = mcp("https://tools.example/mcp", name="extra")
     assert server.url == "https://tools.example/mcp"
     assert server.name == "extra"
 
 
-async def test_agent_create_accepts_mcp_helper_tool():
-    """Agent.create expands mcp(url) tool tags into additive MCP toolsets."""
+def test_mcpserver_constructor_creates_remote_tool_tag():
+    server = MCPServer(url="https://tools.example/mcp", name="extra")
+    assert server.url == "https://tools.example/mcp"
+    assert server.name == "extra"
+
+
+async def test_team_add_agent_accepts_mcp_helper_tool():
     from pydantic_ai.mcp import MCPToolset
 
-    agent = await Agent.create(
+    agent = await _make_agent(
         model=FunctionModel(_final),
         tools=[mcp("https://tools.example/mcp", name="extra")],
     )
@@ -58,3 +72,36 @@ async def test_agent_create_accepts_mcp_helper_tool():
     assert isinstance(agent._runtime._mcp_toolsets[0], MCPToolset)
     assert agent._tools == []
     await agent.aclose()
+
+
+async def test_team_add_agent_accepts_mcpserver_tool():
+    from pydantic_ai.mcp import MCPToolset
+
+    agent = await _make_agent(
+        model=FunctionModel(_final),
+        tools=[MCPServer(url="https://tools.example/mcp", name="extra")],
+    )
+    assert len(agent._runtime._mcp_toolsets) == 1
+    assert isinstance(agent._runtime._mcp_toolsets[0], MCPToolset)
+    await agent.aclose()
+
+
+async def test_agent_create_builds_one_model_agent():
+    agent = await Agent.create(model=FunctionModel(_final), name="solo-agent")
+    try:
+        result = await agent.run("hi")
+    finally:
+        await agent.aclose()
+
+    assert result == "hello"
+    assert agent._name == "solo-agent"
+
+
+async def test_agent_local_aliases_create():
+    agent = await Agent.local(model=FunctionModel(_final), name="local-agent")
+    try:
+        result = await agent.run("hi")
+    finally:
+        await agent.aclose()
+
+    assert result == "hello"

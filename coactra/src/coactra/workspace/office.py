@@ -85,9 +85,7 @@ def validate_status(text: str) -> StatusSchema:
     try:
         data = yaml.safe_load(match.group(1))
     except yaml.YAMLError as exc:
-        raise StatusValidationError(
-            f"STATUS.md frontmatter is not valid YAML: {exc}"
-        ) from exc
+        raise StatusValidationError(f"STATUS.md frontmatter is not valid YAML: {exc}") from exc
     try:
         return StatusSchema.model_validate(data)
     except ValidationError as exc:

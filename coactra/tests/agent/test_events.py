@@ -1,5 +1,9 @@
 from coactra.agent.events import (
-    Assistant, ToolCall, ToolResult, Usage, RunResult,
+    Assistant,
+    RunResult,
+    ToolCall,
+    ToolResult,
+    Usage,
 )
 
 
@@ -7,9 +11,10 @@ def test_events_are_frozen_and_carry_identity():
     ev = Assistant(text="hi", run_id="r1", seq=3)
     assert ev.text == "hi" and ev.run_id == "r1" and ev.seq == 3
     import dataclasses
+
     try:
         ev.text = "no"  # frozen
-        assert False, "expected FrozenInstanceError"
+        raise AssertionError("expected FrozenInstanceError")
     except dataclasses.FrozenInstanceError:
         pass
 

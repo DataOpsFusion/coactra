@@ -7,15 +7,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from coactra.workflow.ledger import (
-    Decision,
-    DecisionOutcome,
-    Lease,
-    WorkManager,
-    WorkOrder,
-    WorkStatus,
-)
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 from coactra.workflow import (
     ApprovalStore,
     InMemoryApprovalStore,
@@ -32,6 +23,15 @@ from coactra.workflow import (
     make_default_workflow_engine,
 )
 from coactra.workflow.domain.scope import Scope as WorkflowScope
+from coactra.workflow.ledger import (
+    Decision,
+    DecisionOutcome,
+    Lease,
+    WorkManager,
+    WorkOrder,
+    WorkStatus,
+)
+from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class ProcedureNotFoundError(LookupError):
@@ -68,9 +68,7 @@ class Orchestrator:
         self.work = work or WorkManager()
         self.procedures = procedures or InMemoryProcedureStore()
         self.engine = engine
-        self.context_factory = context_factory or (
-            lambda scope: RunContext(scope=scope)
-        )
+        self.context_factory = context_factory or (lambda scope: RunContext(scope=scope))
 
     def submit(self, order: WorkOrder) -> WorkOrder:
         return self.work.submit(order)
@@ -88,9 +86,7 @@ class Orchestrator:
         lease_seconds: int = 300,
     ) -> OrchestrationResult:
         if self.engine is None:
-            raise WorkflowEngineRequiredError(
-                "procedure execution requires an injected engine"
-            )
+            raise WorkflowEngineRequiredError("procedure execution requires an injected engine")
         order = self.work.get(work_id, scope)
         if not order.procedure:
             raise ProcedureNotFoundError("work order does not name a procedure")
@@ -100,14 +96,10 @@ class Orchestrator:
             raise ProcedureNotFoundError(
                 f"procedure {order.procedure!r} not found in scope {workflow_scope.key!r}"
             )
-        lease = self.work.claim(
-            work_id, scope, worker=worker, lease_seconds=lease_seconds
-        )
+        lease = self.work.claim(work_id, scope, worker=worker, lease_seconds=lease_seconds)
         self.work.start(lease, scope)
         try:
-            run = self.engine.run(
-                procedure, state or {}, self.context_factory(workflow_scope)
-            )
+            run = self.engine.run(procedure, state or {}, self.context_factory(workflow_scope))
         except Exception as exc:
             self.work.fail(lease, scope, error=str(exc), retry=False)
             raise
@@ -128,8 +120,8 @@ class DurableOrchestrationResult(BaseModel):
     """Work-order view of one async durable-engine transition."""
 
     order: WorkOrder
-    run: "WorkflowRun"
-    approval: "PendingApproval | None" = None
+    run: WorkflowRun
+    approval: PendingApproval | None = None
 
 
 class DurableOrchestrator:
@@ -137,20 +129,18 @@ class DurableOrchestrator:
 
     def __init__(
         self,
-        engine: "WorkflowEngine | None" = None,
+        engine: WorkflowEngine | None = None,
         work: WorkManager | None = None,
         *,
         procedures: ProcedureStore | None = None,
-        approvals: "ApprovalStore | None" = None,
+        approvals: ApprovalStore | None = None,
         context_factory: Callable[[WorkflowScope], RunContext] | None = None,
     ) -> None:
         self.engine = engine or make_default_workflow_engine()
         self.work = work or WorkManager()
         self.procedures = procedures or InMemoryProcedureStore()
         self.approvals = approvals or InMemoryApprovalStore()
-        self.context_factory = context_factory or (
-            lambda scope: RunContext(scope=scope)
-        )
+        self.context_factory = context_factory or (lambda scope: RunContext(scope=scope))
 
     def submit(self, order: WorkOrder) -> WorkOrder:
         return self.work.submit(order)
@@ -169,9 +159,7 @@ class DurableOrchestrator:
         lease_seconds: int = 300,
     ) -> DurableOrchestrationResult:
         procedure, workflow_scope = self._procedure(work_id, scope)
-        lease = self.work.claim(
-            work_id, scope, worker=worker, lease_seconds=lease_seconds
-        )
+        lease = self.work.claim(work_id, scope, worker=worker, lease_seconds=lease_seconds)
         self.work.start(lease, scope)
         try:
             run = await self.engine.start(
@@ -183,9 +171,7 @@ class DurableOrchestrator:
         except Exception as exc:
             self.work.fail(lease, scope, error=str(exc), retry=False)
             raise
-        return self._apply_run(
-            run, lease=lease, scope=scope, workflow_scope=workflow_scope
-        )
+        return self._apply_run(run, lease=lease, scope=scope, workflow_scope=workflow_scope)
 
     async def resume(
         self,
@@ -199,9 +185,7 @@ class DurableOrchestrator:
     ) -> DurableOrchestrationResult:
         order = self.work.get(work_id, scope)
         if order.status != WorkStatus.queued:
-            raise ValueError(
-                "resolve an interrupted approval before resuming workflow work"
-            )
+            raise ValueError("resolve an interrupted approval before resuming workflow work")
         if order.checkpoint is None:
             raise ValueError("work order has no durable workflow checkpoint")
         if decision is None and order.decisions:
@@ -212,9 +196,7 @@ class DurableOrchestrator:
         if not isinstance(thread_id, str) or not thread_id:
             raise ValueError("work-order checkpoint does not name a workflow thread")
         procedure, workflow_scope = self._procedure(work_id, scope)
-        lease = self.work.claim(
-            work_id, scope, worker=worker, lease_seconds=lease_seconds
-        )
+        lease = self.work.claim(work_id, scope, worker=worker, lease_seconds=lease_seconds)
         self.work.start(lease, scope)
         try:
             run = await self.engine.resume(
@@ -227,9 +209,7 @@ class DurableOrchestrator:
         except Exception as exc:
             self.work.fail(lease, scope, error=str(exc), retry=False)
             raise
-        return self._apply_run(
-            run, lease=lease, scope=scope, workflow_scope=workflow_scope
-        )
+        return self._apply_run(run, lease=lease, scope=scope, workflow_scope=workflow_scope)
 
     def resolve_approval(
         self,
@@ -257,16 +237,12 @@ class DurableOrchestrator:
             scope,
             Decision(
                 request_id=request.id,
-                outcome=DecisionOutcome.accepted
-                if approved
-                else DecisionOutcome.declined,
+                outcome=DecisionOutcome.accepted if approved else DecisionOutcome.declined,
                 decided_by=decided_by,
             ),
         )
 
-    def _procedure(
-        self, work_id: str, scope: WorkScope
-    ) -> tuple[Procedure, WorkflowScope]:
+    def _procedure(self, work_id: str, scope: WorkScope) -> tuple[Procedure, WorkflowScope]:
         order = self.work.get(work_id, scope)
         if not order.procedure:
             raise ProcedureNotFoundError("work order does not name a procedure")
@@ -280,16 +256,14 @@ class DurableOrchestrator:
 
     def _apply_run(
         self,
-        run: "WorkflowRun",
+        run: WorkflowRun,
         *,
-        lease: "Lease",
+        lease: Lease,
         scope: WorkScope,
         workflow_scope: WorkflowScope,
     ) -> DurableOrchestrationResult:
         if run.status is WorkflowRunStatus.completed:
-            return DurableOrchestrationResult(
-                order=self.work.complete(lease, scope), run=run
-            )
+            return DurableOrchestrationResult(order=self.work.complete(lease, scope), run=run)
         checkpoint = self.work.checkpoint(
             lease,
             scope,
@@ -297,16 +271,12 @@ class DurableOrchestrator:
         )
         if run.status is WorkflowRunStatus.failed:
             return DurableOrchestrationResult(
-                order=self.work.fail(
-                    lease, scope, error="durable workflow failed", retry=False
-                ),
+                order=self.work.fail(lease, scope, error="durable workflow failed", retry=False),
                 run=run,
             )
         if run.status is WorkflowRunStatus.interrupted:
             if run.interrupt is None:
-                raise ValueError(
-                    "interrupted workflow run is missing interrupt details"
-                )
+                raise ValueError("interrupted workflow run is missing interrupt details")
             approval = self.approvals.save(
                 PendingApproval(
                     thread_id=run.thread_id,
@@ -328,9 +298,7 @@ class DurableOrchestrator:
             return DurableOrchestrationResult(
                 order=self.work.get(lease.work_id, scope), run=run, approval=approval
             )
-        return DurableOrchestrationResult(
-            order=self.work.get(lease.work_id, scope), run=run
-        )
+        return DurableOrchestrationResult(order=self.work.get(lease.work_id, scope), run=run)
 
 
 # Imports for WorkflowRun / PendingApproval now resolve at the top of the module, so the

@@ -32,7 +32,7 @@ def bind_memory(
     *,
     max_recall: int = 5,
     write_policy: Callable[[str], bool] | None = None,
-) -> "MemoryBinding":
+) -> MemoryBinding:
     """Create a :class:`MemoryBinding` from a backend name or an existing backend.
 
     Args:
@@ -57,7 +57,9 @@ def bind_memory(
         backend: MemoryBackend = _make_backend(spec)
     else:
         backend = spec
-    return MemoryBinding(backend=backend, scope=scope, max_recall=max_recall, write_policy=write_policy)
+    return MemoryBinding(
+        backend=backend, scope=scope, max_recall=max_recall, write_policy=write_policy
+    )
 
 
 # ---------------------------------------------------------------------------

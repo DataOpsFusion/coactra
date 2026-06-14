@@ -52,9 +52,7 @@ def test_cross_tenant_reporting_edge_raises(store):
 
 def test_cross_tenant_assignment_department_raises(store):
     _two_tenants(store)
-    globex_node = store.add_department(
-        "globex", Department(tenant_id="globex", name="Operations")
-    )
+    globex_node = store.add_department("globex", Department(tenant_id="globex", name="Operations"))
     acme_member = store.add_member(
         "acme", Member(tenant_id="acme", name="alice", kind=MemberKind.agent)
     )
@@ -65,14 +63,10 @@ def test_cross_tenant_assignment_department_raises(store):
 
 def test_cross_tenant_place_member_node_raises(store):
     _two_tenants(store)
-    globex_node = store.add_department(
-        "globex", Department(tenant_id="globex", name="Operations")
-    )
+    globex_node = store.add_department("globex", Department(tenant_id="globex", name="Operations"))
     acme_member = store.add_member(
         "acme", Member(tenant_id="acme", name="alice", kind=MemberKind.agent)
     )
 
     with pytest.raises(CrossTenantError):
-        store.place_member(
-            "acme", member_id=acme_member.id, node_id=globex_node.id, seat_id=None
-        )
+        store.place_member("acme", member_id=acme_member.id, node_id=globex_node.id, seat_id=None)
