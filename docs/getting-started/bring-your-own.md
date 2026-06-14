@@ -23,4 +23,6 @@ team.add_model("tool-agent", my_model, api_base=api_base, api_key=api_key)
 agent = await team.add_agent("tool-agent", model_capability="tool-agent", gateway=gateway)
 ```
 
-`model_capability=` selects a named route. Normal users should prefer `model=` or `team.add_model(...)` instead of constructing routing internals.
+`model_capability=` selects a named route. Normal users should prefer `Team.local(...)`,
+per-agent `model=...`, or `team.add_model(...)` instead of constructing routing
+internals.
