@@ -1,7 +1,7 @@
 """Local procedure execution context and synchronous runner boundary.
 
 ``ProcedureRunner`` is the small run-to-completion seam implemented by the local
-LangGraph adapter. Durable runtimes implement the async ``WorkflowEngine`` contract from
+local Procedure runner. Durable runtimes implement the async ``WorkflowEngine`` contract from
 ``runtime.durable`` instead: start/resume with a stable thread id.
 """
 

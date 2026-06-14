@@ -42,29 +42,21 @@ Use the root surface for application code. Use lower-level modules only for adap
 import asyncio
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+from coactra import Team
 from coactra.agent import MCPServer
 
 
 async def main() -> None:
-    team = Team(
-        scope=Scope.local(),
-        policy=Policy.permissive(),
-        model_resolver=ModelResolver([
-            ModelRoute(
-                capability="existing-stack",
-                profile=ModelProfile(
-                    name="existing-stack",
-                    model="openai/qwen3.6-plus",
-                    api_base="https://opencode.ai/zen/go/v1",
-                    api_key=os.environ["OC_KEY"],
-                ),
-            )
-        ]),
+    team = Team.local(
+        tenant_id="local",
+        namespace="default",
+        capability="existing-stack",
+        model="openai/qwen3.6-plus",
+        api_base="https://opencode.ai/zen/go/v1",
+        api_key=os.environ["OC_KEY"],
     )
     agent = await team.add_agent(
         name="existing-stack-agent",
-        model_capability="existing-stack",
         tools=[MCPServer(url="https://tools.example/mcp", name="tools")],
         memory="inprocess",
         workspace="./desk",
