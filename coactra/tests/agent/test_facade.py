@@ -3,8 +3,7 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCall
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
-from coactra import Policy, Scope, Team
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:

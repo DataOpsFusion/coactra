@@ -4,16 +4,9 @@ from __future__ import annotations
 
 from pprint import pprint
 
-from coactra.workflow.ledger import (
-    Artifact,
-    ArtifactPart,
-    Decision,
-    DecisionOutcome,
-    WorkManager,
-    WorkOrder,
-    WorkStatus,
-)
+from coactra.workflow.ledger import WorkManager, WorkOrder
 from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra.workflow.ledger import Artifact, ArtifactPart, Decision, DecisionOutcome, WorkStatus
 
 SCOPE = WorkScope(tenant_id="acme", namespace="change-management")
 
@@ -42,9 +35,7 @@ def run_change_with_approval(work: WorkManager, change_id: str) -> dict[str, obj
     completed = work.complete(
         lease,
         SCOPE,
-        artifacts=[
-            Artifact(name="approval-record", parts=[ArtifactPart(kind="text", text=change_id)])
-        ],
+        artifacts=[Artifact(name="approval-record", parts=[ArtifactPart(kind="text", text=change_id)])],
     )
     return {
         "work_id": completed.id,

@@ -6,13 +6,12 @@ import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope
 from coactra.agent.checkpoint import InMemoryCheckpointStore, run_from_state
 from coactra.agent.planner import PlannedPlan, PlannedStep
 from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.agent.skills import Skill
 from coactra.agent.workflow import Workflow
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.team import Team
 from coactra.workflow.playbook import Playbook, ProofBundle, VerificationReceipt, step
 
@@ -79,11 +78,13 @@ async def team():
     )
     await team.add_agent(
         name="cert-agent",
+        model_capability="cert",
         skills=[Skill("cert.rotate", description="rotate TLS certs")],
         expose=True,
     )
     await team.add_agent(
         name="deploy-agent",
+        model_capability="deploy",
         skills=[Skill("infra.deploy", description="deploy services")],
         expose=True,
     )
@@ -182,11 +183,13 @@ async def test_run_goal_without_client_derives_planner_client_from_team_model_co
     )
     cert = await team.add_agent(
         name="cert-agent",
+        model_capability="cert",
         skills=[Skill("cert.rotate", description="rotate TLS certs")],
         expose=True,
     )
     deploy = await team.add_agent(
         name="deploy-agent",
+        model_capability="deploy",
         skills=[Skill("infra.deploy", description="deploy services")],
         expose=True,
     )

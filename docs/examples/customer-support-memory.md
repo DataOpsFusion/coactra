@@ -1,28 +1,79 @@
 # Customer Support Memory
 
-Modern Coactra examples use lazy builders instead of legacy route/profile construction.
+An agent that automatically remembers and recalls past support interactions.
+
+## Demonstrates
+
+- `team.add_agent(memory="graphiti", model_capability=...)`
+- Memory is auto-injected into the model's context
+- `memory="inprocess"` for local/offline development
+
+## Code
 
 ```python
-from coactra import Skill, Team
+import asyncio
+import os
 
-team = Team.local(model="openai:gpt-4.1-mini", tenant_id="acme")
-agent = await team.add_agent(
-    "agent",
-    skills=[Skill("example")],
-    instructions="Be concise and actionable.",
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+
+
+async def handle_ticket(ticket_text: str, customer_id: str) -> str:
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="support-memory",
+                profile=ModelProfile(
+                    name="support-memory",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="support-memory",
+        name="support-agent",
+        auth="dev-token",
+        memory="inprocess",
+        instructions=(
+            "You are a helpful support agent. Use past interactions to give "
+            "consistent, personalised answers."
+        ),
+    )
+    return await agent.run(f"[customer:{customer_id}] {ticket_text}")
+```
+
+## Production Swap
+
+```python
+import os
+
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, StaticToken, Team
+
+team = Team(
+    scope=Scope(tenant_id="acme", namespace="support"),
+    policy=Policy.permissive(),
+    model_resolver=ModelResolver([
+        ModelRoute(
+            capability="support-memory",
+            profile=ModelProfile(
+                name="support-memory",
+                model="openai/qwen3.6-plus",
+                api_base="https://opencode.ai/zen/go/v1",
+                api_key=os.environ["OC_KEY"],
+            ),
+        )
+    ]),
 )
-```
-
-For multiple models:
-
-```python
-fast = await team.add_agent("fast")
-smart = await team.add_agent("smart", model="anthropic:claude-sonnet-4")
-```
-
-For a reusable named route:
-
-```python
-team.add_model("senior", "anthropic:claude-sonnet-4")
-senior = await team.add_agent("senior", model_capability="senior")
+agent = await team.add_agent(
+    model_capability="support-memory",
+    name="support-agent",
+    auth=StaticToken("gateway-token"),
+    gateway="https://gateway/mcp",
+    memory="graphiti",
+    instructions="...",
+)
 ```

@@ -12,10 +12,9 @@ from __future__ import annotations
 import pytest
 from pydantic_ai.models.test import TestModel
 
-from coactra import Policy, Scope, Team, Workflow
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team, Workflow
 from coactra.agent import Agent
 from coactra.agent.skills import Skill
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.workflow import step
 
 
@@ -39,7 +38,6 @@ def _team_with_model(scope: Scope, policy, model) -> Team:
     )
 
 
-
 def test_team_local_builds_default_scope_policy_and_model_route():
     model = TestModel()
 
@@ -50,13 +48,25 @@ def test_team_local_builds_default_scope_policy_and_model_route():
 
 
 @pytest.mark.asyncio
-async def test_team_local_add_agent_needs_only_a_name():
+async def test_team_local_add_agent_uses_default_model_route():
     team = Team.local(model=TestModel(), tenant_id="acme", namespace="lazy")
 
-    agent = await team.add_agent("assistant")
+    agent = await team.add_agent(name="assistant")
 
     assert isinstance(agent, Agent)
     assert team.member("assistant") is agent
+
+
+@pytest.mark.asyncio
+async def test_team_add_model_registers_named_model_route(team_scope, permissive_policy):
+    model = TestModel()
+    team = Team(scope=team_scope, policy=permissive_policy)
+
+    route = team.add_model("smart", model)
+    agent = await team.add_agent(name="smart-agent", model_capability="smart")
+
+    assert route.model is model
+    assert isinstance(agent, Agent)
 
 
 class DelegateOnlyDenyPolicy:
@@ -86,6 +96,7 @@ async def test_add_agent_registers_runtime_and_member_lookup(team_scope, permiss
 
     agent = await team.add_agent(
         name="sre-agent",
+        model_capability="default",
         skills=[Skill("infra.deploy", description="deploy infrastructure")],
         expose=True,
     )
@@ -109,11 +120,13 @@ async def test_match_skill_uses_exact_skill_ids(team_scope, permissive_policy):
     team = _team_with_model(team_scope, permissive_policy, TestModel())
     await team.add_agent(
         name="security-agent",
+        model_capability="default",
         skills=[Skill("cert.rotate", description="rotate TLS certs")],
         expose=True,
     )
     await team.add_agent(
         name="sre-agent",
+        model_capability="default",
         skills=[Skill("infra.deploy", description="deploy infrastructure")],
         expose=True,
     )
@@ -128,6 +141,7 @@ async def test_roster_is_derived_from_team_owned_agents(team_scope, permissive_p
     team = _team_with_model(team_scope, permissive_policy, TestModel())
     await team.add_agent(
         name="security-agent",
+        model_capability="default",
         skills=[Skill("cert.rotate", description="rotate TLS certs")],
         expose=True,
     )
@@ -179,6 +193,7 @@ async def test_team_run_executes_registered_workflow(team_scope, permissive_poli
     team = _team_with_model(team_scope, permissive_policy, TestModel())
     await team.add_agent(
         name="sre-agent",
+        model_capability="default",
         skills=[Skill("infra.deploy", description="deploy infrastructure")],
         expose=True,
     )
@@ -204,11 +219,13 @@ async def test_match_skill_with_required_tags_and_ambiguity(team_scope, permissi
     team = _team_with_model(team_scope, permissive_policy, TestModel())
     await team.add_agent(
         name="python-impl",
+        model_capability="default",
         skills=[Skill("python", tags=["implement", "backend"])],
         expose=True,
     )
     await team.add_agent(
         name="python-security",
+        model_capability="default",
         skills=[Skill("python", tags=["security", "review"])],
         expose=True,
     )
@@ -216,29 +233,3 @@ async def test_match_skill_with_required_tags_and_ambiguity(team_scope, permissi
     assert team.match_skill("python", required_tags=["security"])._name == "python-security"
     with pytest.raises(ValueError):
         team.match_skill("python")
-
-
-@pytest.mark.asyncio
-async def test_add_agent_accepts_per_agent_model_without_route_boilerplate():
-    default_model = TestModel()
-    smart_model = TestModel()
-    team = Team.local(model=default_model, tenant_id="acme", namespace="two-models")
-
-    default_agent = await team.add_agent("default-agent")
-    smart_agent = await team.add_agent("smart-agent", model=smart_model)
-
-    assert default_agent._runtime._model is default_model
-    assert smart_agent._runtime._model is smart_model
-    assert team._agent_specs["smart-agent"].model_capability == "agent:smart-agent"
-
-
-@pytest.mark.asyncio
-async def test_team_add_model_registers_model_route():
-    smart_model = TestModel()
-    team = Team.local(model=TestModel(), tenant_id="acme", namespace="two-models")
-
-    route = team.add_model("smart", smart_model)
-    smart_agent = await team.add_agent("smart-agent", model_capability="smart")
-
-    assert route.model is smart_model
-    assert smart_agent._runtime._model is smart_model

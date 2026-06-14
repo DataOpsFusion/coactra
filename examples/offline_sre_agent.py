@@ -7,7 +7,7 @@ import asyncio
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def sre_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
@@ -21,8 +21,15 @@ def sre_model(messages, info: AgentInfo) -> ModelResponse:  # noqa: ARG001
 
 
 async def main() -> None:
-    team = Team.local(model=FunctionModel(sre_model), tenant_id="acme", namespace="incident")
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="incident"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(capability="sre", profile=ModelProfile(name="sre", model=FunctionModel(sre_model)))
+        ]),
+    )
     agent = await team.add_agent(
+        model_capability="sre",
         name="sre-agent",
         instructions="You are a concise SRE incident assistant.",
     )

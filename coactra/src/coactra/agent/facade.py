@@ -96,66 +96,6 @@ class Agent:
         if close is not None:
             await close()
 
-    @classmethod
-    async def create(
-        cls,
-        *,
-        model: Any,
-        instructions: str | None = None,
-        tools: list[Any] | None = None,
-        runtime: AgentRuntimePort | None = None,
-        api_base: str | None = None,
-        api_key: str | None = None,
-        gateway: str | None = None,
-        auth: Any = None,
-        name: str | None = None,
-        tenant: str | None = None,
-        memory: Any = None,
-        workspace: Any = None,
-        skills: Any = None,
-        expose: bool = False,
-        peers: list | None = None,
-        registry: Any | None = None,
-        learned: Any = None,
-        procedure_engine: Any | None = None,
-        procedure_scope: Any | None = None,
-        allow_unreviewed_learned: bool = False,
-        tracer: Any | None = None,
-        policy: Any | None = None,
-        **defaults: Any,
-    ) -> Agent:
-        """Create a low-ceremony single Agent without constructing a Team."""
-        return await build_agent(
-            model=model,
-            instructions=instructions,
-            tools=tools,
-            runtime=runtime,
-            api_base=api_base,
-            api_key=api_key,
-            gateway=gateway,
-            auth=auth,
-            name=name,
-            tenant=tenant,
-            memory=memory,
-            workspace=workspace,
-            skills=skills,
-            expose=expose,
-            peers=peers,
-            registry=registry,
-            learned=learned,
-            procedure_engine=procedure_engine,
-            procedure_scope=procedure_scope,
-            allow_unreviewed_learned=allow_unreviewed_learned,
-            tracer=tracer,
-            policy=policy,
-            **defaults,
-        )
-
-    @classmethod
-    async def local(cls, **kwargs: Any) -> Agent:
-        """Alias for :meth:`create` for symmetry with ``Team.local``."""
-        return await cls.create(**kwargs)
-
     async def __aenter__(self) -> Agent:
         return self
 

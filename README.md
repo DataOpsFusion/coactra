@@ -11,6 +11,9 @@ from coactra import (
     Agent,
     Decision,
     DecisionOutcome,
+    ModelProfile,
+    ModelResolver,
+    ModelRoute,
     Policy,
     PolicyRequest,
     Scope,
@@ -84,9 +87,9 @@ agent = await team.add_agent(name="planner", model_capability="fast-chat")
 
 `model_capability=` is the governed Team-facing path. Configure named routes with
 `team.add_model(...)`, then register agents against those capabilities. The lower
-level `coactra.model.ModelResolver`, `ModelRoute`, and `ModelProfile` types are
-available for advanced integrations, but normal application code should not need
-to construct them directly.
+level `ModelResolver`, `ModelRoute`, and `ModelProfile` types remain available
+for advanced integrations, but normal application code should not need to
+construct them directly.
 
 ## Add MCP Tools Without Owning The Gateway
 

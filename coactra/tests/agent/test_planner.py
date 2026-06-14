@@ -5,9 +5,8 @@ from __future__ import annotations
 import pytest
 from pydantic_ai.models.test import TestModel
 
-from coactra import Policy, Scope
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope
 from coactra.agent.skills import Skill
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.team import Team
 from coactra.workflow.playbook import Playbook, Step
 
@@ -38,11 +37,13 @@ async def team():
     )
     await team.add_agent(
         name="cert-agent",
+        model_capability="cert",
         skills=[Skill("cert.rotate", description="rotate TLS certificates", tags=["cert", "tls"])],
         expose=True,
     )
     await team.add_agent(
         name="deploy-agent",
+        model_capability="deploy",
         skills=[
             Skill(
                 "infra.deploy",

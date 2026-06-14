@@ -8,13 +8,15 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from coactra import (
     Decision,
     DecisionOutcome,
+    ModelProfile,
+    ModelResolver,
+    ModelRoute,
     Policy,
     PolicyRequest,
     Scope,
     Team,
 )
 from coactra.agent import Agent
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 def _echo_model(name: str) -> FunctionModel:

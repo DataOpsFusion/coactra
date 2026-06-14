@@ -1,28 +1,56 @@
 # Offline Agent SDK
 
-Modern Coactra examples use lazy builders instead of legacy route/profile construction.
+Create an agent with local tools and stream its events — no network model required.
+
+## Demonstrates
+
+- `team.add_agent(model_capability=..., tools=, instructions=)`
+- `agent.send(prompt).stream()`
+- offline model substitution through `ModelResolver`
+
+## Code
 
 ```python
-from coactra import Skill, Team
+import asyncio
 
-team = Team.local(model="openai:gpt-4.1-mini", tenant_id="acme")
-agent = await team.add_agent(
-    "agent",
-    skills=[Skill("example")],
-    instructions="Be concise and actionable.",
-)
-```
+from pydantic_ai.messages import ModelResponse, TextPart
+from pydantic_ai.models.function import FunctionModel
 
-For multiple models:
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
-```python
-fast = await team.add_agent("fast")
-smart = await team.add_agent("smart", model="anthropic:claude-sonnet-4")
-```
 
-For a reusable named route:
+def check_disk(host: str) -> dict:
+    return {"host": host, "used_pct": 78, "free_gb": 22}
 
-```python
-team.add_model("senior", "anthropic:claude-sonnet-4")
-senior = await team.add_agent("senior", model_capability="senior")
+
+def restart_service(host: str, service: str) -> str:
+    return f"Restarted {service} on {host}"
+
+
+def offline_model(messages, info):
+    return ModelResponse(parts=[TextPart("disk is fine; no restart needed")])
+
+
+async def main() -> None:
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="offline"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="offline-sre",
+                profile=ModelProfile(name="offline-sre", model=FunctionModel(offline_model)),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="offline-sre",
+        name="sre-agent",
+        auth="dev-token",
+        tools=[check_disk, restart_service],
+        instructions="You are an SRE agent. Check before you act.",
+    )
+
+    print("Streaming response:")
+    async for event in agent.send("Check disk on web-01 and restart nginx if >80%").stream():
+        print(event)
 ```

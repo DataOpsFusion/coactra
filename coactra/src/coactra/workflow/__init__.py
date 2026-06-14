@@ -109,6 +109,16 @@ _LAZY_ROUTING_EXPORTS = frozenset(
     }
 )
 
+_LAZY_DURABLE_EXPORTS = frozenset(
+    {
+        "build_graph",
+        "run_workflow",
+        "document_from_procedure",
+        "check_done_criteria",
+        "verify_done_criteria",
+    }
+)
+
 _LAZY_LEDGER_FACADE_EXPORTS = frozenset(
     {
         "DurableOrchestrationResult",
@@ -193,6 +203,9 @@ def __getattr__(name: str) -> Any:
     if name in _LAZY_ROUTING_EXPORTS:
         routing = import_module("coactra.workflow.routing")
         return getattr(routing, name)
+    if name in _LAZY_DURABLE_EXPORTS:
+        durable = import_module("coactra.workflow.backends.durable_langgraph")
+        return getattr(durable, name)
     if name in _LAZY_LEDGER_FACADE_EXPORTS:
         ledger_facade = import_module("coactra.workflow.ledger_facade")
         return getattr(ledger_facade, name)

@@ -7,10 +7,9 @@ import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent.auth import BearerAuth, StaticToken
 from coactra.agent.runtime import PydanticAIRuntime
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
@@ -114,6 +113,7 @@ async def test_team_add_agent_accepts_gateway_params() -> None:
         ),
     )
     agent = await team.add_agent(
+        model_capability="default",
         gateway="https://gw/mcp",
         auth=StaticToken("t"),
         name="gateway-agent",
