@@ -91,7 +91,7 @@ Use `AsyncKeycloakExchanger` or a cached async exchanger in async services. Avoi
 
 ## Adapter posture
 
-Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as integration seams, not production backends. Prefer the reference/implemented backends: `SqlWorkStore` over `InMemoryWorkStore`, sandboxed or remote workspaces over local exec, a persistent-checkpointer `DurableLangGraphEngine` with an explicit restart contract, and real token exchange over the in-process exchanger.
+Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as integration seams, not production backends. Prefer the reference/implemented backends: `SqlWorkStore` over `InMemoryWorkStore`, sandboxed or remote workspaces over local exec, an injected host/runtime `WorkflowEngine` for process-restart durability, and real token exchange over the in-process exchanger.
 
 ## Deployment checklist
 
@@ -109,6 +109,4 @@ Treat experimental adapters (e.g. the DBOS/Temporal/Dapr dispatch bridges) as in
 
 ## Capability registry and verification
 
-For production workflows that call tools, register capabilities up front and pass the registry into `DurableLangGraphEngine`. The registry validates that tool nodes reference real tools and that required inputs are present before execution.
-
-Use structured done criteria such as `success`, `not_error`, `equals`, and `cel` instead of checking only that a key exists. `run_workflow` records `_verification` with status, failures, and evidence.
+For production workflows that call tools, register capabilities up front in your host runtime or `WorkflowEngine` adapter. Validate tool names and required inputs before execution, and record verification evidence in the work ledger instead of relying on a best-effort in-memory run result.

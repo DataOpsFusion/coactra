@@ -46,30 +46,20 @@ pip install "coactra[sql]"
 import asyncio
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
-
-resolver = ModelResolver([
-    ModelRoute(
-        capability="triage",
-        profile=ModelProfile(
-            name="triage",
-            model="openai/qwen3.6-plus",
-            api_base="https://opencode.ai/zen/go/v1",
-            api_key=os.environ["OC_KEY"],
-        ),
-    )
-])
+from coactra import Skill, Team
 
 
 async def main() -> None:
-    team = Team(
-        scope=Scope(tenant_id="acme", namespace="support"),
-        policy=Policy.permissive(),
-        model_resolver=resolver,
+    team = Team.local(
+        tenant_id="acme",
+        namespace="support",
+        capability="triage",
+        model="openai/qwen3.6-plus",
+        api_base="https://opencode.ai/zen/go/v1",
+        api_key=os.environ["OC_KEY"],
     )
     agent = await team.add_agent(
         name="triage-agent",
-        model_capability="triage",
         instructions="Use host policy.",
         skills=[Skill("incident", description="triage incidents", tags=["triage"])],
         expose=True,
@@ -84,50 +74,41 @@ asyncio.run(main())
 ## Policy-Gated Model Routes
 
 ```python
+from coactra import Policy, Scope, Team
 from pydantic_ai.models.test import TestModel
 
-resolver = ModelResolver([
-    ModelRoute(
-        capability="fast-chat",
-        profile=ModelProfile(name="default-fast", model=TestModel()),
-    )
-])
 team = Team(
     scope=Scope(tenant_id="acme", namespace="ops"),
     policy=Policy.permissive(),
-    model_resolver=resolver,
 )
+team.add_model("fast-chat", TestModel())
 agent = await team.add_agent(name="planner", model_capability="fast-chat")
 ```
 
-`model_capability=` is the governed Team-facing path. Configure one or more routes on `ModelResolver`, then register agents against named capabilities.
+`model_capability=` is the governed Team-facing path. Configure named routes with
+`team.add_model(...)`, then register agents against those capabilities. The lower
+level `ModelResolver`, `ModelRoute`, and `ModelProfile` types remain available
+for advanced integrations, but normal application code should not need to
+construct them directly.
 
 ## Add MCP Tools Without Owning The Gateway
 
 ```python
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+from coactra import Team
 from coactra.agent import MCPServer
 
-team = Team(
-    scope=Scope(tenant_id="acme", namespace="tools"),
-    policy=Policy.permissive(),
-    model_resolver=ModelResolver([
-        ModelRoute(
-            capability="tool-agent",
-            profile=ModelProfile(
-                name="tool-agent",
-                model="openai/qwen3.6-plus",
-                api_base="https://opencode.ai/zen/go/v1",
-                api_key=os.environ["OC_KEY"],
-            ),
-        )
-    ]),
+team = Team.local(
+    tenant_id="acme",
+    namespace="tools",
+    capability="tool-agent",
+    model="openai/qwen3.6-plus",
+    api_base="https://opencode.ai/zen/go/v1",
+    api_key=os.environ["OC_KEY"],
 )
 agent = await team.add_agent(
     name="tool-agent",
-    model_capability="tool-agent",
     tools=[MCPServer(url="https://gateway.example.com/mcp", name="gateway")],
 )
 ```
@@ -139,22 +120,24 @@ For the primary MCP path, prefer `gateway=` + `auth=` on `team.add_agent(...)`.
 ```python
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team, Workflow
+from coactra import Policy, Scope, Skill, Team, Workflow
 from coactra.workflow import step
 
 team = Team(
     scope=Scope(tenant_id="acme", namespace="release"),
     policy=Policy.permissive(),
-    model_resolver=ModelResolver([
-        ModelRoute(
-            capability="deploy",
-            profile=ModelProfile(name="deploy", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
-        ),
-        ModelRoute(
-            capability="review",
-            profile=ModelProfile(name="review", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
-        ),
-    ]),
+)
+team.add_model(
+    "deploy",
+    model="openai/qwen3.6-plus",
+    api_base="https://opencode.ai/zen/go/v1",
+    api_key=os.environ["OC_KEY"],
+)
+team.add_model(
+    "review",
+    model="openai/qwen3.6-plus",
+    api_base="https://opencode.ai/zen/go/v1",
+    api_key=os.environ["OC_KEY"],
 )
 await team.add_agent(
     name="release-sre",

@@ -5,36 +5,30 @@ use the mature library for each concern and wire it through Coactra's seams.
 
 ## Model Routing
 
-Team-facing model selection is routed through `ModelResolver`:
+Use `Team.local(...)` for one default model route:
 
 ```python
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
+from coactra import Team
 
-team = Team(
-    scope=Scope(tenant_id="acme", namespace="ops"),
-    policy=Policy.permissive(),
-    model_resolver=ModelResolver([
-        ModelRoute(
-            capability="cheap-chat",
-            profile=ModelProfile(
-                name="cheap-chat",
-                model="openai/qwen3.6-plus",
-                api_base="https://opencode.ai/zen/go/v1",
-                api_key=os.environ["OC_KEY"],
-            ),
-        )
-    ]),
+team = Team.local(
+    tenant_id="acme",
+    namespace="ops",
+    capability="cheap-chat",
+    model="openai/qwen3.6-plus",
+    api_base="https://opencode.ai/zen/go/v1",
+    api_key=os.environ["OC_KEY"],
 )
 agent = await team.add_agent(
-    model_capability="cheap-chat",
     name="sre-agent",
     instructions="Be terse.",
 )
 ```
 
-For deterministic or fully local development, point the route at `TestModel()` or `FunctionModel(...)` instead of a live provider.
+For multiple named routes, use `team.add_model(...)` and select one with
+`model_capability=`. For deterministic or fully local development, point the
+route at `TestModel()` or `FunctionModel(...)` instead of a live provider.
 
 ## OAuth / MCP gateway auth
 
@@ -43,25 +37,17 @@ Coactra ships `StaticToken` for dev and pre-fetched bearer tokens:
 ```python
 import os
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, StaticToken, Team
+from coactra import StaticToken, Team
 
-team = Team(
-    scope=Scope(tenant_id="acme", namespace="tools"),
-    policy=Policy.permissive(),
-    model_resolver=ModelResolver([
-        ModelRoute(
-            capability="tool-agent",
-            profile=ModelProfile(
-                name="tool-agent",
-                model="openai/qwen3.6-plus",
-                api_base="https://opencode.ai/zen/go/v1",
-                api_key=os.environ["OC_KEY"],
-            ),
-        )
-    ]),
+team = Team.local(
+    tenant_id="acme",
+    namespace="tools",
+    capability="tool-agent",
+    model="openai/qwen3.6-plus",
+    api_base="https://opencode.ai/zen/go/v1",
+    api_key=os.environ["OC_KEY"],
 )
 agent = await team.add_agent(
-    model_capability="tool-agent",
     name="tool-agent",
     gateway="https://gateway.example/mcp",
     auth=StaticToken("your-token"),

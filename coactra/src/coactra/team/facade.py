@@ -13,9 +13,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from coactra.agent import Agent
 from coactra.agent.skills import Skill, normalize_skills
-from coactra.model import ModelResolver, ModelRoute
+from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.policy import DecisionOutcome, Policy, PolicyRequest
+from coactra.policy import permissive as _permissive_policy
 from coactra.scope import Scope
+from coactra.team.spec import TeamAgentSpec
 
 __all__ = ["Team"]
 
@@ -65,15 +67,52 @@ class Team:
         scope: Scope,
         policy: Policy,
         model_resolver: ModelResolver | None = None,
+        default_model_capability: str | None = None,
     ) -> None:
         self.scope = scope
         self.policy = policy
         self._model_resolver = model_resolver
+        if default_model_capability is None and model_resolver is not None:
+            routes = getattr(model_resolver, "_routes", {})
+            default_model_capability = next(iter(routes), None)
+        self._default_model_capability = default_model_capability
         self._agent_specs: dict[str, _AgentSpec] = {}
         self._agents: dict[str, Agent] = {}
         self._members: dict[str, Agent] = self._agents
         self._skills: dict[str, Skill] = {}
         self._workflows: dict[str, Any] = {}
+
+    @classmethod
+    def local(
+        cls,
+        *,
+        model: Any,
+        tenant_id: str = "local",
+        namespace: str = "default",
+        capability: str = "default",
+        profile_name: str | None = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
+        policy: Policy | None = None,
+        **defaults: Any,
+    ) -> Team:
+        """Create a low-ceremony Team with one default model route."""
+        route = ModelRoute(
+            capability=capability,
+            profile=ModelProfile(
+                name=profile_name or capability,
+                model=model,
+                api_base=api_base,
+                api_key=api_key,
+                defaults=dict(defaults),
+            ),
+        )
+        return cls(
+            scope=Scope(tenant_id=tenant_id, namespace=namespace),
+            policy=policy if policy is not None else _permissive_policy(),
+            model_resolver=ModelResolver([route]),
+            default_model_capability=capability,
+        )
 
     def set_model_resolver(self, resolver: ModelResolver) -> ModelResolver:
         self._model_resolver = resolver
@@ -85,6 +124,30 @@ class Team:
             resolver.register(route)
         self._model_resolver = resolver
         return resolver
+
+    def add_model(
+        self,
+        capability: str,
+        model: Any,
+        *,
+        profile_name: str | None = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
+        **defaults: Any,
+    ) -> ModelRoute:
+        """Register a model route without constructing routing internals by hand."""
+        route = ModelRoute(
+            capability=capability,
+            profile=ModelProfile(
+                name=profile_name or capability,
+                model=model,
+                api_base=api_base,
+                api_key=api_key,
+                defaults=dict(defaults),
+            ),
+        )
+        self.set_model_routes(route)
+        return route
 
     async def add_agent(
         self,
@@ -114,13 +177,17 @@ class Team:
         """Register and build an Agent owned by this Team."""
         if name in self._agent_specs:
             raise ValueError(f"agent {name!r} is already registered")
-        if model_capability is None:
-            raise TypeError("add_agent() requires model_capability=")
+        effective_model_capability = model_capability or self._default_model_capability
+        if effective_model_capability is None:
+            raise TypeError(
+                "add_agent() requires model_capability= or a Team default route; "
+                "use Team.local(model=...) for the low-ceremony path"
+            )
         if self._model_resolver is None:
             raise ValueError("Team has no model_resolver; configure routes before add_agent()")
 
         route = await self._model_resolver.resolve(
-            model_capability,
+            effective_model_capability,
             principal=f"agent:{name}",
             scope=self.scope,
             policy=self.policy,
@@ -135,7 +202,7 @@ class Team:
         spec = _AgentSpec(
             name=name,
             model=resolved_model,
-            model_capability=model_capability,
+            model_capability=effective_model_capability,
             instructions=instructions,
             tools=list(tools or []),
             runtime=runtime,
@@ -314,6 +381,76 @@ class Team:
         if resolved is None:
             raise KeyError(f"unknown workflow {workflow!r}")
         return await resolved.run(self, *args, **kwargs)
+
+
+    @classmethod
+    async def from_spec(
+        cls,
+        *,
+        model: Any,
+        agents: list[TeamAgentSpec] | tuple[TeamAgentSpec, ...],
+        tenant_id: str = "local",
+        namespace: str = "default",
+        capability: str = "default",
+        policy: Policy | None = None,
+        scope: Scope | None = None,
+        model_resolver: ModelResolver | None = None,
+        **defaults: Any,
+    ) -> Team:
+        if scope is not None or model_resolver is not None:
+            team = cls(
+                scope=scope or Scope(tenant_id=tenant_id, namespace=namespace),
+                policy=policy if policy is not None else _permissive_policy(),
+                model_resolver=model_resolver,
+                default_model_capability=capability if model_resolver is not None else None,
+            )
+            if model_resolver is None:
+                team.add_model(capability, model, **defaults)
+                team._default_model_capability = capability
+        else:
+            team = cls.local(
+                model=model,
+                tenant_id=tenant_id,
+                namespace=namespace,
+                capability=capability,
+                policy=policy,
+                **defaults,
+            )
+        for spec in agents:
+            spec_capability = spec.model_capability
+            if spec.model is not None:
+                spec_capability = spec_capability or f"agent:{spec.name}"
+                team.add_model(
+                    spec_capability,
+                    spec.model,
+                    api_base=spec.api_base,
+                    api_key=spec.api_key,
+                    **spec.defaults,
+                )
+            await team.add_agent(
+                name=spec.name,
+                model_capability=spec_capability,
+                instructions=spec.instructions,
+                tools=list(spec.tools),
+                runtime=spec.runtime,
+                api_base=spec.api_base,
+                api_key=spec.api_key,
+                gateway=spec.gateway,
+                auth=spec.auth,
+                memory=spec.memory,
+                workspace=spec.workspace,
+                skills=list(spec.skills),
+                expose=spec.expose,
+                peers=list(spec.peers),
+                registry=spec.registry,
+                learned=spec.learned,
+                procedure_engine=spec.procedure_engine,
+                procedure_scope=spec.procedure_scope,
+                allow_unreviewed_learned=spec.allow_unreviewed_learned,
+                tracer=spec.tracer,
+                **({} if spec.model is not None else spec.defaults),
+            )
+        return team
 
     @staticmethod
     def _workflow_name(workflow: Any) -> str:

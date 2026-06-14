@@ -38,6 +38,37 @@ def _team_with_model(scope: Scope, policy, model) -> Team:
     )
 
 
+def test_team_local_builds_default_scope_policy_and_model_route():
+    model = TestModel()
+
+    team = Team.local(model=model, tenant_id="acme", namespace="lazy")
+
+    assert team.scope == Scope(tenant_id="acme", namespace="lazy")
+    assert team._model_resolver.route("default").model is model
+
+
+@pytest.mark.asyncio
+async def test_team_local_add_agent_uses_default_model_route():
+    team = Team.local(model=TestModel(), tenant_id="acme", namespace="lazy")
+
+    agent = await team.add_agent(name="assistant")
+
+    assert isinstance(agent, Agent)
+    assert team.member("assistant") is agent
+
+
+@pytest.mark.asyncio
+async def test_team_add_model_registers_named_model_route(team_scope, permissive_policy):
+    model = TestModel()
+    team = Team(scope=team_scope, policy=permissive_policy)
+
+    route = team.add_model("smart", model)
+    agent = await team.add_agent(name="smart-agent", model_capability="smart")
+
+    assert route.model is model
+    assert isinstance(agent, Agent)
+
+
 class DelegateOnlyDenyPolicy:
     async def check(self, request):
         if request.action == "model.use":

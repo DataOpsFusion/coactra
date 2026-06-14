@@ -1,4 +1,4 @@
-"""LangGraphEngine — the ONE working default WorkflowEngine.
+"""LangGraphEngine — optional graph-backed Procedure runner.
 
 Control flow is DELEGATED to LangGraph natives, never re-implemented:
   task     -> a graph node running the registered callable
