@@ -1,5 +1,5 @@
 import coactra.model as model_mod
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
+from coactra import ModelProfile, ModelResolver, ModelRoute
 
 
 def test_model_exports_present_on_root_and_module():

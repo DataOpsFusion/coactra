@@ -1,7 +1,7 @@
 # Memory Design
 
 Memory is an **agent capability**, not a standalone domain. You enable it through
-`team.add_agent(memory="graphiti", model=... or model_capability=...)` — the agent auto-recalls
+`team.add_agent(memory="graphiti", model_capability=...)` — the agent auto-recalls
 before each model turn and auto-stores the turn after. Coactra is a pure connector:
 it calls the backend's own `recall()` / `remember()` APIs and never ranks, stores,
 or judges salience itself.

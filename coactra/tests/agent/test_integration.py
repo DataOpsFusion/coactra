@@ -8,9 +8,8 @@ from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
-from coactra import Policy, Scope, Skill, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 from coactra.agent.skills import Skill as SkillDirect
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 def _static_model(text: str) -> FunctionModel:

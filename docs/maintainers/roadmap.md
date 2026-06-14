@@ -9,8 +9,8 @@ durability**.
 1. **Team spine** - `Team(scope=..., policy=...)`; explicit catalogs for agents, skills, and workflows; `add_agent()` and `run()` as the main assembly/runtime verbs.
 2. **workspace + memory + peers through Team** - runtime agents still expose file tools, memory bindings, MCP gateway tools, and outbound delegation, but Team owns the construction path.
 3. **Workflow** - `Workflow(steps=[...])` + `step()` using broad `requires_skill` ids, `required_tags`, approval evidence, and policy gates.
-4. **Model resolution** - `team.add_model(...)` and the internal resolver select governed model routes; LiteLLM stays an adapter, not Coactra's identity.
-5. **Durability and external policy** - Temporal/OpenFGA and optional LangGraph integrations remain adapters layered under the same execution model.
+4. **Model resolution** - `ModelResolver` selects governed model routes; LiteLLM stays an adapter, not Coactra's identity.
+5. **Durability and external policy** - LangGraph/Temporal/OpenFGA remain adapters layered under the same execution model.
 
 **What is built today:**
 
@@ -22,7 +22,7 @@ durability**.
 - broad `requires_skill` workflow routing with `required_tags` disambiguation and fail-closed ambiguity
 - `ProofBundle` / `VerificationReceipt` approval evidence and `approval_only=True` pure human gates
 - `Workflow.code_change(...)` as a thin implement/verify/review builder
-- `team.add_model(...)` as the public route seam with resolver internals behind it
+- `ModelProfile` / `ModelRoute` / `ModelResolver` as the governed model seam
 - Outbound A2A via `coactra.agent.adapters.OfficialA2ATransport`
 
 **Delegated to host / external libraries:**

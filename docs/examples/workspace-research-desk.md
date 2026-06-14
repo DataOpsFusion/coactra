@@ -1,28 +1,48 @@
 # Workspace Research Desk
 
-Modern Coactra examples use lazy builders instead of legacy route/profile construction.
+An agent with a **workspace** — a persistent desk where it can read and write files between tasks and sessions.
+
+## Demonstrates
+
+- `team.add_agent(workspace="./desk", model_capability=...)`
+- Workspace surfaces as tools the model can call directly
+- `run` is allow-listed
+- Persistent notes across sessions
+
+## Code
 
 ```python
-from coactra import Skill, Team
+import asyncio
+import os
 
-team = Team.local(model="openai:gpt-4.1-mini", tenant_id="acme")
-agent = await team.add_agent(
-    "agent",
-    skills=[Skill("example")],
-    instructions="Be concise and actionable.",
-)
-```
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
-For multiple models:
 
-```python
-fast = await team.add_agent("fast")
-smart = await team.add_agent("smart", model="anthropic:claude-sonnet-4")
-```
-
-For a reusable named route:
-
-```python
-team.add_model("senior", "anthropic:claude-sonnet-4")
-senior = await team.add_agent("senior", model_capability="senior")
+async def research_session(topic: str) -> str:
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="research"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="research",
+                profile=ModelProfile(
+                    name="research",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="research",
+        name="research-agent",
+        auth="dev-token",
+        workspace="./desk",
+        instructions=(
+            "You are a research assistant. Use the workspace to take notes, "
+            "store findings, and write a summary file when done."
+        ),
+    )
+    return await agent.run(f"Research {topic} and save a summary to summary.md")
 ```

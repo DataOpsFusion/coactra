@@ -27,6 +27,9 @@ expected = {
     "DecisionOutcome",
     "ErrorCode",
     "MissingExtraError",
+    "ModelProfile",
+    "ModelResolver",
+    "ModelRoute",
     "Policy",
     "PolicyRequest",
     "RemotePeer",
@@ -45,10 +48,6 @@ assert coactra.__version__ != "0.0.0", (
 )
 assert importlib.util.find_spec("coactra.jobs") is None
 assert importlib.util.find_spec("coactra.directory") is None
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
-assert ModelProfile is not None
-assert ModelResolver is not None
-assert ModelRoute is not None
 for module in [
     "coactra.ai",
     "coactra.memory",

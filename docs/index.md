@@ -1,9 +1,8 @@
 # Coactra Docs
 
-Coactra is a block-kit orchestration library for AI workloads. Start small with
-`Agent.create(...)`, grow into `Team.local(...)`, then add explicit `Policy`,
-`Scope`, memory, workspace, MCP, peer delegation, and workflow backends when the
-host needs them.
+Coactra is a composition and persistence library for multi-agent workflows:
+`Team`, `Workflow`, and `WorkManager` are the core; `Agent` is a thin shell over
+pydantic-ai with memory, workspace, MCP, and peer delegation wiring.
 
 Start with the [Quickstart](getting-started/quickstart.md), then use the example
 and production guides when you are ready to wire real backends.
@@ -14,21 +13,18 @@ and production guides when you are ready to wire real backends.
 pip install "coactra[agent]"
 ```
 
-Use extras to add only the backends you need:
+Use extras to add the backends you need:
 
 ```bash
-pip install "coactra[sql]"       # SQL work ledger / stores
-pip install "coactra[graphiti]"  # Graphiti-backed memory
-pip install "coactra[oauth]"     # Keycloak/OAuth token exchange
+pip install "coactra[sql]"
+pip install "coactra[graphiti]"
+pip install "coactra[langgraph]"
 ```
-
-`coactra[langgraph]` remains available for the optional LangGraph adapter, but
-it is no longer required for the default durable workflow engine.
 
 ## Main Guides
 
 - [Quickstart](getting-started/quickstart.md): build a small function-first incident triage app.
-- [Bring Your Own Stack](getting-started/bring-your-own.md): existing models, tools, memory, workspace, and MCP gateway.
+- [Bring Your Own Stack](getting-started/bring-your-own.md): pydantic-ai models, OAuth, and A2A serving without Coactra glue.
 - [Examples](examples/index.md): runnable scripts and sample projects.
 - [API Index](API_INDEX.md): the public API surface.
 - [Production](operations/production.md): SQL work store, scope consistency, auth, and deployment posture.

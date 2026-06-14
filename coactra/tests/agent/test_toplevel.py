@@ -8,9 +8,14 @@ from pydantic_ai.models.test import TestModel
 import coactra
 from coactra import (
     Agent,
+    ModelProfile,
+    ModelResolver,
+    ModelRoute,
+    Policy,
     RemotePeer,
     Run,
     Scope,
+    Team,
 )  # noqa: F401
 from coactra.agent import MCPServer, mcp
 
@@ -24,7 +29,15 @@ class MyOutput(BaseModel):
 
 
 async def _make_agent(*, model, tools=None):
-    return await Agent.create(model=model, tools=tools, name="agent-under-test")
+    resolver = ModelResolver(
+        [ModelRoute(capability="default", profile=ModelProfile(name="default", model=model))]
+    )
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="toplevel"),
+        policy=Policy.permissive(),
+        model_resolver=resolver,
+    )
+    return await team.add_agent(model_capability="default", tools=tools, name="agent-under-test")
 
 
 async def test_toplevel_import():
@@ -84,24 +97,3 @@ async def test_team_add_agent_accepts_mcpserver_tool():
     assert len(agent._runtime._mcp_toolsets) == 1
     assert isinstance(agent._runtime._mcp_toolsets[0], MCPToolset)
     await agent.aclose()
-
-
-async def test_agent_create_builds_one_model_agent():
-    agent = await Agent.create(model=FunctionModel(_final), name="solo-agent")
-    try:
-        result = await agent.run("hi")
-    finally:
-        await agent.aclose()
-
-    assert result == "hello"
-    assert agent._name == "solo-agent"
-
-
-async def test_agent_local_aliases_create():
-    agent = await Agent.local(model=FunctionModel(_final), name="local-agent")
-    try:
-        result = await agent.run("hi")
-    finally:
-        await agent.aclose()
-
-    assert result == "hello"

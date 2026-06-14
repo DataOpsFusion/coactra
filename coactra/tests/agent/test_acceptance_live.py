@@ -17,11 +17,10 @@ import pytest
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from coactra import Policy, Scope, Skill, Team, Workflow
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team, Workflow
 from coactra.agent.checkpoint import InMemoryCheckpointStore
 from coactra.agent.playbook_store import InMemoryPlaybookStore
 from coactra.ai import Client
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.workflow import ProofBundle, VerificationReceipt, step
 
 
@@ -75,6 +74,7 @@ async def test_team_workflow_acceptance():
     )
     security = await team.add_agent(
         name="security-agent",
+        model_capability="security",
         skills=[
             Skill(
                 "cert.rotate",
@@ -86,6 +86,7 @@ async def test_team_workflow_acceptance():
     )
     await team.add_agent(
         name="sre-agent",
+        model_capability="sre",
         skills=[
             Skill(
                 "infra.deploy",

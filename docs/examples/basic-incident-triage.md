@@ -1,28 +1,52 @@
 # Basic Incident Triage
 
-Modern Coactra examples use lazy builders instead of legacy route/profile construction.
+The smallest Coactra application: one Team-owned agent that receives an incident description and returns a triage plan.
+
+## Demonstrates
+
+- `team.add_agent(model_capability=..., tools=, instructions=)`
+- `agent.run(prompt)`
+- plain local tools
+
+## Code
 
 ```python
-from coactra import Skill, Team
+import asyncio
+import os
 
-team = Team.local(model="openai:gpt-4.1-mini", tenant_id="acme")
-agent = await team.add_agent(
-    "agent",
-    skills=[Skill("example")],
-    instructions="Be concise and actionable.",
-)
-```
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
-For multiple models:
 
-```python
-fast = await team.add_agent("fast")
-smart = await team.add_agent("smart", model="anthropic:claude-sonnet-4")
-```
+def get_runbook(service: str) -> str:
+    runbooks = {
+        "nginx": "https://wiki.example.com/runbooks/nginx",
+        "postgres": "https://wiki.example.com/runbooks/postgres",
+    }
+    return runbooks.get(service, "https://wiki.example.com/runbooks/generic")
 
-For a reusable named route:
 
-```python
-team.add_model("senior", "anthropic:claude-sonnet-4")
-senior = await team.add_agent("senior", model_capability="senior")
+async def triage_incident(incident: str) -> str:
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="incident"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="triage",
+                profile=ModelProfile(
+                    name="triage",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    agent = await team.add_agent(
+        model_capability="triage",
+        name="triage-1",
+        auth="dev-token",
+        tools=[get_runbook],
+        instructions="You are a senior SRE. Be brief and actionable.",
+    )
+    return await agent.run(f"Triage this incident: {incident}")
 ```

@@ -6,8 +6,7 @@ import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope, Team
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def _echo_model(name: str) -> FunctionModel:
@@ -59,7 +58,8 @@ async def test_team_add_agent_peer_name_resolves_through_registry():
     )
 
     team = _team("registry", _echo_model("sre-1"))
-    main = await team.add_agent( name="sre-1", peers=["security-agent"], registry=registry
+    main = await team.add_agent(
+        model_capability="default", name="sre-1", peers=["security-agent"], registry=registry
     )
 
     ask = next(t for t in main._tools if t.__name__ == "ask_security_agent")

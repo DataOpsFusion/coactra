@@ -5,10 +5,9 @@ from __future__ import annotations
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent import Agent
 from coactra.agent.domain import AgentRef
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 def _echo_model(name: str):

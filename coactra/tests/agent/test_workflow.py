@@ -15,9 +15,8 @@ import pytest
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope
 from coactra.agent.skills import Skill
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.team import Team
 from coactra.workflow.playbook import ProofBundle, VerificationReceipt
 
@@ -73,11 +72,13 @@ async def team():
     )
     await team.add_agent(
         name="security-agent",
+        model_capability="security",
         skills=[Skill("cert.rotate", description="rotate TLS certs")],
         expose=True,
     )
     await team.add_agent(
         name="sre-agent",
+        model_capability="sre",
         skills=[Skill("infra.deploy", description="redeploy services")],
         expose=True,
     )
@@ -345,11 +346,13 @@ async def test_required_tags_disambiguate_shared_skill():
     )
     await team.add_agent(
         name="security-agent",
+        model_capability="security",
         skills=[Skill("python", tags=["implement", "backend"])],
         expose=True,
     )
     await team.add_agent(
         name="review-agent",
+        model_capability="review",
         skills=[Skill("python", tags=["security", "review"])],
         expose=True,
     )
@@ -391,11 +394,13 @@ async def test_ambiguous_skill_without_tags_fails_closed():
     )
     await team.add_agent(
         name="agent-a",
+        model_capability="a",
         skills=[Skill("python", tags=["backend"])],
         expose=True,
     )
     await team.add_agent(
         name="agent-b",
+        model_capability="b",
         skills=[Skill("python", tags=["security"])],
         expose=True,
     )
@@ -430,6 +435,7 @@ async def test_workflow_checks_policy_at_route_and_execute():
     )
     await team.add_agent(
         name="sre-agent",
+        model_capability="sre",
         skills=[Skill("infra.deploy", tags=["deploy"])],
         expose=True,
     )

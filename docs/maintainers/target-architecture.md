@@ -1,7 +1,7 @@
 # Target Architecture
 
 Coactra's target architecture is **Team · Agent · Workflow** - a small public surface with one
-assembly door. The library wraps mature runtimes (Temporal, LangGraph, Graphiti, mem0,
+assembly door. The library wraps mature runtimes (LangGraph, Temporal, Graphiti, mem0,
 LiteLLM, MCP, A2A) rather than reimplementing them. Coactra owns the policy, tenancy, scope,
 capability roster, and connector contracts that sit above those engines.
 

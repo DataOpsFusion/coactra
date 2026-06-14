@@ -20,6 +20,9 @@ __all__ = [
     "DecisionOutcome",
     "ErrorCode",
     "MissingExtraError",
+    "ModelProfile",
+    "ModelResolver",
+    "ModelRoute",
     "Policy",
     "PolicyRequest",
     "RemotePeer",
@@ -39,7 +42,7 @@ _SKILLS_EXPORTS = frozenset({"Skill"})
 _SCOPE_EXPORTS = frozenset({"Scope"})
 _TEAM_EXPORTS = frozenset({"Team"})
 _WORKFLOW_EXPORTS = frozenset({"Workflow"})
-_MODEL_EXPORTS = frozenset()
+_MODEL_EXPORTS = frozenset({"ModelProfile", "ModelResolver", "ModelRoute"})
 _POLICY_EXPORTS = frozenset({"Policy", "PolicyRequest", "Decision", "DecisionOutcome"})
 _ERROR_EXPORTS = frozenset({"CoactraError", "ErrorCode", "MissingExtraError", "ValidationError"})
 _VERSION_EXPORTS = frozenset({"__version__"})
@@ -50,6 +53,7 @@ _LAZY_EXPORTS = (
     | _SCOPE_EXPORTS
     | _TEAM_EXPORTS
     | _WORKFLOW_EXPORTS
+    | _MODEL_EXPORTS
     | _POLICY_EXPORTS
     | _ERROR_EXPORTS
     | _VERSION_EXPORTS
@@ -75,6 +79,9 @@ def __getattr__(name: str) -> Any:
         return getattr(team, name)
     if name in _WORKFLOW_EXPORTS:
         return getattr(import_module("coactra.agent.workflow"), name)
+    if name in _MODEL_EXPORTS:
+        model = import_module("coactra.model")
+        return getattr(model, name)
     if name in _POLICY_EXPORTS:
         policy = import_module("coactra.policy")
         return getattr(policy, name)

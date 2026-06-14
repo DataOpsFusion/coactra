@@ -22,7 +22,7 @@ def test_cli_init_creates_minimal_project(tmp_path, capsys):
     assert (target / "app.py").exists()
     assert (target / ".env.example").exists()
     assert (target / "README.md").exists()
-    assert "Agent.create" in (target / "app.py").read_text()
+    assert "Team.local" in (target / "app.py").read_text()
     assert "created" in capsys.readouterr().out
 
 

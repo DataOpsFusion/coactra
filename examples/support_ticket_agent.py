@@ -9,7 +9,7 @@ from pprint import pprint
 from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Skill, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 from coactra.workflow.ledger import WorkManager, WorkOrder
 from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
@@ -43,8 +43,15 @@ def open_ticket(work: WorkManager, ticket_id: str, issue: str) -> WorkOrder:
 
 async def handle_ticket(ticket_id: str, issue: str) -> dict[str, object]:
     work = WorkManager()
-    team = Team.local(model=FunctionModel(ticket_model), tenant_id="acme", namespace="support")
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(capability="support-triage", profile=ModelProfile(name="support-triage", model=FunctionModel(ticket_model)))
+        ]),
+    )
     agent = await team.add_agent(
+        model_capability="support-triage",
         name="support-agent",
         auth="dev-token",
         tools=[fetch_ticket],

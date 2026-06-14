@@ -14,8 +14,8 @@ standalone factory door has been removed in the alpha redesign.
 
 **Key principles:**
 
-- `team.add_agent(model=... or model_capability=..., memory=..., workspace=..., skills=..., ...)` is the public construction path
-- Team-facing model choice uses lazy defaults first and named routes for governed hosts
+- `team.add_agent(model_capability=..., memory=..., workspace=..., skills=..., ...)` is the public construction path
+- Team-facing model choice always routes through `ModelResolver`
 - Tools are unified after discovery: local functions and scoped MCP gateway tools enter the same model tool list
 - `gateway=` + `auth=` is the primary MCP path; the token's scopes slice the tool list
 - Memory is automatic: recall fires before the model turn; remember fires after

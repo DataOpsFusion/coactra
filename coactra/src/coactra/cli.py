@@ -42,11 +42,12 @@ def _init(name: str, template: str) -> int:
 
 import asyncio
 
-from coactra import Agent
+from coactra import Team
 
 
 async def main() -> None:
-    agent = await Agent.create(model="openai:gpt-4.1-mini", name="assistant")
+    team = Team.local(model="openai:gpt-4.1-mini")
+    agent = await team.add_agent(name="assistant")
     try:
         print(await agent.run("Say hello from Coactra"))
     finally:

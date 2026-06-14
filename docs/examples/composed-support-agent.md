@@ -1,28 +1,69 @@
 # Composed Support Agent
 
-Modern Coactra examples use lazy builders instead of legacy route/profile construction.
+A support agent with multiple local tools and a structured `Skill` roster so it can be discovered by a Team.
+
+## Demonstrates
+
+- `team.add_agent(model_capability=..., tools=, skills=, memory=, instructions=)`
+- `Skill(id, description, tags, scopes)`
+- `agent.card`
+- Multiple local tools passed as a plain list
+
+## Code
 
 ```python
-from coactra import Skill, Team
+import asyncio
+import os
 
-team = Team.local(model="openai:gpt-4.1-mini", tenant_id="acme")
-agent = await team.add_agent(
-    "agent",
-    skills=[Skill("example")],
-    instructions="Be concise and actionable.",
-)
-```
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 
-For multiple models:
 
-```python
-fast = await team.add_agent("fast")
-smart = await team.add_agent("smart", model="anthropic:claude-sonnet-4")
-```
+def search_knowledge_base(query: str) -> list[str]:
+    return [f"Article: How to fix '{query}'"]
 
-For a reusable named route:
 
-```python
-team.add_model("senior", "anthropic:claude-sonnet-4")
-senior = await team.add_agent("senior", model_capability="senior")
+def escalate_ticket(ticket_id: str, reason: str) -> str:
+    return f"Ticket {ticket_id} escalated: {reason}"
+
+
+def update_ticket_status(ticket_id: str, status: str) -> str:
+    return f"Ticket {ticket_id} set to {status}"
+
+
+async def build_support_agent():
+    team = Team(
+        scope=Scope(tenant_id="acme", namespace="support"),
+        policy=Policy.permissive(),
+        model_resolver=ModelResolver([
+            ModelRoute(
+                capability="tier1-support",
+                profile=ModelProfile(
+                    name="tier1-support",
+                    model="openai/qwen3.6-plus",
+                    api_base="https://opencode.ai/zen/go/v1",
+                    api_key=os.environ["OC_KEY"],
+                ),
+            )
+        ]),
+    )
+    return await team.add_agent(
+        model_capability="tier1-support",
+        name="tier1-support",
+        auth="dev-token",
+        tools=[search_knowledge_base, escalate_ticket, update_ticket_status],
+        memory="inprocess",
+        skills=[
+            Skill(
+                "support",
+                description="Handle tier-1 customer support tickets",
+                tags=["helpdesk", "tier1"],
+                scopes=["tickets:read", "tickets:write"],
+            )
+        ],
+        instructions=(
+            "You are a tier-1 support agent. Search the KB first, then resolve "
+            "or escalate. Always update the ticket status."
+        ),
+        expose=True,
+    )
 ```

@@ -3,9 +3,8 @@ from __future__ import annotations
 from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from coactra import Policy, Scope, Team
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.agent.workflow import Workflow, step
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
 
 
 class RecordingSpan:
@@ -54,6 +53,7 @@ async def _make_agent(*, tracer):
         ),
     )
     return await team.add_agent(
+        model_capability="default",
         name="sre-agent",
         tracer=tracer,
     )

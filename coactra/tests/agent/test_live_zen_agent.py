@@ -9,8 +9,7 @@ import pytest
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from coactra import Policy, Scope, Team
-from coactra.model import ModelProfile, ModelResolver, ModelRoute
+from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 ZEN_BASE = "https://opencode.ai/zen/go/v1"
 _KEY_FILE = Path("/tmp/oc.key")
@@ -42,6 +41,7 @@ async def test_team_add_agent_with_openai_provider_runs_live():
         ),
     )
     agent = await team.add_agent(
+        model_capability="live",
         name="live-agent",
         instructions="Be brief.",
     )

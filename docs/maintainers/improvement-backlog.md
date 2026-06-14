@@ -23,7 +23,7 @@ Status of major features (0.0.x alpha):
 | broad `requires_skill` routing with `required_tags` fail-closed disambiguation | Built |
 | approval proof bundles and `approval_only=True` gates | Built |
 | `Workflow.code_change(...)` thin builder | Built |
-| `Team.local` / `team.add_model` / per-agent `model=` | Built |
+| `ModelResolver` / `ModelProfile` / `ModelRoute` | Built |
 
 ## Outstanding: Team and Agent Layer
 
