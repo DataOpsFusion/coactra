@@ -18,8 +18,8 @@ from pydantic import BaseModel, Field
 from coactra.memory.capabilities import Capability
 from coactra.memory.types import Scope
 
-if TYPE_CHECKING:  # avoid runtime import cycle (base imports ExportReport name only)
-    from coactra.memory.backends.base import MemoryBackend
+if TYPE_CHECKING:
+    from coactra.memory.backends.base import MemoryExporter
 
 
 class ExportReport(BaseModel):
@@ -47,7 +47,7 @@ class ExportReport(BaseModel):
         return cls(transferred=transferred, target_backend=type(backend).__name__)
 
 
-async def export(source: MemoryBackend, target: MemoryBackend, *, scope: Scope) -> ExportReport:
+async def export(source: MemoryExporter, target: MemoryExporter, *, scope: Scope) -> ExportReport:
     """Move a scope's recollections from ``source`` into ``target``, lossily and honestly."""
     src_caps = await source.capabilities()
     dst_caps = await target.capabilities()

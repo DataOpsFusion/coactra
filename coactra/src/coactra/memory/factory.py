@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from coactra.memory.backends.base import MemoryBackend
+from coactra.memory.backends.base import MemoryReader
 
 _NAMES = ("inprocess", "mem0", "graphiti")
 
 
-def make_backend(name: str, **config: Any) -> MemoryBackend:
+def make_backend(name: str, **config: Any) -> MemoryReader:
     """Construct a backend by name. ``**config`` is forwarded to the backend ctor."""
     if name == "inprocess":
         from coactra.memory.backends.inprocess import InProcessBackend

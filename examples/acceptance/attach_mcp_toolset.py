@@ -21,11 +21,15 @@ async def main() -> None:
             ModelRoute(capability="toolset", profile=ModelProfile(name="toolset", model=FunctionModel(existing_model)))
         ]),
     )
-    agent = await team.add_agent(
-        model_capability="toolset",
-        name="toolset-agent",
-        tools=[MCPServer(url="https://tools.example/mcp", name="existing-tools")],
-    )
+    try:
+        agent = await team.add_agent(
+            model_capability="toolset",
+            name="toolset-agent",
+            tools=[MCPServer(url="https://tools.example/mcp", name="existing-tools")],
+        )
+    except ImportError as exc:
+        print("mcp_extra_missing=", exc)
+        return
     try:
         print("mcp_toolsets=", len(agent._runtime._mcp_toolsets))
     finally:

@@ -1,6 +1,6 @@
 # Coactra
 
-Coactra is an alpha Python orchestration fabric for agentic systems.
+Coactra is an alpha policy-aware composition library for AI workloads.
 
 It gives you a small set of composable primitives — `Scope`, `Policy`, `Team`, `Agent`, `Skill`, `Workflow`, and `Run` — and lets you wire them to existing model, memory, tool, and workflow ecosystems without making those ecosystems Coactra's identity.
 
@@ -54,7 +54,7 @@ async def main() -> None:
         tenant_id="acme",
         namespace="support",
         capability="triage",
-        model="openai/qwen3.6-plus",
+        model="openai/deepseek-v4-pro",
         api_base="https://opencode.ai/zen/go/v1",
         api_key=os.environ["OC_KEY"],
     )
@@ -103,7 +103,7 @@ team = Team.local(
     tenant_id="acme",
     namespace="tools",
     capability="tool-agent",
-    model="openai/qwen3.6-plus",
+    model="openai/deepseek-v4-pro",
     api_base="https://opencode.ai/zen/go/v1",
     api_key=os.environ["OC_KEY"],
 )
@@ -129,13 +129,13 @@ team = Team(
 )
 team.add_model(
     "deploy",
-    model="openai/qwen3.6-plus",
+    model="openai/deepseek-v4-pro",
     api_base="https://opencode.ai/zen/go/v1",
     api_key=os.environ["OC_KEY"],
 )
 team.add_model(
     "review",
-    model="openai/qwen3.6-plus",
+    model="openai/deepseek-v4-pro",
     api_base="https://opencode.ai/zen/go/v1",
     api_key=os.environ["OC_KEY"],
 )

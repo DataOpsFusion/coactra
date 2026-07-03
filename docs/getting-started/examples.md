@@ -15,24 +15,24 @@ python -m pip install -e "./coactra[all,dev]"
 Then run examples from the repository root:
 
 ```bash
-python3 examples/basic_incident_triage.py
-python3 examples/work/lifecycle_with_approval.py
+python3 examples/incident_response_handoff.py
+python3 examples/work/release_work_lifecycle.py
 ```
 
 ## Recommended Starting Points
 
 | If you are building... | Start here | Source |
 |---|---|---|
-| a normal single-agent app | [Basic Incident Triage](../examples/basic-incident-triage.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/basic_incident_triage.py) |
-| explicit function-first composition | [Composed Support Agent](../examples/composed-support-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/function_first_agent.py) |
-| a higher-level SDK loop | [Offline Agent SDK](../examples/offline-agent-sdk.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/elegant_agent.py) |
-| support or helpdesk memory | [Customer Support Memory](../examples/customer-support-memory.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/customer_support_memory) |
-| combined helpdesk (agent + work + memory) | [Support Desk](../examples/support-desk.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/support_desk) |
+| a normal single-agent app | [Incident Response Handoff](../examples/incident-response-handoff.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/incident_response_handoff.py) |
+| explicit function-first composition | [Support Ticket Agent](../examples/support-ticket-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/support_ticket_agent.py) |
+| a higher-level SDK loop | [Offline SRE Agent](../examples/offline-sre-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/offline_sre_agent.py) |
+| support or helpdesk memory | Resolution Memory | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/resolution_memory) |
+| combined helpdesk (agent + work + memory) | Ticket Triage | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/ticket_triage) |
 | durable jobs or releases | [Work Order Lifecycle](../examples/work-order-lifecycle.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/work) |
-| procedure-backed work orders | [Procedure-Backed Work](../examples/procedure-backed-work.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/work/procedure_backed_work.py) |
-| release project layout | [Release Runner](../examples/release-runner.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/release_runner) |
-| a file-backed agent desk | [Workspace Research Desk](../examples/workspace-research-desk.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/workspace_research_desk) |
-| multi-agent collaboration | [Multi-Agent Policy](../examples/multi-agent-policy.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/multi_agent_policy) |
+| procedure-backed work orders | [Procedure-Backed Work](../examples/procedure-backed-work.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/work/procedure_runbook.py) |
+| release project layout | Release Checkpoint | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/release_checkpoint) |
+| a file-backed agent desk | Research Workspace | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/research_workspace) |
+| multi-agent collaboration | Approval Routing | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/approval_routing) |
 
 ## Naming Style
 

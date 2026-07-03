@@ -26,7 +26,7 @@ async def main() -> None:
         instructions="Use host policy.",
     )
     try:
-        print(await agent.run("can I keep my own model?"))
+        print("existing_model_attached=", agent._runtime._model is not None)
     finally:
         await agent.aclose()
 

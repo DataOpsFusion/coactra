@@ -14,6 +14,15 @@ def _select_scopes(bound: Mapping[str, Any], selected: list[str] | None) -> list
     return [(alias, bound[alias]) for alias in aliases]
 
 
+def _check_acl(acl: Any, actor: str | None, operation: str, scope: Any) -> None:
+    if acl is None or actor is None:
+        return
+    checker = getattr(acl, f"check_{operation}", None) or getattr(acl, "check", None)
+    if checker is None:
+        raise TypeError(f"acl must provide check_{operation}() or check()")
+    checker(actor, scope)
+
+
 def register_recall_tool(
     mcp_server: object,
     memory: Any,
@@ -42,6 +51,7 @@ def register_recall_tool(
         seen: set[tuple[str, str]] = set()
         selected = _select_scopes(bound, scopes)
         for alias, selected_scope in selected:
+            _check_acl(acl, actor, "read", selected_scope)
             recollections = await memory.recall(query, scope=selected_scope, k=limit)
             for recollection in recollections:
                 marker = (recollection.source_id, recollection.text)
@@ -69,6 +79,6 @@ def register_recall_tool(
             raise ValueError("fact may not be empty")
         selected = _select_scopes(bound, [scope])
         _, target = selected[0]
-        acl.check_write(actor, target)
+        _check_acl(acl, actor, "write", target)
         await memory.remember([clean], scope=target)
         return {"status": "published", "scope": scope}

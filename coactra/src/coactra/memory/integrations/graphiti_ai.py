@@ -7,7 +7,6 @@ connect those stable seams without patching Graphiti internals.
 
 from __future__ import annotations
 
-import asyncio
 import json
 from collections.abc import Callable, Iterable
 from typing import Any
@@ -192,15 +191,10 @@ class GraphitiAIClient(LLMClient):
         client = self._client_for_size(model_size)
         prompt = _messages_prompt(messages)
         if response_model is not None:
-            result = await asyncio.to_thread(
-                client.structured,
-                response_model,
-                prompt,
-                max_tokens=max_tokens,
-            )
+            result = client.structured(response_model, prompt, max_tokens=max_tokens)
             return _structured_to_dict(result)
 
-        text = await asyncio.to_thread(client.ask, prompt, max_tokens=max_tokens)
+        text = client.ask(prompt, max_tokens=max_tokens)
         return _loads_json_object(text)
 
 
@@ -219,17 +213,15 @@ class GraphitiEmbeddingClient(EmbedderClient):
         self._embedding_dim = embedding_dim
 
     async def create(self, input_data: Any) -> list[float]:
-        vector = await asyncio.to_thread(self._embed, _input_text(input_data))
+        vector = self._embed(_input_text(input_data))
         return _truncate(list(vector), self._embedding_dim)
 
     async def create_batch(self, input_data_list: list[str]) -> list[list[float]]:
         embed_many = getattr(self._embed, "embed_many", None)
         if callable(embed_many):
-            vectors = await asyncio.to_thread(embed_many, input_data_list)
+            vectors = embed_many(input_data_list)
         else:
-            vectors = await asyncio.gather(
-                *(asyncio.to_thread(self._embed, item) for item in input_data_list)
-            )
+            vectors = [self._embed(item) for item in input_data_list]
         return [_truncate(list(vector), self._embedding_dim) for vector in vectors]
 
 
@@ -248,16 +240,12 @@ class GraphitiEmbeddingReranker(CrossEncoderClient):
     async def rank(self, query: str, passages: list[str]) -> list[tuple[str, float]]:
         if not passages:
             return []
-        query_vector = _truncate(
-            list(await asyncio.to_thread(self._embed, query)), self._embedding_dim
-        )
+        query_vector = _truncate(list(self._embed(query)), self._embedding_dim)
         embed_many = getattr(self._embed, "embed_many", None)
         if callable(embed_many):
-            passage_vectors = await asyncio.to_thread(embed_many, passages)
+            passage_vectors = embed_many(passages)
         else:
-            passage_vectors = await asyncio.gather(
-                *(asyncio.to_thread(self._embed, passage) for passage in passages)
-            )
+            passage_vectors = [self._embed(passage) for passage in passages]
         scored = [
             (passage, self._cosine(query_vector, _truncate(list(vector), self._embedding_dim)))
             for passage, vector in zip(passages, passage_vectors, strict=False)

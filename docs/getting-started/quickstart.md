@@ -49,7 +49,7 @@ async def main() -> None:
                 capability="triage",
                 profile=ModelProfile(
                     name="triage",
-                    model="openai/qwen3.6-plus",
+                    model="openai/deepseek-v4-pro",
                     api_base="https://opencode.ai/zen/go/v1",
                     api_key=os.environ["OC_KEY"],
                 ),
@@ -89,7 +89,7 @@ team = Team(
             capability="sre",
             profile=ModelProfile(
                 name="sre",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),
@@ -121,7 +121,7 @@ team = Team(
             capability="security-review",
             profile=ModelProfile(
                 name="security-review",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),

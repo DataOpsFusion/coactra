@@ -16,7 +16,7 @@ team = Team.local(
     tenant_id="acme",
     namespace="ops",
     capability="cheap-chat",
-    model="openai/qwen3.6-plus",
+    model="openai/deepseek-v4-pro",
     api_base="https://opencode.ai/zen/go/v1",
     api_key=os.environ["OC_KEY"],
 )
@@ -43,7 +43,7 @@ team = Team.local(
     tenant_id="acme",
     namespace="tools",
     capability="tool-agent",
-    model="openai/qwen3.6-plus",
+    model="openai/deepseek-v4-pro",
     api_base="https://opencode.ai/zen/go/v1",
     api_key=os.environ["OC_KEY"],
 )
@@ -82,7 +82,7 @@ team = Team(
             capability="orchestrator",
             profile=ModelProfile(
                 name="orchestrator",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),

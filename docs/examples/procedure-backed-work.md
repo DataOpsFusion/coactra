@@ -29,11 +29,11 @@ async def main() -> None:
         model_resolver=ModelResolver([
             ModelRoute(
                 capability="security",
-                profile=ModelProfile(name="security", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+                profile=ModelProfile(name="security", model="openai/deepseek-v4-pro", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
             ),
             ModelRoute(
                 capability="ops",
-                profile=ModelProfile(name="ops", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+                profile=ModelProfile(name="ops", model="openai/deepseek-v4-pro", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
             ),
         ]),
     )
