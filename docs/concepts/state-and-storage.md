@@ -8,7 +8,6 @@ is backed by a durable store or a host-provided runtime with persistence.
 | State | Location / owner | Default | Durable option | Notes |
 |---|---|---|---|---|
 | Canonical scope metadata | `coactra.Scope` | in memory | host-owned | Converts tenant/namespace/agent/session to package scopes. |
-| AI reasoning traces | `coactra[ai]` replay store | in-process dict | Chroma or custom store | Separate from long-term memory unless bridged intentionally. |
 | Memory events/facts | `coactra[memory]` | in-process dict | mem0, Graphiti/Neo4j, or host-owned recall source | Export is optional and lossy. |
 | Workspace files | `coactra[workspace]` | local filesystem | future sandbox provider | Local backend confines paths under tenant/agent root. |
 | Workspace exec output | `coactra[workspace]` | subprocess result | sandbox provider | Local exec disabled by default and not a jail. |

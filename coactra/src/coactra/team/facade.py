@@ -50,10 +50,6 @@ class _AgentSpec:
     expose: bool = False
     peers: list[Any] = field(default_factory=list)
     registry: Any | None = None
-    learned: Any = None
-    procedure_engine: Any | None = None
-    procedure_scope: Any | None = None
-    allow_unreviewed_learned: bool = False
     tracer: Any | None = None
     defaults: dict[str, Any] = field(default_factory=dict)
 
@@ -167,10 +163,6 @@ class Team:
         expose: bool = False,
         peers: list[Any] | None = None,
         registry: Any | None = None,
-        learned: Any = None,
-        procedure_engine: Any | None = None,
-        procedure_scope: Any | None = None,
-        allow_unreviewed_learned: bool = False,
         tracer: Any | None = None,
         **defaults: Any,
     ) -> Agent:
@@ -216,10 +208,6 @@ class Team:
             expose=expose,
             peers=list(peers or []),
             registry=registry,
-            learned=learned,
-            procedure_engine=procedure_engine,
-            procedure_scope=procedure_scope,
-            allow_unreviewed_learned=allow_unreviewed_learned,
             tracer=tracer,
             defaults=effective_defaults,
         )
@@ -246,10 +234,6 @@ class Team:
             expose=expose,
             peers=list(peers or []),
             registry=registry,
-            learned=learned,
-            procedure_engine=procedure_engine,
-            procedure_scope=procedure_scope,
-            allow_unreviewed_learned=allow_unreviewed_learned,
             tracer=tracer,
             policy=self.policy,
             **effective_defaults,
@@ -443,10 +427,6 @@ class Team:
                 expose=spec.expose,
                 peers=list(spec.peers),
                 registry=spec.registry,
-                learned=spec.learned,
-                procedure_engine=spec.procedure_engine,
-                procedure_scope=spec.procedure_scope,
-                allow_unreviewed_learned=spec.allow_unreviewed_learned,
                 tracer=spec.tracer,
                 **({} if spec.model is not None else spec.defaults),
             )

@@ -27,7 +27,6 @@ Status of major features (0.0.x alpha):
 
 ## Outstanding: Team and Agent Layer
 
-- Semantic matcher embedding cache (perf)
 - Memory guardrails: injection cap, deletion/export (GDPR), write policy
 - Workspace `run` allow-list configuration surface
 - More documented production route recipes for OpenCode/Zen, LiteLLM, and host-managed gateways
@@ -35,7 +34,7 @@ Status of major features (0.0.x alpha):
 
 ## Outstanding: Workflow Layer
 
-- richer workflow-candidate review and promotion UX
+- richer workflow review and approval UX
 - reusable verification profile libraries on top of the typed verifier/check model
 - planner support for emitting verifier roles and richer workflow candidates
 - broader conformance tests for policy-enforced routing and resume semantics across adapters

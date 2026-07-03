@@ -121,10 +121,6 @@ async def build_agent(
     expose: bool = False,
     peers: list | None = None,
     registry: Any | None = None,
-    learned: Any = None,
-    procedure_engine: Any | None = None,
-    procedure_scope: Any | None = None,
-    allow_unreviewed_learned: bool = False,
     tracer: Any | None = None,
     policy: Any | None = None,
     **defaults: Any,
@@ -134,20 +130,12 @@ async def build_agent(
     if unknown:
         raise TypeError(f"build_agent() got unexpected keyword argument(s): {sorted(unknown)}")
     if runtime is not None:
-        skills_for_card = normalize_agent_skills(
-            skills,
-            learned=learned,
-            allow_unreviewed_learned=allow_unreviewed_learned,
-        )
+        skills_for_card = normalize_agent_skills(skills)
         return Agent(runtime, name=name, tenant=tenant, skills=skills_for_card, expose=expose)
 
     bindings = build_agent_bindings(
         tools=tools,
         skills=skills,
-        learned=learned,
-        allow_unreviewed_learned=allow_unreviewed_learned,
-        procedure_engine=procedure_engine,
-        procedure_scope=procedure_scope,
         peers=peers,
         registry=registry,
         name=name,

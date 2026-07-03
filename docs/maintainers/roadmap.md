@@ -18,7 +18,7 @@ durability**.
 - `agent.card` (curated discovery metadata)
 - `Team(scope=..., policy=...)` with explicit catalogs and `add_agent(...)`
 - `peers=` with local Agent objects, string placeholders, and `RemotePeer(...)`
-- `Workflow` / `step()` / `Workflow.run_goal()` with approval pause/resume and checkpoint-store resume
+- `Workflow` / `step()` with approval pause/resume and checkpoint-store resume
 - broad `requires_skill` workflow routing with `required_tags` disambiguation and fail-closed ambiguity
 - `ProofBundle` / `VerificationReceipt` approval evidence and `approval_only=True` pure human gates
 - `Workflow.code_change(...)` as a thin implement/verify/review builder
@@ -35,8 +35,7 @@ durability**.
 
 - Fleet registry/discovery for remote A2A endpoints
 - OpenFGA/AuthZEN policy adapters
-- Automatic learning loop around reflection, promotion, replay, and advertisement
-- Workflow candidate promotion that emits typed verifier-role metadata directly
+- Runtime adapters and conformance checks for externally owned engines
 
 The authoritative source for the phased plan, milestone gates, and implementation
 details is the implementation plan spec:

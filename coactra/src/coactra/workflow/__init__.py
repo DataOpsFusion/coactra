@@ -1,10 +1,4 @@
-"""coactra.workflow — public playbooks plus durable Procedure engines.
-
-Workflow owns the definition and run ledger: authored flows, induced procedures,
-approvals, checkpoints, and runtime adapters. Team/directory policy decides who may act;
-agent transports carry the talk. Induction is trace-faithful and deterministic; update()
-is manual so the library does not overclaim self-learning.
-"""
+"""coactra.workflow — public playbooks plus durable Procedure engines."""
 
 from importlib import import_module
 from typing import Any
@@ -12,7 +6,6 @@ from typing import Any
 from coactra._version import distribution_version
 from coactra.workflow.domain.models import Procedure, RunResult, Step
 from coactra.workflow.domain.scope import Scope
-from coactra.workflow.induction import ReasoningTrace, induce, update
 from coactra.workflow.playbook import ProofBundle, VerificationReceipt, step
 from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
 
@@ -128,9 +121,6 @@ __all__ = [
     "make_workflow_engine",
     "LangGraphEngine",
     "DurableLangGraphEngine",
-    "ReasoningTrace",
-    "induce",
-    "update",
     "Approver",
     "Collaborator",
     "EscalationRouter",

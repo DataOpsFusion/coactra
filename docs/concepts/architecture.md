@@ -29,7 +29,6 @@ The project should use an adopt-first rule for generic infrastructure:
 - Temporal is the first-choice target for hard durable execution and same-thread signal/resume.
 - Prefect is useful for Python deployment-triggered workflows, but Coactra must document whether resume is same-thread, host-owned, or a new run carrying prior state.
 - PydanticAI is the agent execution runtime behind `coactra.Agent`; pass pydantic-ai `Model` instances or provider strings directly.
-- LiteLLM and Instructor remain the right direction for provider normalization and structured output below `coactra[ai]` (separate from the Agent facade).
 
 See [../maintainers/roadmap.md](../maintainers/roadmap.md) and [../maintainers/release-policy.md](../maintainers/release-policy.md) for the concrete v1 plan.
 
@@ -51,7 +50,6 @@ Application functions
 | Package | Keep owning | Avoid owning |
 |---|---|---|
 | `coactra` | shared `Scope` and umbrella extras | runtime behavior |
-| `coactra[ai]` | model-call helpers and reasoning trace utilities | full agent framework semantics |
 | `coactra[memory]` | backend-neutral memory contract | a custom vector/graph memory engine |
 | `coactra[workspace]` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
 | `coactra[workflow]` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |

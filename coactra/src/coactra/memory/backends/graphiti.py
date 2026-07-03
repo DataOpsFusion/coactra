@@ -235,9 +235,8 @@ def _openai_compatible_clients(
 class GraphitiBackend:
     """Adapter over ``graphiti_core.Graphiti``.
 
-    Preferred portable model seam is ``ai_client=coactra.ai.Client(...)``.
-    Native Graphiti clients remain injectable via ``llm_client``/``embedder``/
-    ``cross_encoder`` for advanced use.
+    Native Graphiti clients are injectable via ``llm_client``/``embedder``/
+    ``cross_encoder``. OpenAI-compatible config is provided as a convenience path.
     """
 
     declared_capabilities = set(_CAPS)
@@ -250,7 +249,6 @@ class GraphitiBackend:
         user: str | None = None,
         password: str | None = None,
         llm_client: Any | None = None,
-        ai_client: Any | None = None,
         embedder: Any | None = None,
         cross_encoder: Any | None = None,
         llm_provider: str = "openai",
@@ -265,16 +263,10 @@ class GraphitiBackend:
         if client is not None:
             self._client = client
             return
-        if ai_client is not None and llm_client is not None:
-            raise ValueError("pass either ai_client or llm_client, not both")
         try:
             from graphiti_core import Graphiti  # noqa: PLC0415  (lazy: optional extra)
         except ImportError as exc:  # pragma: no cover - exercised only without the extra
             raise MissingExtraError("graphiti") from exc
-        if ai_client is not None:
-            from coactra.memory.integrations import GraphitiAIClient
-
-            llm_client = GraphitiAIClient(ai_client=ai_client)
         needs_configured_llm = llm_client is None or cross_encoder is None
         needs_configured_embedder = embedder is None
         configured_llm, configured_embedder, configured_cross_encoder = _openai_compatible_clients(

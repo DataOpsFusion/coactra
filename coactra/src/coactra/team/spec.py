@@ -30,9 +30,5 @@ class TeamAgentSpec:
     expose: bool = False
     peers: tuple[Any, ...] = ()
     registry: Any | None = None
-    learned: Any = None
-    procedure_engine: Any | None = None
-    procedure_scope: Any | None = None
-    allow_unreviewed_learned: bool = False
     tracer: Any | None = None
     defaults: dict[str, Any] = field(default_factory=dict)
