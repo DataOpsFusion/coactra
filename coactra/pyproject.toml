@@ -22,9 +22,12 @@ classifiers = [
 ]
 dependencies = ["pydantic>=2.7,<3"]
 
+[project.scripts]
+coactra = "coactra.cli:main"
+
 [project.optional-dependencies]
 # --- Capability extras (each = its origin package's base deps, minus the pydantic core). ---
-ai = ["instructor>=1.0,<2", "litellm>=1.40,<2", "numpy>=1.26"]
+ai = ["instructor>=1.0,<2", "litellm>=1.40,<2"]
 memory = []
 workspace = []
 workflow = ["pyyaml>=6.0"]
@@ -85,7 +88,6 @@ integrations = [
 all = [
     "instructor>=1.0,<2",
     "litellm>=1.40,<2",
-    "numpy>=1.26",
     "sqlmodel>=0.0.21",
     "pydantic-ai-slim>=1.0,<2",
 ]

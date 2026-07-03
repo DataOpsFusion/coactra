@@ -1,6 +1,6 @@
 """coactra.agent.memory — automatic recall/remember connector.
 
-A thin connector around a ``coactra.memory.MemoryBackend``.  coactra never ranks,
+A thin connector around a memory reader/writer. coactra never ranks,
 embeds, or consolidates — all of that belongs to the backend (graphiti/mem0/inprocess).
 This module owns *when* recall/remember happen and enforces the guardrails from
 design/2026-06-06-review-refinements.md item 6:
@@ -8,16 +8,19 @@ design/2026-06-06-review-refinements.md item 6:
 - tenant/scope isolation (threaded through every call)
 - max-injected-memory cap  (``max_recall``)
 - memory-write policy      (``write_policy``)
-- provenance / source      (best-effort: accepted at the call site; the Protocol's
-  ``remember(events, scope)`` has no metadata channel, so ``source`` is currently
-  noted in the call but not forwarded — attach provenance once a backend exposes it)
+- provenance / source      (best-effort: accepted at the call site)
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from coactra.memory.backends.base import MemoryBackend
+from coactra.memory.backends.base import (
+    CallableMemoryReader,
+    MemoryReader,
+    MemoryWriter,
+    RecallCallable,
+)
 from coactra.memory.factory import make_backend as _make_backend
 from coactra.memory.types import Scope
 
@@ -27,7 +30,7 @@ from coactra.memory.types import Scope
 
 
 def bind_memory(
-    spec: str | MemoryBackend,
+    spec: str | MemoryReader | RecallCallable,
     scope: Scope,
     *,
     max_recall: int = 5,
@@ -36,9 +39,8 @@ def bind_memory(
     """Create a :class:`MemoryBinding` from a backend name or an existing backend.
 
     Args:
-        spec: A backend name (``"inprocess"``, ``"mem0"``, ``"graphiti"``) — resolved
-            via :func:`coactra.memory.factory.make_backend` — or an already-constructed
-            :class:`~coactra.memory.backends.base.MemoryBackend` instance.
+        spec: A backend name (``"inprocess"``, ``"mem0"``, ``"graphiti"``), an
+            object with ``recall()``, or a simple recall callable.
         scope: A :class:`~coactra.memory.types.Scope` object that namespaces every
             remember/recall call.  Tenant isolation is enforced by the backend; this
             connector threads the scope through without modification.  (Accepting raw
@@ -54,9 +56,11 @@ def bind_memory(
         A configured :class:`MemoryBinding`.
     """
     if isinstance(spec, str):
-        backend: MemoryBackend = _make_backend(spec)
-    else:
+        backend: MemoryReader = _make_backend(spec)
+    elif isinstance(spec, MemoryReader):
         backend = spec
+    else:
+        backend = CallableMemoryReader(spec)
     return MemoryBinding(
         backend=backend, scope=scope, max_recall=max_recall, write_policy=write_policy
     )
@@ -76,7 +80,7 @@ class MemoryBinding:
     def __init__(
         self,
         *,
-        backend: MemoryBackend,
+        backend: MemoryReader,
         scope: Scope,
         max_recall: int,
         write_policy: Callable[[str], bool] | None,
@@ -110,15 +114,13 @@ class MemoryBinding:
         Args:
             text: The plain-text fact or conversational fragment to store.
             source: Optional provenance tag (e.g. ``"turn-42"``).  Accepted for
-                API stability and future use; the current ``MemoryBackend`` Protocol
-                has no metadata channel on ``remember``, so ``source`` is not forwarded
-                to the backend today.  When a backend exposes a provenance seam this
-                connector can attach it without a breaking API change.
+                API stability and future use.
 
         The backend's own extraction/consolidation logic applies; coactra does not
         re-implement ranking or deduplication here.
         """
         if self._write_policy is not None and not self._write_policy(text):
             return  # vetoed — no-op
-        # Protocol: remember(events: Sequence[MemoryEvent], scope: Scope) -> None
+        if not isinstance(self._backend, MemoryWriter):
+            return
         await self._backend.remember([text], self._scope)

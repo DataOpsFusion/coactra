@@ -38,7 +38,7 @@ from coactra.workflow.runtime.handlers import (
     RejectAll,
     TerminalHumanRouter,
 )
-from coactra.workflow.runtime.tools import ToolInvoker
+from coactra.workflow.runtime.tools import ToolContext, ToolInvoker
 from coactra.workflow.runtime.verification import VerificationResult
 
 __all__ = [
@@ -62,6 +62,7 @@ __all__ = [
     "CapabilityValidationError",
     "CapabilityValidationIssue",
     "InMemoryCapabilityRegistry",
+    "ToolContext",
     "ToolInvoker",
     "VerificationResult",
     "Approver",

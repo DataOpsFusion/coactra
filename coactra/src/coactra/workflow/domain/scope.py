@@ -8,8 +8,6 @@ boundary unless code explicitly moves it.
 
 from __future__ import annotations
 
-from coactra.scope import _TenantNamespaceScope
+from coactra.scope import _TenantNamespaceScope as Scope
 
-
-class Scope(_TenantNamespaceScope):
-    """Immutable, hashable tenant + namespace key."""
+__all__ = ["Scope"]

@@ -9,7 +9,7 @@ from coactra import (
     Agent, CoactraError, Decision, DecisionOutcome, ErrorCode,
     MissingExtraError, ModelProfile, ModelResolver, ModelRoute,
     Policy, PolicyRequest, RemotePeer, Run, Scope, Skill,
-    StaticToken, Team, ValidationError, Workflow, __version__,
+    StaticToken, Team, TeamExtension, ValidationError, Workflow, __version__,
 )
 ```
 
@@ -29,6 +29,7 @@ from coactra import (
 | `Skill` | dataclass | **Available** | Structured skill entry for the Agent Card. |
 | `StaticToken` | class | **Available** | Pre-fetched JWT token source for dev / CI. |
 | `Team` | class | **Available** | Team-first coordination root with explicit scope, policy, catalogs, routing, and execution. |
+| `TeamExtension` | protocol | **Available** | Plugin-like seam for host-owned packages that install capabilities into a Team. |
 | `Workflow` | class | **Available** | Playbook runner with capability routing, approvals, checkpoint resume, and engine bridge. |
 | `CoactraError` | class | **Available** | Base exception for all Coactra errors. |
 | `ErrorCode` | enum | **Available** | Machine-readable error categories (TIMEOUT, VALIDATION, PROVIDER, etc.). |
@@ -48,6 +49,29 @@ For OAuth client-credentials token fetch/refresh, use `authlib` or `httpx-oauth`
 
 Removed alpha roots are intentionally not compatibility-shimmed; the exact banned names are enforced by the architecture guard and release checklist.
 
+## Team.install_extension(...)
+
+```python
+from dataclasses import dataclass
+
+from coactra import Skill, Team
+
+
+@dataclass
+class HermesExtension:
+    name: str = "hermes"
+
+    async def install(self, team: Team) -> None:
+        team.add_skill(Skill("code.review", description="Review code changes"))
+        # Real extensions may also register agents, model routes, workflows,
+        # MCP servers, A2A peers, policy hooks, or host-owned adapters.
+
+
+await team.install_extension(HermesExtension())
+```
+
+Use extensions for host-owned packages such as Pi, Hermes, Claude Code, Codex, or internal platform packages. The extension owns SDK-specific behavior; Coactra provides the scoped Team boundary it can register against.
+
 ## Team.add_agent(...)
 
 ```python
@@ -63,7 +87,7 @@ team = Team(
             capability="sre",
             profile=ModelProfile(
                 name="sre",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),
@@ -126,7 +150,7 @@ team = Team(
             capability="delegation",
             profile=ModelProfile(
                 name="delegation",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),
@@ -161,7 +185,7 @@ team = Team(
             capability="learned",
             profile=ModelProfile(
                 name="learned",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),
@@ -224,7 +248,7 @@ team = Team(
             capability="tool-agent",
             profile=ModelProfile(
                 name="tool-agent",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),

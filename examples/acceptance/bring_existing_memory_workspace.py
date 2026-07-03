@@ -29,10 +29,14 @@ async def main() -> None:
             name="support-agent",
         )
         try:
-            print(await agent.run("remember this workspace handoff"))
+            await agent._runtime._memory.remember("workspace handoff")
             recalled = await agent._runtime._memory.recall("workspace handoff")
-            tool_names = sorted(tool.__name__ for tool in agent._runtime._workspace_tools)
+            tools = {tool.__name__: tool for tool in agent._runtime._workspace_tools}
+            tools["write_file"]("handoff.txt", "workspace handoff")
+            read_back = tools["read_file"]("handoff.txt")
+            tool_names = sorted(tools)
             print("recalled=", bool(recalled))
+            print("workspace_read=", read_back)
             print("workspace_tools=", ",".join(tool_names))
         finally:
             await agent.aclose()

@@ -1,8 +1,8 @@
 # Coactra Docs
 
-Coactra is a composition and persistence library for multi-agent workflows:
-`Team`, `Workflow`, and `WorkManager` are the core; `Agent` is a thin shell over
-pydantic-ai with memory, workspace, MCP, and peer delegation wiring.
+Coactra is a policy-aware composition library for AI workloads. It gives host
+applications small `Scope`, `Policy`, `Team`, `Agent`, `Workflow`, and `Run`
+primitives for wiring existing model, memory, tool, and workflow stacks.
 
 Start with the [Quickstart](getting-started/quickstart.md), then use the example
 and production guides when you are ready to wire real backends.

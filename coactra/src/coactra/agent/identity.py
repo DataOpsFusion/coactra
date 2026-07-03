@@ -13,7 +13,6 @@ guarantee.
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import inspect
 import time
@@ -45,7 +44,7 @@ def _mint(material: str, tenant_id: str) -> str:
     """Deterministically derive a fresh, opaque downstream token. NOT the subject token.
 
     A real AS issues a signed JWT here; the in-process default derives an opaque value via
-    a one-way hash, so the raw subject token can never leak through it.
+    a one-way hash, so the raw source token can never leak through it.
     """
     digest = hashlib.sha256(f"{tenant_id}:{material}".encode()).hexdigest()
     return f"exch_{digest[:32]}"
@@ -96,7 +95,7 @@ class InProcessExchanger:
         # token is consumed here and never stored on the chain or the downstream token.
         head = Hop(subject=grant.actor, actor=grant.actor)
         return ExchangedIdentity(
-            token=_mint(grant.actor, scope.tenant_id),
+            token=_mint(f"{grant.actor}:{grant.subject_token}", scope.tenant_id),
             subject=grant.actor,
             tenant_id=scope.tenant_id,
             chain=head,
@@ -108,7 +107,7 @@ class InProcessExchanger:
         """Multi-hop: append one hop, SHARING the prior chain's tail (cons)."""
         head = identity.chain.extend(subject=identity.subject, actor=actor)
         return ExchangedIdentity(
-            token=_mint(actor, scope.tenant_id),
+            token=_mint(f"{actor}:{identity.token}", scope.tenant_id),
             subject=actor,
             tenant_id=scope.tenant_id,
             chain=head,
@@ -116,23 +115,18 @@ class InProcessExchanger:
 
 
 class AsyncTokenExchangerAdapter:
-    """Run an existing synchronous exchanger in a worker thread."""
+    """Expose a synchronous exchanger through the async contract."""
 
     def __init__(self, exchanger: TokenExchanger) -> None:
         self._exchanger = exchanger
 
     async def exchange(self, grant: DelegationGrant, scope: Scope) -> ExchangedIdentity:
-        return await asyncio.to_thread(self._exchanger.exchange, grant, scope)
+        return self._exchanger.exchange(grant, scope)
 
     async def exchange_from(
         self, identity: ExchangedIdentity, *, actor: str, scope: Scope
     ) -> ExchangedIdentity:
-        return await asyncio.to_thread(
-            self._exchanger.exchange_from,
-            identity,
-            actor=actor,
-            scope=scope,
-        )
+        return self._exchanger.exchange_from(identity, actor=actor, scope=scope)
 
 
 def as_async_exchanger(

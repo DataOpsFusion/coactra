@@ -1,7 +1,7 @@
 # Improvement Backlog
 
 This backlog tracks implementation gaps and quality improvements for the current
-**Team · Agent · Workflow** architecture. The design decisions are finalized in
+policy-aware **Team · Agent · Workflow** composition surface. The design decisions are finalized in
 the `design/2026-06-06-*.md` specs; this page tracks the work still outstanding
 against those decisions.
 

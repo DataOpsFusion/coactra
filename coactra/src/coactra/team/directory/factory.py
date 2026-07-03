@@ -9,7 +9,6 @@ injected into the service layer.
 from __future__ import annotations
 
 from coactra.team.directory.engine import make_engine
-from coactra.team.directory.repository.async_store import AsyncPostgresOrgStore
 from coactra.team.directory.repository.sqlite_store import SqliteOrgStore
 from coactra.team.directory.repository.store import OrgStore
 
@@ -24,8 +23,3 @@ def make_org_store(config: str = "sqlite://") -> OrgStore:
     if config.startswith("sqlite"):
         return SqliteOrgStore(engine=make_engine(config))
     raise ValueError(f"unsupported org-store backend: {config!r}")
-
-
-def make_async_org_store(config: str) -> AsyncPostgresOrgStore:
-    """Return the async Postgres org-store facade for a shared fleet database."""
-    return AsyncPostgresOrgStore(config)

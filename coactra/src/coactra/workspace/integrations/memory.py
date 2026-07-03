@@ -19,16 +19,24 @@ Journal entries:
 
 
 def _already_distilled(journal_dir: Path) -> set[str]:
-    marker = journal_dir / ".distilled"
+    marker = _confined(journal_dir, journal_dir / ".distilled")
     if not marker.exists():
         return set()
     return {line.strip() for line in marker.read_text().splitlines() if line.strip()}
 
 
 def _mark_distilled(journal_dir: Path, filename: str) -> None:
-    marker = journal_dir / ".distilled"
+    marker = _confined(journal_dir, journal_dir / ".distilled")
     with marker.open("a") as file:
         file.write(f"{filename}\n")
+
+
+def _confined(journal_dir: Path, path: Path) -> Path:
+    root = journal_dir.resolve()
+    target = path.resolve()
+    if root != target and root not in target.parents:
+        raise ValueError(f"journal path {path.name!r} escapes journal_dir")
+    return target
 
 
 async def distill_journal(
@@ -55,7 +63,7 @@ async def distill_journal(
     for entry in sorted(journal_dir.glob("*.md")):
         if entry.name in done:
             continue
-        text = entry.read_text().strip()
+        text = _confined(journal_dir, entry).read_text().strip()
         if not text:
             _mark_distilled(journal_dir, entry.name)
             continue

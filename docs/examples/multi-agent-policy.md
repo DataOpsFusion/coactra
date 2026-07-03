@@ -22,15 +22,15 @@ async def main() -> None:
     resolver = ModelResolver([
         ModelRoute(
             capability="sre",
-            profile=ModelProfile(name="sre", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+            profile=ModelProfile(name="sre", model="openai/deepseek-v4-pro", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
         ),
         ModelRoute(
             capability="security",
-            profile=ModelProfile(name="security", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+            profile=ModelProfile(name="security", model="openai/deepseek-v4-pro", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
         ),
         ModelRoute(
             capability="orchestrator",
-            profile=ModelProfile(name="orchestrator", model="openai/qwen3.6-plus", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
+            profile=ModelProfile(name="orchestrator", model="openai/deepseek-v4-pro", api_base="https://opencode.ai/zen/go/v1", api_key=os.environ["OC_KEY"]),
         ),
     ])
     team = Team(

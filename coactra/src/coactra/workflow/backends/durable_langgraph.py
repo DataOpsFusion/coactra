@@ -37,7 +37,7 @@ from coactra.workflow.runtime.durable import (
 )
 from coactra.workflow.runtime.engine import RunContext
 from coactra.workflow.runtime.handlers import Escalation
-from coactra.workflow.runtime.tools import ToolInvoker
+from coactra.workflow.runtime.tools import ToolContext, ToolInvoker
 from coactra.workflow.runtime.verification import (
     VerificationResult,
     is_error_like,
@@ -154,10 +154,49 @@ def _gate_red_tier(node: dict[str, Any], action: str, params: Any) -> None:
         raise ApprovalDenied(f"red-tier node {node['id']!r} ({action}) denied by operator")
 
 
+def _tool_context(ctx: RunContext | None) -> ToolContext | None:
+    if ctx is None:
+        return None
+    return ToolContext(
+        actor=ctx.chain[-1] if ctx.chain else None,
+        scope=ctx.scope,
+        policy=getattr(ctx, "policy", None),
+        run_context=ctx,
+    )
+
+
+def _accepts_kwarg(fn: Callable, name: str) -> bool:
+    try:
+        parameters = inspect.signature(fn).parameters.values()
+    except (TypeError, ValueError):
+        return True
+    return any(p.kind is inspect.Parameter.VAR_KEYWORD or p.name == name for p in parameters)
+
+
+async def _call_tool(
+    tool_invoker: ToolInvoker,
+    *,
+    server: str,
+    tool: str,
+    params: dict[str, Any],
+    ctx: RunContext | None,
+) -> Any:
+    context = _tool_context(ctx)
+    if context is not None and _accepts_kwarg(tool_invoker.call, "context"):
+        return await tool_invoker.call(
+            server=server,
+            tool=tool,
+            params=params,
+            context=context,
+        )
+    return await tool_invoker.call(server=server, tool=tool, params=params)
+
+
 def make_tool_node(
     node: dict[str, Any],
     tool_invoker: ToolInvoker | None,
     capability_registry: CapabilityRegistry | None = None,
+    ctx: RunContext | None = None,
 ) -> Callable:
     async def _node(state: dict[str, Any]) -> dict[str, Any]:
         if tool_invoker is None:
@@ -173,10 +212,12 @@ def make_tool_node(
                 node_id=node["id"],
             )
         _gate_red_tier(node, f"call {node.get('target')}.{node.get('tool')}", params)
-        result = await tool_invoker.call(
+        result = await _call_tool(
+            tool_invoker,
             server=node["target"],
             tool=node["tool"],
             params=params,
+            ctx=ctx,
         )
         return {"data": {_result_key(node): result}}
 
@@ -405,7 +446,7 @@ def build_graph(
             builder.add_node(
                 nid,
                 _with_timeout(
-                    make_tool_node(node, tool_invoker, capability_registry),
+                    make_tool_node(node, tool_invoker, capability_registry, ctx),
                     nid,
                     _nt,
                 ),
@@ -568,9 +609,15 @@ async def check_done_criteria(
     state_data: dict[str, Any],
     *,
     tool_invoker: ToolInvoker | None = None,
+    ctx: RunContext | None = None,
 ) -> tuple[bool, list[str]]:
     """Compatibility wrapper returning the historical boolean/failures shape."""
-    result = await verify_done_criteria(criteria, state_data, tool_invoker=tool_invoker)
+    result = await verify_done_criteria(
+        criteria,
+        state_data,
+        tool_invoker=tool_invoker,
+        ctx=ctx,
+    )
     return (result.passed, result.failures)
 
 
@@ -579,6 +626,7 @@ async def verify_done_criteria(
     state_data: dict[str, Any],
     *,
     tool_invoker: ToolInvoker | None = None,
+    ctx: RunContext | None = None,
 ) -> VerificationResult:
     """Run structured done criteria against final workflow state."""
     failures: list[str] = []
@@ -629,10 +677,12 @@ async def verify_done_criteria(
                 failures.append(f"tool criterion needs tool_invoker: {criterion.get('tool')}")
                 continue
             params = render_value(criterion.get("inputs", {}), state_data)
-            result = await tool_invoker.call(
+            result = await _call_tool(
+                tool_invoker,
                 server=criterion["target"],
                 tool=criterion["tool"],
                 params=params,
+                ctx=ctx,
             )
             if not isinstance(result, dict):
                 failures.append(f"{criterion['tool']}: result is not an object")
@@ -744,7 +794,12 @@ async def run_workflow(
 
     criteria = workflow.get("done_criteria")
     if criteria:
-        verification = await verify_done_criteria(criteria, data, tool_invoker=tool_invoker)
+        verification = await verify_done_criteria(
+            criteria,
+            data,
+            tool_invoker=tool_invoker,
+            ctx=ctx,
+        )
         data["_verified"] = verification.passed
         data["_verification"] = verification.model_dump()
         if not verification.passed:

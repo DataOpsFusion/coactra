@@ -31,6 +31,7 @@ __all__ = [
     "Skill",
     "StaticToken",
     "Team",
+    "TeamExtension",
     "ValidationError",
     "Workflow",
     "__version__",
@@ -40,7 +41,7 @@ _SDK_EXPORTS = frozenset({"Agent", "RemotePeer", "Run"})
 _AUTH_EXPORTS = frozenset({"StaticToken"})
 _SKILLS_EXPORTS = frozenset({"Skill"})
 _SCOPE_EXPORTS = frozenset({"Scope"})
-_TEAM_EXPORTS = frozenset({"Team"})
+_TEAM_EXPORTS = frozenset({"Team", "TeamExtension"})
 _WORKFLOW_EXPORTS = frozenset({"Workflow"})
 _MODEL_EXPORTS = frozenset({"ModelProfile", "ModelResolver", "ModelRoute"})
 _POLICY_EXPORTS = frozenset({"Policy", "PolicyRequest", "Decision", "DecisionOutcome"})

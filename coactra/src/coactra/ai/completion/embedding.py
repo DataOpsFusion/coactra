@@ -1,7 +1,8 @@
-"""Default EmbeddingFn over litellm.embedding + numpy cosine."""
+"""Default EmbeddingFn over litellm.embedding."""
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
@@ -9,25 +10,13 @@ if TYPE_CHECKING:  # annotation only — no runtime dep on replay.models (avoids
     from coactra.ai.replay.models import ReasoningTrace
 
 
-def _require_numpy():
-    try:
-        import numpy as np
-    except ImportError as exc:  # pragma: no cover - base install gate
-        from coactra.errors import MissingExtraError
-
-        raise MissingExtraError(
-            "embedding helpers require coactra[ai]; install with: pip install coactra[ai]"
-        ) from exc
-    return np
-
-
 def cosine(a: list[float], b: list[float]) -> float:
-    np = _require_numpy()
-    va, vb = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
-    na, nb = np.linalg.norm(va), np.linalg.norm(vb)
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
     if na == 0.0 or nb == 0.0:
         return 0.0
-    return float(np.dot(va, vb) / (na * nb))
+    return dot / (na * nb)
 
 
 def rank_traces(

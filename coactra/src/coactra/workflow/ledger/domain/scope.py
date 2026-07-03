@@ -7,8 +7,6 @@ package-local ``Scope`` name.
 
 from __future__ import annotations
 
-from coactra.scope import _TenantNamespaceScope
+from coactra.scope import _TenantNamespaceScope as Scope
 
-
-class Scope(_TenantNamespaceScope):
-    """Immutable tenant + namespace key."""
+__all__ = ["Scope"]

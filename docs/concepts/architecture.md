@@ -1,6 +1,9 @@
 # Architecture
 
-Coactra should remain a modular Python library suite, not a monolithic agent framework. The durable runtime should be delegated to mature engines where possible; Coactra should keep the policy, tenancy, workspace, memory facade, work ledger, and integration contracts that are specific to this project.
+Coactra should remain a policy-aware composition library for AI workloads, not an
+agent framework, memory framework, or workflow engine. Host applications keep
+their model, memory, tool, and runtime choices; Coactra keeps the policy,
+tenancy, scope, workspace, work-ledger, and adapter contracts between them.
 
 ## Positioning
 
@@ -22,7 +25,7 @@ Coactra should not grow into a general durable workflow engine. Runtime executio
 
 The project should use an adopt-first rule for generic infrastructure:
 
-- LangGraph is the default stateful agent procedure runtime.
+- LangGraph is a supported stateful procedure adapter.
 - Temporal is the first-choice target for hard durable execution and same-thread signal/resume.
 - Prefect is useful for Python deployment-triggered workflows, but Coactra must document whether resume is same-thread, host-owned, or a new run carrying prior state.
 - PydanticAI is the agent execution runtime behind `coactra.Agent`; pass pydantic-ai `Model` instances or provider strings directly.
@@ -37,7 +40,7 @@ Application functions
   -> coactra[agent] composition root
   -> Coactra policy and state contracts
   -> runtime adapter where needed
-       LangGraph as the default agentic stateful execution adapter
+       LangGraph as a stateful execution adapter
        Temporal/Prefect/DBOS for durable execution and recovery
   -> external policy/storage engines
        Keycloak, OpenFGA, SQL, Graphiti/mem0, sandbox provider
@@ -86,4 +89,4 @@ WorkOrder / Procedure / Approval / Artifact / Audit
 
 `make_workflow_engine()` is the public factory for runtime adapters. `default` and `langgraph` select the checkpointed LangGraph adapter. `local` wraps a synchronous `ProcedureRunner` for tests and prototypes and does not support resume. `temporal` builds `TemporalEngine` around a host Temporal client/workflow/task queue. `prefect` builds `PrefectEngine` around a Prefect deployment runner.
 
-`DurableOrchestrator()` now defaults to `make_default_workflow_engine()` when no engine is injected. Hosts that need hard workflow durability can still inject a Temporal/Prefect/custom `WorkflowEngine` without changing `WorkOrder`, `Procedure`, approval, org, workspace, or memory concepts. Temporal provides same-thread signal/resume semantics; Prefect resume is modeled as a new deployment run carrying prior state unless the host flow implements stricter behavior.
+`DurableOrchestrator()` uses the configured runtime adapter when one is supplied. Hosts that need hard workflow durability can inject a Temporal/Prefect/custom `WorkflowEngine` without changing `WorkOrder`, `Procedure`, approval, org, workspace, or memory concepts. Temporal provides same-thread signal/resume semantics; Prefect resume is modeled as a new deployment run carrying prior state unless the host flow implements stricter behavior.

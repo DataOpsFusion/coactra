@@ -26,7 +26,7 @@ async def handle_ticket(ticket_text: str, customer_id: str) -> str:
                 capability="support-memory",
                 profile=ModelProfile(
                     name="support-memory",
-                    model="openai/qwen3.6-plus",
+                    model="openai/deepseek-v4-pro",
                     api_base="https://opencode.ai/zen/go/v1",
                     api_key=os.environ["OC_KEY"],
                 ),
@@ -61,7 +61,7 @@ team = Team(
             capability="support-memory",
             profile=ModelProfile(
                 name="support-memory",
-                model="openai/qwen3.6-plus",
+                model="openai/deepseek-v4-pro",
                 api_base="https://opencode.ai/zen/go/v1",
                 api_key=os.environ["OC_KEY"],
             ),

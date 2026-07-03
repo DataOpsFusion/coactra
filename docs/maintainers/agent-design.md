@@ -2,7 +2,7 @@
 
 Coactra's public assembly surface is Team-first: `from coactra import Team`.
 `Agent` remains a **thin composition shell over pydantic-ai**, not a competing
-agent framework, but runtime agents are constructed through `team.add_agent(...)`.
+runtime framework, but runtime agents are constructed through `team.add_agent(...)`.
 They still wire memory, workspace, MCP toolsets, peer delegation, and tracing
 around a pydantic-ai runtime. For direct framework access, import
 `pydantic_ai.Agent` and compose it under Coactra's Team, Workflow, and Policy

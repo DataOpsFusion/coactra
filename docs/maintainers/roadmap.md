@@ -1,6 +1,6 @@
 # Roadmap
 
-The implementation roadmap now follows the alpha-breaking Team-first order:
+The implementation roadmap now follows the alpha-breaking composition order:
 **Team spine -> skill-routed workflow -> model resolution -> broader adapters and
 durability**.
 
@@ -10,7 +10,7 @@ durability**.
 2. **workspace + memory + peers through Team** - runtime agents still expose file tools, memory bindings, MCP gateway tools, and outbound delegation, but Team owns the construction path.
 3. **Workflow** - `Workflow(steps=[...])` + `step()` using broad `requires_skill` ids, `required_tags`, approval evidence, and policy gates.
 4. **Model resolution** - `ModelResolver` selects governed model routes; LiteLLM stays an adapter, not Coactra's identity.
-5. **Durability and external policy** - LangGraph/Temporal/OpenFGA remain adapters layered under the same execution model.
+5. **Durability and external policy** - LangGraph/Temporal/OpenFGA remain adapters layered under the same composition model.
 
 **What is built today:**
 

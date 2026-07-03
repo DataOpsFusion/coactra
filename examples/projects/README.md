@@ -15,7 +15,6 @@ python -m pip install -e "./coactra[all,dev]"
 | `release_checkpoint` | release work checkpoints and artifacts | `python3 examples/projects/release_checkpoint/app.py` |
 | `research_workspace` | scoped files, handoff, capability manifest | `python3 examples/projects/research_workspace/app.py` |
 | `approval_routing` | policy-gated collaboration before A2A transport | `python3 examples/projects/approval_routing/app.py` |
-
 These are local examples, not production deployments. Replace memory backends,
 work stores, AI ports, workspace backends, and A2A verifiers at the adapter
 boundary.

@@ -2,8 +2,8 @@
 
 mem0 already does extraction + consolidation + vector recall. This adapter is a thin
 connector: it maps ``Scope`` onto mem0's ``user_id``/``agent_id``/``run_id`` scoping,
-runs the sync engine in a worker thread (``asyncio.to_thread``), and maps mem0's result
-dicts into plain ``Recollection`` objects. No mem0 type ever crosses the boundary.
+calls the sync engine, and maps mem0's result dicts into plain ``Recollection`` objects.
+No mem0 type ever crosses the boundary.
 
 ``mem0`` imports lazily: the module imports fine without the extra, and only
 ``MissingExtraError`` is raised when a backend is actually constructed without it.
@@ -11,7 +11,6 @@ dicts into plain ``Recollection`` objects. No mem0 type ever crosses the boundar
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
@@ -96,26 +95,18 @@ class Mem0Backend:
         ]
         if not messages:
             return
-        await asyncio.to_thread(self._client.add, messages, **_scope_kwargs(scope))
+        self._client.add(messages, **_scope_kwargs(scope))
 
     async def recall(self, query: str, scope: Scope, k: int = 10) -> list[Recollection]:
-        payload = await asyncio.to_thread(
-            self._client.search,
-            query=query,
-            filters=_scope_kwargs(scope),
-            top_k=k,
-        )
+        payload = self._client.search(query=query, filters=_scope_kwargs(scope), top_k=k)
         return [_to_recollection(r) for r in _results_list(payload)]
 
     async def dump(self, scope: Scope) -> list[Recollection]:
-        payload = await asyncio.to_thread(
-            self._client.get_all,
-            filters=_scope_kwargs(scope),
-        )
+        payload = self._client.get_all(filters=_scope_kwargs(scope))
         return [_to_recollection(r) for r in _results_list(payload)]
 
     async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:
         messages = [{"role": "user", "content": item.text} for item in items if item.text]
         if messages:
-            await asyncio.to_thread(self._client.add, messages, **_scope_kwargs(scope))
+            self._client.add(messages, **_scope_kwargs(scope))
         return ExportReport.from_ingest(self, transferred=len(messages))

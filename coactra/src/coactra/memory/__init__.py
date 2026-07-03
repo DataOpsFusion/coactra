@@ -1,10 +1,10 @@
-"""coactra.memory — a thin, clean connector to long-term memory engines.
+"""coactra.memory — a thin connector to long-term memory sources.
 
 mem0 and Graphiti already do extraction + consolidation + recall, so this package is a
-small, framework-agnostic facade over one async ``MemoryBackend`` Protocol — not a
-reimplemented store. Two headline verbs: ``remember`` and ``recall``. ``export`` (lossy,
-capability-negotiated) stays off the headline. Returns are always plain ``Recollection``
-objects; no mem0/graphiti type ever leaks across the boundary.
+small, framework-agnostic facade over async memory protocols — not a reimplemented
+store. ``recall`` is the minimum contract. ``remember`` and ``export`` are optional.
+Returns are always plain ``Recollection`` objects; no mem0/graphiti type ever leaks
+across the boundary.
 
     from coactra.memory import Memory, make_backend, Scope
 
@@ -19,13 +19,18 @@ objects; no mem0/graphiti type ever leaks across the boundary.
 
 from coactra._version import distribution_version
 from coactra.memory.authorization import AuthorizedMemory, MemoryAccess, MemoryAccessDenied
-from coactra.memory.backends.base import MemoryBackend
+from coactra.memory.backends.base import (
+    CallableMemoryReader,
+    MemoryExporter,
+    MemoryReader,
+    MemoryWriter,
+)
 from coactra.memory.capabilities import Capability
-from coactra.memory.conformance import MemoryBackendReport, check_memory_backend_contract
+from coactra.memory.conformance import MemoryContractReport, check_memory_contract
 from coactra.memory.export import ExportReport, export
 from coactra.memory.facade import Memory
 from coactra.memory.factory import make_backend
-from coactra.memory.routing import TenantMemoryBackendRouter
+from coactra.memory.routing import TenantMemoryRouter
 from coactra.memory.types import MemoryEvent, Recollection, Scope
 
 __all__ = [
@@ -35,16 +40,19 @@ __all__ = [
     "Scope",
     "Recollection",
     "MemoryEvent",
-    "MemoryBackend",
+    "MemoryReader",
+    "MemoryWriter",
+    "MemoryExporter",
+    "CallableMemoryReader",
     "MemoryAccess",
     "MemoryAccessDenied",
     "AuthorizedMemory",
     "Capability",
-    "MemoryBackendReport",
-    "check_memory_backend_contract",
+    "MemoryContractReport",
+    "check_memory_contract",
     "ExportReport",
     "export",
-    "TenantMemoryBackendRouter",
+    "TenantMemoryRouter",
 ]
 
 __version__ = distribution_version()

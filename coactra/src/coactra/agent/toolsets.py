@@ -6,6 +6,7 @@ gateway or additive mcp() tag is actually used.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 
@@ -51,6 +52,10 @@ def build_mcp_toolsets(
         server_auth = _token_auth(getattr(server, "auth", None))
         if server_auth is not None:
             kwargs["auth"] = server_auth
-        additive.append(MCPToolset(server.url, **kwargs))
+        server_url = str(server.url)
+        if Path(server_url).exists():
+            additive.append(MCPToolset(Path(server_url), **kwargs))
+        else:
+            additive.append(MCPToolset(server_url, **kwargs))
 
     return gateway_toolset, additive

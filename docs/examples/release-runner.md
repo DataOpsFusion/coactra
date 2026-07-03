@@ -22,7 +22,7 @@ async def main(version: str) -> None:
                 capability="release",
                 profile=ModelProfile(
                     name="release",
-                    model="openai/qwen3.6-plus",
+                    model="openai/deepseek-v4-pro",
                     api_base="https://opencode.ai/zen/go/v1",
                     api_key=os.environ["OC_KEY"],
                 ),

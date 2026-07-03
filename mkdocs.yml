@@ -39,6 +39,7 @@ nav:
   - Concepts:
       - Architecture: concepts/architecture.md
       - Library Map: concepts/library-map.md
+      - Extensions: concepts/extensions.md
       - State and Storage: concepts/state-and-storage.md
       - Tenant Isolation: concepts/tenant-isolation.md
       - Security: concepts/security.md

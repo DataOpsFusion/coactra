@@ -30,12 +30,12 @@ Tenant isolation is a design constraint across the library. Every package should
 3. Do not convert tenant IDs with ad hoc string parsing when a scope DTO exists.
 4. Keep cross-tenant collaboration denied by default unless a host policy explicitly allows it.
 5. Add tests where a value written under one tenant cannot be read from another.
-6. For routers, forward the full backend protocol so tenant isolation does not drop options or methods.
+6. For routers, forward only the memory/tool/workspace contracts the wrapped object supports.
 
 ## Router Inventory
 
 - `TenantReasoningStoreRouter`
-- `TenantMemoryBackendRouter`
+- `TenantMemoryRouter`
 - `TenantWorkspaceBackendRouter`
 - `TenantWorkStoreRouter`
 - `TenantProcedureStoreRouter`
