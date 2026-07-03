@@ -5,14 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from coactra._routing import TenantRouter
-from coactra.ai.protocols import ReasoningStore
 
 
-class TenantReasoningStoreRouter(TenantRouter[ReasoningStore]):
+class TenantReasoningStoreRouter(TenantRouter[Any]):
     """Delegate reasoning records to one cached physical store per tenant.
 
     Caching/dispatch comes from :class:`coactra._routing.TenantRouter`; this subclass
-    adds only the ``ReasoningStore`` contract delegators.
+    adds only the reasoning-store delegators.
     """
 
     def put(self, tenant: str, trace: Any) -> None:

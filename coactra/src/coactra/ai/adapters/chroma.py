@@ -1,16 +1,12 @@
-"""Optional ChromaStore adapter - install with `pip install coactra[ai][chroma]`.
-
-Implements the ReasoningStore Protocol shape over a Chroma collection. Construction
-fails loudly if chromadb is not installed.
-"""
+"""Optional ChromaStore adapter - install with `pip install coactra[chroma]`."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
-from coactra.ai.completion.embedding import rank_traces
 from coactra.ai.replay.models import ReasoningTrace
+from coactra.ai.replay.store import _rank_traces
 
 _META_JSON = "coactra_meta_json"
 
@@ -63,7 +59,7 @@ class ChromaStore:
     def search(
         self, tenant: str, vector: list[float], k: int, min_quality: float
     ) -> list[tuple[ReasoningTrace, float]]:
-        # Over-fetch (k*4) stays adapter-local; ranking/filtering is shared via rank_traces.
+        # Over-fetch stays adapter-local; ranking/filtering matches InMemoryStore.
         res = self._col.query(
             query_embeddings=[vector],
             n_results=k * 4,
@@ -74,4 +70,4 @@ class ChromaStore:
             _from_metadata(meta, emb)
             for meta, emb in zip(res["metadatas"][0], res["embeddings"][0], strict=False)
         ]
-        return rank_traces(vector, candidates, k, min_quality)
+        return _rank_traces(vector, candidates, k, min_quality)

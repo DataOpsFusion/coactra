@@ -6,8 +6,6 @@ from typing import Any
 
 __all__ = [
     "GraphitiAIClient",
-    "GraphitiEmbeddingClient",
-    "GraphitiEmbeddingReranker",
     "make_graphiti_ai_client",
     "make_graphiti_ai_clients",
 ]
@@ -17,16 +15,12 @@ def __getattr__(name: str) -> Any:
     if name in __all__:
         from coactra.memory.integrations.graphiti_ai import (
             GraphitiAIClient,
-            GraphitiEmbeddingClient,
-            GraphitiEmbeddingReranker,
             make_graphiti_ai_client,
             make_graphiti_ai_clients,
         )
 
         exports = {
             "GraphitiAIClient": GraphitiAIClient,
-            "GraphitiEmbeddingClient": GraphitiEmbeddingClient,
-            "GraphitiEmbeddingReranker": GraphitiEmbeddingReranker,
             "make_graphiti_ai_client": make_graphiti_ai_client,
             "make_graphiti_ai_clients": make_graphiti_ai_clients,
         }

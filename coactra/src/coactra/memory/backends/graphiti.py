@@ -235,9 +235,9 @@ def _openai_compatible_clients(
 class GraphitiBackend:
     """Adapter over ``graphiti_core.Graphiti``.
 
-    Preferred portable model seams are ``ai_client=coactra.ai.Client(...)`` and
-    ``embed=coactra.ai.LiteLLMEmbedding(...)``. Native Graphiti clients remain
-    injectable via ``llm_client``/``embedder``/``cross_encoder`` for advanced use.
+    Preferred portable model seam is ``ai_client=coactra.ai.Client(...)``.
+    Native Graphiti clients remain injectable via ``llm_client``/``embedder``/
+    ``cross_encoder`` for advanced use.
     """
 
     declared_capabilities = set(_CAPS)
@@ -252,7 +252,6 @@ class GraphitiBackend:
         llm_client: Any | None = None,
         ai_client: Any | None = None,
         embedder: Any | None = None,
-        embed: Any | None = None,
         cross_encoder: Any | None = None,
         llm_provider: str = "openai",
         llm_api_key: str | None = None,
@@ -268,8 +267,6 @@ class GraphitiBackend:
             return
         if ai_client is not None and llm_client is not None:
             raise ValueError("pass either ai_client or llm_client, not both")
-        if embed is not None and embedder is not None:
-            raise ValueError("pass either embed or embedder, not both")
         try:
             from graphiti_core import Graphiti  # noqa: PLC0415  (lazy: optional extra)
         except ImportError as exc:  # pragma: no cover - exercised only without the extra
@@ -278,15 +275,6 @@ class GraphitiBackend:
             from coactra.memory.integrations import GraphitiAIClient
 
             llm_client = GraphitiAIClient(ai_client=ai_client)
-        if embed is not None:
-            from coactra.memory.integrations import (
-                GraphitiEmbeddingClient,
-                GraphitiEmbeddingReranker,
-            )
-
-            embedder = GraphitiEmbeddingClient(embed=embed, embedding_dim=embedding_dim)
-            if cross_encoder is None:
-                cross_encoder = GraphitiEmbeddingReranker(embed=embed, embedding_dim=embedding_dim)
         needs_configured_llm = llm_client is None or cross_encoder is None
         needs_configured_embedder = embedder is None
         configured_llm, configured_embedder, configured_cross_encoder = _openai_compatible_clients(

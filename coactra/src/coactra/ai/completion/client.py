@@ -23,8 +23,6 @@ import instructor
 import litellm
 from pydantic import BaseModel
 
-from coactra.ai.protocols import Completer
-
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -58,7 +56,7 @@ def _extract_text(message: Any) -> str:
 
 
 class BoundCompleter:
-    """A Completer with provider config (api_base/api_key/defaults) pre-bound.
+    """A completion client with provider config pre-bound.
 
     Per-call kwargs override the bound defaults. This is the single litellm call path;
     ``LiteLLMCompleter`` is just the zero-binding case. Includes the reasoning_content
@@ -70,7 +68,7 @@ class BoundCompleter:
 
     def complete(self, model: str, messages: list[dict[str, Any]], **kwargs: Any) -> str:
         merged = {**self._bound, **kwargs}
-        # model is per-call in the Completer Protocol; drop any stray bound model
+        # model is per-call; drop any stray bound model
         # so the positional arg always wins (no "multiple values for 'model'").
         merged.pop("model", None)
         resp = litellm.completion(model=model, messages=messages, **merged)
@@ -111,10 +109,10 @@ def make_completer(
     api_base: str | None = None,
     api_key: str | None = None,
     **defaults: Any,
-) -> Completer:
-    """Build a Completer with provider config pre-bound so callers stop repeating
+) -> BoundCompleter:
+    """Build a completion client with provider config pre-bound so callers stop repeating
     ``api_base``/``api_key`` (and any default kwargs) on every call. Injectable
-    anywhere a ``Completer`` is expected (``ReasoningEngine``, ``ask``)."""
+    anywhere an object with ``complete(...)`` is expected."""
     return BoundCompleter(**_provider_config(api_base, api_key, defaults))
 
 
@@ -122,7 +120,7 @@ def ask(
     prompt: str,
     *,
     model: str = "gpt-4o-mini",
-    completer: Completer | None = None,
+    completer: Any | None = None,
     **kwargs: Any,
 ) -> str:
     """Call any model for free-text. completer is swappable; default = LiteLLM.
@@ -187,7 +185,7 @@ def structured[T: BaseModel](
 class Client:
     """Provider facade so callers configure ``model``/``api_base``/``api_key`` once.
 
-    ``ask()`` routes through the injected (or built) Completer Protocol.
+    ``ask()`` routes through the injected completion object.
     ``structured()`` threads the bound config as kwargs to the standalone
     ``structured()`` (which uses instructor directly, not the Completer). Standalone
     ``ask``/``structured`` and the DI Protocols remain fully usable.
@@ -199,7 +197,7 @@ class Client:
         model: str,
         api_base: str | None = None,
         api_key: str | None = None,
-        completer: Completer | None = None,
+        completer: Any | None = None,
         **defaults: Any,
     ) -> None:
         self.model = model

@@ -1,14 +1,13 @@
-"""Graphiti adapters backed by Coactra AI protocols.
+"""Graphiti adapters backed by Coactra AI completion helpers.
 
 Graphiti owns temporal memory extraction. Coactra AI owns model routing,
-structured output, and embeddings through LiteLLM/Instructor. These adapters
-connect those stable seams without patching Graphiti internals.
+structured output, and provider calls through LiteLLM/Instructor. These adapters
+connect that seam without patching Graphiti internals.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterable
 from typing import Any
 
 from pydantic import BaseModel
@@ -16,15 +15,11 @@ from pydantic import BaseModel
 from coactra.memory.backends._errors import MissingExtraError
 
 try:  # pragma: no cover - import path is exercised in integration tests when installed
-    from graphiti_core.cross_encoder.client import CrossEncoderClient
-    from graphiti_core.embedder.client import EmbedderClient
     from graphiti_core.llm_client.client import LLMClient
     from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
     from graphiti_core.prompts.models import Message
 except ImportError as exc:  # pragma: no cover - optional extra guard
     raise MissingExtraError("graphiti") from exc
-
-EmbeddingFn = Callable[[str], list[float]]
 
 
 def _coactra_client_cls() -> type[Any]:
@@ -33,22 +28,6 @@ def _coactra_client_cls() -> type[Any]:
     except ImportError as exc:  # pragma: no cover - optional sibling package guard
         raise MissingExtraError("graphiti-ai") from exc
     return Client
-
-
-def _coactra_embedding_cls() -> type[Any]:
-    try:
-        from coactra.ai import LiteLLMEmbedding
-    except ImportError as exc:  # pragma: no cover - optional sibling package guard
-        raise MissingExtraError("graphiti-ai") from exc
-    return LiteLLMEmbedding
-
-
-def _cosine() -> Callable[[list[float], list[float]], float]:
-    try:
-        from coactra.ai import cosine
-    except ImportError as exc:  # pragma: no cover - optional sibling package guard
-        raise MissingExtraError("graphiti-ai") from exc
-    return cosine
 
 
 def _message_text(message: Message) -> str:
@@ -99,21 +78,6 @@ def _structured_to_dict(value: Any) -> dict[str, Any]:
         if isinstance(dumped, dict):
             return dumped
     raise TypeError("coactra.ai.structured must return a pydantic model or dict")
-
-
-def _input_text(input_data: Any) -> str:
-    if isinstance(input_data, str):
-        return input_data
-    if isinstance(input_data, Iterable):
-        values = list(input_data)
-        if all(isinstance(value, str) for value in values):
-            return "\n".join(values)
-        return " ".join(str(value) for value in values)
-    return str(input_data)
-
-
-def _truncate(vector: list[float], embedding_dim: int | None) -> list[float]:
-    return vector[:embedding_dim] if embedding_dim is not None else vector
 
 
 class GraphitiAIClient(LLMClient):
@@ -198,62 +162,6 @@ class GraphitiAIClient(LLMClient):
         return _loads_json_object(text)
 
 
-class GraphitiEmbeddingClient(EmbedderClient):
-    """Graphiti ``EmbedderClient`` backed by any Coactra ``EmbeddingFn``."""
-
-    def __init__(
-        self,
-        embed: EmbeddingFn | None = None,
-        *,
-        model: str = "text-embedding-3-small",
-        embedding_dim: int | None = None,
-        **embedding_defaults: Any,
-    ) -> None:
-        self._embed = embed or _coactra_embedding_cls()(model=model, **embedding_defaults)
-        self._embedding_dim = embedding_dim
-
-    async def create(self, input_data: Any) -> list[float]:
-        vector = self._embed(_input_text(input_data))
-        return _truncate(list(vector), self._embedding_dim)
-
-    async def create_batch(self, input_data_list: list[str]) -> list[list[float]]:
-        embed_many = getattr(self._embed, "embed_many", None)
-        if callable(embed_many):
-            vectors = embed_many(input_data_list)
-        else:
-            vectors = [self._embed(item) for item in input_data_list]
-        return [_truncate(list(vector), self._embedding_dim) for vector in vectors]
-
-
-class GraphitiEmbeddingReranker(CrossEncoderClient):
-    """Graphiti reranker backed by embedding cosine similarity.
-
-    This avoids Graphiti's provider-specific default reranker when callers already
-    provide a portable Coactra embedding function.
-    """
-
-    def __init__(self, embed: EmbeddingFn, *, embedding_dim: int | None = None) -> None:
-        self._embed = embed
-        self._embedding_dim = embedding_dim
-        self._cosine = _cosine()
-
-    async def rank(self, query: str, passages: list[str]) -> list[tuple[str, float]]:
-        if not passages:
-            return []
-        query_vector = _truncate(list(self._embed(query)), self._embedding_dim)
-        embed_many = getattr(self._embed, "embed_many", None)
-        if callable(embed_many):
-            passage_vectors = embed_many(passages)
-        else:
-            passage_vectors = [self._embed(passage) for passage in passages]
-        scored = [
-            (passage, self._cosine(query_vector, _truncate(list(vector), self._embedding_dim)))
-            for passage, vector in zip(passages, passage_vectors, strict=False)
-        ]
-        scored.sort(key=lambda item: item[1], reverse=True)
-        return scored
-
-
 def make_graphiti_ai_client(**kwargs: Any) -> GraphitiAIClient:
     """Factory form for composition roots that prefer function injection."""
     return GraphitiAIClient(**kwargs)
@@ -262,12 +170,7 @@ def make_graphiti_ai_client(**kwargs: Any) -> GraphitiAIClient:
 def make_graphiti_ai_clients(
     *,
     ai_client: Any | None = None,
-    embed: EmbeddingFn | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Return Graphiti constructor kwargs for Coactra-backed LLM/embedding clients."""
-    out: dict[str, Any] = {"llm_client": GraphitiAIClient(ai_client=ai_client, **kwargs)}
-    if embed is not None:
-        out["embedder"] = GraphitiEmbeddingClient(embed=embed)
-        out["cross_encoder"] = GraphitiEmbeddingReranker(embed=embed)
-    return out
+    """Return Graphiti constructor kwargs for the Coactra-backed LLM client."""
+    return {"llm_client": GraphitiAIClient(ai_client=ai_client, **kwargs)}
