@@ -73,8 +73,8 @@ each new agent framework.
 
 - Removed pure compatibility shim modules in `ai`, `workflow`, and `workspace`.
   Alpha status makes this acceptable and it reduces import ambiguity.
-- Removed `numpy` from the embedding cosine path. The same behavior is achieved
-  with the standard library, so the base install is lighter.
+- Removed the public embedding wrapper. Provider libraries and memory engines
+  should own embeddings; Coactra keeps only private replay ranking.
 - Removed the fake async/Postgres org-store wrapper. It did not provide true
   async I/O and created a misleading public surface.
 - Collapsed duplicate package-local `Scope` subclasses into direct aliases over

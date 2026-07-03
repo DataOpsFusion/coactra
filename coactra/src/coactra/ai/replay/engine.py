@@ -11,18 +11,19 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from typing import Any
 
-from coactra.ai.protocols import EmbeddingFn, ReasoningStore
 from coactra.ai.replay.gate import AdaptiveGate
 from coactra.ai.replay.models import Decision, ReasoningTrace, RecallResult
 
 Reasoner = Callable[[str], str]
+EmbeddingFn = Callable[[str], list[float]]
 
 
 class ReasoningEngine:
     def __init__(
         self,
-        store: ReasoningStore,
+        store: Any,
         embed: EmbeddingFn,
         reasoner: Reasoner,
         *,

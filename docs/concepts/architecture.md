@@ -51,7 +51,7 @@ Application functions
 | Package | Keep owning | Avoid owning |
 |---|---|---|
 | `coactra` | shared `Scope` and umbrella extras | runtime behavior |
-| `coactra[ai]` | model/embedding wrappers, reasoning trace utilities | full agent framework semantics |
+| `coactra[ai]` | model-call helpers and reasoning trace utilities | full agent framework semantics |
 | `coactra[memory]` | backend-neutral memory contract | a custom vector/graph memory engine |
 | `coactra[workspace]` | desk files, handoff, manifest, local policy | MCP mounting or org policy |
 | `coactra[workflow]` | durable business ledger vocabulary | broker/scheduler/workflow engine replacement |
