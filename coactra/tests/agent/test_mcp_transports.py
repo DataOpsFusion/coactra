@@ -30,7 +30,7 @@ def _unused_port() -> int:
     strict=False,
 )
 async def test_team_agent_uses_real_stdio_mcp_server():
-    server = Path(__file__).resolve().parents[1] / "fixtures" / "mcp_math_server.py"
+    server = Path(__file__).resolve().parents[1] / "fixtures" / "math_mcp_server.py"
     team = Team(
         scope=Scope(tenant_id="acme", namespace="mcp"),
         policy=Policy.permissive(),
@@ -53,7 +53,7 @@ async def test_team_agent_uses_real_stdio_mcp_server():
 
 
 async def test_team_agent_uses_real_streamable_http_mcp_server():
-    server = Path(__file__).resolve().parents[1] / "fixtures" / "mcp_math_server.py"
+    server = Path(__file__).resolve().parents[1] / "fixtures" / "math_mcp_server.py"
     fastmcp = Path(sys.executable).with_name("fastmcp")
     port = _unused_port()
     process = subprocess.Popen(

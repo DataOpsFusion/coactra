@@ -186,7 +186,7 @@ make release-check
 
 ## Maturity and API Stability
 
-Coactra is **alpha** (`0.0.x`). Breaking import moves are allowed before stable releases. The root `coactra` exports are the intended application-facing contract; deep imports are adapter and runtime seams.
+Coactra is **alpha** (`0.x`). Breaking import moves are allowed before stable releases. The root `coactra` exports are the intended application-facing contract; deep imports are adapter and runtime seams.
 
 | Surface | Tier | Notes |
 |---------|------|-------|

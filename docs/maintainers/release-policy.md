@@ -1,11 +1,11 @@
 # Release Policy
 
-Coactra is currently at **alpha** (`0.0.x`). The alpha phase covers the Agent core
+Coactra is currently at **alpha** (`0.x`). The alpha phase covers the Agent core
 milestone. No backward-compatibility guarantees are made while the public surface
 is being established. Each milestone (Agent → workspace → Team → Workflow) ships
 as a minor version increment.
 
-## Alpha Surface (0.0.x)
+## Alpha Surface (0.x)
 
 The removed layer (ports-based factory, ports-based Agent, sync collaboration stack)
 has been deleted in the alpha redesign. Compatibility-only import shims are not

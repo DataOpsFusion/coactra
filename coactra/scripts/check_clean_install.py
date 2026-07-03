@@ -49,7 +49,6 @@ assert coactra.__version__ != "0.0.0", (
 assert importlib.util.find_spec("coactra.jobs") is None
 assert importlib.util.find_spec("coactra.directory") is None
 for module in [
-    "coactra.ai",
     "coactra.memory",
     "coactra.workspace",
     "coactra.workflow",

@@ -28,7 +28,9 @@ class LiveCheck:
 
     def ready(self) -> tuple[bool, str]:
         missing_env = [key for key in self.env_any if not _env_or_known_file(key)]
-        missing_modules = [module for module in self.modules if importlib.util.find_spec(module) is None]
+        missing_modules = [
+            module for module in self.modules if importlib.util.find_spec(module) is None
+        ]
         if missing_env:
             return False, "missing env " + ", ".join(missing_env)
         if missing_modules:
@@ -39,18 +41,19 @@ class LiveCheck:
 def _env_or_known_file(key: str) -> str | None:
     if os.getenv(key):
         return os.getenv(key)
-    if key == "OC_KEY" and Path("/tmp/oc.key").exists():
-        return Path("/tmp/oc.key").read_text().strip()
+    if key == "OC_KEY":
+        for path in (Path("/tmp/OC.key"), Path("/tmp/oc.key")):
+            if path.exists():
+                return path.read_text().strip()
     return None
 
 
 CHECKS = [
     LiveCheck(
-        name="opencode-zen-agent",
+        name="opencode-agent",
         tests=(
-            "tests/ai/test_live_zen.py",
-            "tests/agent/test_live_zen_agent.py",
-            "tests/agent/test_acceptance_live.py",
+            "tests/agent/test_live_opencode_agent.py",
+            "tests/agent/test_live_opencode_workflow.py",
         ),
         env_any=("OC_KEY",),
     ),
@@ -106,7 +109,10 @@ def main() -> int:
     if not skipped and RUN_LIVE:
         print("All configured live checks passed.")
     elif not RUN_LIVE:
-        print("Live checks were inventoried only. Set COACTRA_RUN_LIVE=1 to execute configured checks.")
+        print(
+            "Live checks were inventoried only. "
+            "Set COACTRA_RUN_LIVE=1 to execute configured checks."
+        )
     return 0
 
 

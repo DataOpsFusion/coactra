@@ -23,9 +23,9 @@ python3 examples/work/release_work_lifecycle.py
 
 | If you are building... | Start here | Source |
 |---|---|---|
-| a normal single-agent app | [Incident Response Handoff](../examples/incident-response-handoff.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/incident_response_handoff.py) |
-| explicit function-first composition | [Support Ticket Agent](../examples/support-ticket-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/support_ticket_agent.py) |
-| a higher-level SDK loop | [Offline SRE Agent](../examples/offline-sre-agent.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/offline_sre_agent.py) |
+| a normal single-agent app | [Basic Incident Triage](../examples/basic-incident-triage.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/incident_response_handoff.py) |
+| explicit function-first composition | [Support Desk](../examples/support-desk.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/support_ticket_agent.py) |
+| a higher-level SDK loop | [Offline Agent SDK](../examples/offline-agent-sdk.md) | [source](https://github.com/DataOpsFusion/coactra/blob/main/examples/offline_sre_agent.py) |
 | support or helpdesk memory | Resolution Memory | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/resolution_memory) |
 | combined helpdesk (agent + work + memory) | Ticket Triage | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/projects/ticket_triage) |
 | durable jobs or releases | [Work Order Lifecycle](../examples/work-order-lifecycle.md) | [source](https://github.com/DataOpsFusion/coactra/tree/main/examples/work) |

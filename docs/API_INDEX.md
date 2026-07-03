@@ -1,6 +1,6 @@
 # API Index
 
-Complete public surface for Coactra 0.0.x (alpha). Tags: **Available** = works today; **Advanced seam** = available but requires host wiring or optional runtime adapters.
+Complete public surface for Coactra 0.x (alpha). Tags: **Available** = works today; **Advanced seam** = available but requires host wiring or optional runtime adapters.
 
 ## Top-Level Exports
 
