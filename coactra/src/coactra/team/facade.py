@@ -7,13 +7,11 @@ and carries canonical scope and policy for its members.
 
 from __future__ import annotations
 
-import inspect
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from coactra.agent import Agent
-    from coactra.team.extensions import TeamExtension
 from coactra.agent.skills import Skill, normalize_skills
 from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.policy import DecisionOutcome, Policy, PolicyRequest
@@ -282,16 +280,6 @@ class Team:
         workflow_name = self._workflow_name(workflow)
         self._workflows[workflow_name] = workflow
         return workflow
-
-    async def install_extension(self, extension: TeamExtension) -> TeamExtension:
-        """Install a host-owned extension into this Team."""
-        installer = getattr(extension, "install", None)
-        if not callable(installer):
-            raise TypeError("extension must expose install(team)")
-        result = installer(self)
-        if inspect.isawaitable(result):
-            await result
-        return extension
 
     def workflow(self, name: str) -> Any | None:
         return self._workflows.get(name)

@@ -9,7 +9,7 @@ from coactra import (
     Agent, CoactraError, Decision, DecisionOutcome, ErrorCode,
     MissingExtraError, ModelProfile, ModelResolver, ModelRoute,
     Policy, PolicyRequest, RemotePeer, Run, Scope, Skill,
-    StaticToken, Team, TeamExtension, ValidationError, Workflow, __version__,
+    StaticToken, Team, ValidationError, Workflow, __version__,
 )
 ```
 
@@ -29,7 +29,6 @@ from coactra import (
 | `Skill` | dataclass | **Available** | Structured skill entry for the Agent Card. |
 | `StaticToken` | class | **Available** | Pre-fetched JWT token source for dev / CI. |
 | `Team` | class | **Available** | Team-first coordination root with explicit scope, policy, catalogs, routing, and execution. |
-| `TeamExtension` | protocol | **Available** | Plugin-like seam for host-owned packages that install capabilities into a Team. |
 | `Workflow` | class | **Available** | Playbook runner with capability routing, approvals, checkpoint resume, and engine bridge. |
 | `CoactraError` | class | **Available** | Base exception for all Coactra errors. |
 | `ErrorCode` | enum | **Available** | Machine-readable error categories (TIMEOUT, VALIDATION, PROVIDER, etc.). |
@@ -49,28 +48,22 @@ For OAuth client-credentials token fetch/refresh, use `authlib` or `httpx-oauth`
 
 Removed alpha roots are intentionally not compatibility-shimmed; the exact banned names are enforced by the architecture guard and release checklist.
 
-## Team.install_extension(...)
+## External Install Functions
 
 ```python
-from dataclasses import dataclass
-
 from coactra import Skill, Team
 
 
-@dataclass
-class HermesExtension:
-    name: str = "hermes"
-
-    async def install(self, team: Team) -> None:
-        team.add_skill(Skill("code.review", description="Review code changes"))
-        # Real extensions may also register agents, model routes, workflows,
-        # MCP servers, A2A peers, policy hooks, or host-owned adapters.
+def install_hermes(team: Team) -> None:
+    team.add_skill(Skill("code.review", description="Review code changes"))
+    # Real packages may also call team.add_agent(...), add model routes,
+    # register workflows, or configure MCP/A2A adapters.
 
 
-await team.install_extension(HermesExtension())
+install_hermes(team)
 ```
 
-Use extensions for host-owned packages such as Pi, Hermes, Claude Code, Codex, or internal platform packages. The extension owns SDK-specific behavior; Coactra provides the scoped Team boundary it can register against.
+Add a formal plugin API only after multiple real integrations need the same contract.
 
 ## Team.add_agent(...)
 

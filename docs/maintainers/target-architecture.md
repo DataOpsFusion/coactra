@@ -11,7 +11,7 @@ and connector contracts that sit above those engines.
 - One public assembly door: `from coactra import Team, Scope, Policy, Workflow`
 - `Team(scope=..., policy=...)` owns agent registration, skill catalogs, workflow catalogs, and routing
 - `team.add_agent(...)` is the only endorsed application construction path for runtime agents
-- `team.install_extension(...)` is the endorsed path for Pi/Hermes/Codex/Claude-Code-style packages to add capabilities without Coactra wrapping their whole execution model
+- External packages can expose plain install functions such as `install_hermes(team)`; do not add a public plugin protocol until real integrations need one
 - `Workflow(steps=[...])` routes by broad `requires_skill` domains plus optional `required_tags`; direct `agent=` pinning is an override
 - Workflow routing and execution both go through Team policy checks
 - Approval resumes carry structured `ProofBundle` evidence, not plain text claims

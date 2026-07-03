@@ -1,6 +1,5 @@
-"""coactra.team - public Team facade and extension seam."""
+"""coactra.team - public Team facade only."""
 
-from coactra.team.extensions import TeamExtension
 from coactra.team.facade import Team
 
-__all__ = ["Team", "TeamExtension"]
+__all__ = ["Team"]
