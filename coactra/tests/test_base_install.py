@@ -12,7 +12,6 @@ import sys
 import pytest
 
 CAPABILITY_ROOTS = [
-    "coactra.ai",
     "coactra.memory",
     "coactra.workspace",
     "coactra.workflow",

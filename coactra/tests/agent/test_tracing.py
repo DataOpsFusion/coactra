@@ -34,7 +34,7 @@ class RecordingTracer:
 
 
 def _echo_model() -> FunctionModel:
-    def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         return ModelResponse(parts=[TextPart("model ok")])
 
     return FunctionModel(_reply)

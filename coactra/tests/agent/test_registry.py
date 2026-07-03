@@ -10,7 +10,7 @@ from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
 def _echo_model(name: str) -> FunctionModel:
-    def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         last_text = name
         for msg in reversed(messages):
             for part in getattr(msg, "parts", []):

@@ -18,6 +18,7 @@ def test_approval_routing_example_runs() -> None:
         text=True,
         capture_output=True,
         check=False,
+        timeout=10,
     )
 
     assert result.returncode == 0, result.stderr
@@ -50,6 +51,7 @@ def test_acceptance_examples_run() -> None:
             text=True,
             capture_output=True,
             check=False,
+            timeout=10,
         )
         assert result.returncode == 0, (example, result.stderr)
         assert result.stdout.strip(), example
@@ -72,6 +74,7 @@ def test_work_examples_run() -> None:
             text=True,
             capture_output=True,
             check=False,
+            timeout=10,
         )
         assert result.returncode == 0, (example, result.stderr)
         assert "status" in result.stdout

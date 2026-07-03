@@ -17,13 +17,8 @@ def test_public_surface_is_complete():
         "make_workflow_engine",
         "make_default_workflow_engine",
         "WorkflowRuntime",
-        "ToolInvoker",
         "LangGraphEngine",
         "DurableLangGraphEngine",
-        "check_done_criteria",
-        "ReasoningTrace",
-        "induce",
-        "update",
         "Approver",
         "Collaborator",
         "EscalationRouter",
@@ -41,7 +36,7 @@ def test_public_surface_is_complete():
         assert hasattr(w, name), name
 
 
-def test_end_to_end_author_run_store_and_induce_run():
+def test_end_to_end_author_run_store_and_reuse():
     scope = w.Scope(tenant_id="acme", namespace="agent:1")
 
     def make(tag):
@@ -65,13 +60,7 @@ def test_end_to_end_author_run_store_and_induce_run():
     store.save(authored, scope)
     assert store.get("deploy", scope).name == "deploy"
 
-    # induced from a trace -> SAME run path as authored
-    induced = w.induce(
-        w.ReasoningTrace(
-            problem="deploy",
-            steps=[{"id": "build", "kind": "task"}, {"id": "verify", "kind": "task"}],
-        )
-    )
-    r2 = eng.run(induced, {}, ctx)
+    reused = store.get("deploy", scope)
+    assert reused is not None
+    r2 = eng.run(reused, {}, ctx)
     assert r2.path == r1.path
-    assert induced.is_induced is True

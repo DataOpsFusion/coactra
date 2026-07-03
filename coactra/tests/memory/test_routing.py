@@ -2,9 +2,9 @@ import pytest
 
 from coactra.memory import (
     Capability,
-    MemoryBackend,
+    MemoryReader,
     Scope,
-    TenantMemoryBackendRouter,
+    TenantMemoryRouter,
     make_backend,
 )
 
@@ -17,8 +17,8 @@ async def test_memory_router_binds_one_backend_per_tenant():
         built.append(tenant)
         return make_backend("inprocess")
 
-    router = TenantMemoryBackendRouter(factory)
-    assert isinstance(router, MemoryBackend)
+    router = TenantMemoryRouter(factory)
+    assert isinstance(router, MemoryReader)
     acme = Scope(tenant="acme")
     globex = Scope(tenant="globex")
     await router.remember(["acme secret"], acme)
@@ -29,7 +29,7 @@ async def test_memory_router_binds_one_backend_per_tenant():
 
 @pytest.mark.asyncio
 async def test_router_capabilities_empty_when_no_backends():
-    router = TenantMemoryBackendRouter(lambda _t: make_backend("inprocess"))
+    router = TenantMemoryRouter(lambda _t: make_backend("inprocess"))
     assert await router.capabilities() == set()
 
 
@@ -46,7 +46,7 @@ async def test_router_capabilities_intersect_cached_backends():
         "acme": {Capability.STORE, Capability.LEXICAL_RECALL, Capability.PROVENANCE},
         "globex": {Capability.STORE, Capability.PROVENANCE},
     }
-    router = TenantMemoryBackendRouter(lambda t: FakeBackend(caps_by_tenant[t]))
+    router = TenantMemoryRouter(lambda t: FakeBackend(caps_by_tenant[t]))
     router.for_tenant("acme")
     router.for_tenant("globex")
     # Routers span heterogeneous silos; advertise only universally-supported capabilities.

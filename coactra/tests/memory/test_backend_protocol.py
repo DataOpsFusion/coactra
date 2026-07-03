@@ -1,4 +1,11 @@
-from coactra.memory import Capability, MemoryBackend, Recollection, Scope
+from coactra.memory import (
+    Capability,
+    MemoryExporter,
+    MemoryReader,
+    MemoryWriter,
+    Recollection,
+    Scope,
+)
 from coactra.memory.backends.base import event_text, normalize_events
 
 
@@ -20,15 +27,19 @@ class _Dummy:
 
 
 def test_protocol_is_runtime_checkable():
-    assert isinstance(_Dummy(), MemoryBackend)
+    assert isinstance(_Dummy(), MemoryReader)
+    assert isinstance(_Dummy(), MemoryWriter)
+    assert isinstance(_Dummy(), MemoryExporter)
 
 
-def test_incomplete_class_is_not_a_backend():
+def test_recall_is_the_minimum_contract():
     class Partial:
-        async def remember(self, events, scope):
-            return None
+        async def recall(self, query, scope, k=10):
+            return []
 
-    assert not isinstance(Partial(), MemoryBackend)
+    assert isinstance(Partial(), MemoryReader)
+    assert not isinstance(Partial(), MemoryWriter)
+    assert not isinstance(Partial(), MemoryExporter)
 
 
 def test_event_text_flattens_str_and_chat_dict():

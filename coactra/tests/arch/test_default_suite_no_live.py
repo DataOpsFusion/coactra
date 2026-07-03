@@ -9,7 +9,6 @@ from pathlib import Path
 LIVE_TEST_FILES = (
     "tests/agent/test_acceptance_live.py",
     "tests/agent/test_live_zen_agent.py",
-    "tests/ai/test_live_zen.py",
     "tests/memory/test_live_integration.py",
 )
 
@@ -54,5 +53,4 @@ def test_default_collection_excludes_live_tests():
     assert "deselected" in collected or result.returncode == 5
     assert "test_team_workflow_acceptance" not in collected
     assert "test_live_mem0_remember_recall" not in collected
-    assert "test_structured_returns_typed_object_from_qwen" not in collected
     assert "test_agent_create_with_openai_provider_runs_live" not in collected

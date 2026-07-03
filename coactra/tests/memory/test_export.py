@@ -1,4 +1,4 @@
-from coactra.memory import Capability, ExportReport, MemoryBackend, Scope, export
+from coactra.memory import Capability, ExportReport, MemoryExporter, Scope, export
 from coactra.memory.backends.inprocess import InProcessBackend
 
 SCOPE = Scope(tenant="acme", agent="agent1")
@@ -92,5 +92,5 @@ async def test_export_is_scope_isolated():
 
 
 def test_backends_satisfy_protocol():
-    assert isinstance(_GraphBackend(), MemoryBackend)
-    assert isinstance(InProcessBackend(), MemoryBackend)
+    assert isinstance(_GraphBackend(), MemoryExporter)
+    assert isinstance(InProcessBackend(), MemoryExporter)

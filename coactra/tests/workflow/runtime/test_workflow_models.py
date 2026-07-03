@@ -44,14 +44,6 @@ def test_procedure_is_ordered_and_indexed_by_id():
     assert p.entry.id == "a"
 
 
-def test_authored_and_induced_are_the_same_type():
-    authored = Procedure(name="x", steps=[Step(id="a", kind="task")])
-    induced = Procedure(name="x", steps=[Step(id="a", kind="task")], is_induced=True)
-    assert type(authored) is type(induced)
-    assert authored.is_induced is False
-    assert induced.is_induced is True
-
-
 def test_run_result_holds_path_and_output():
     r = RunResult(output={"ok": True}, path=["a", "b"])
     assert r.output == {"ok": True}

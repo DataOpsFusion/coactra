@@ -9,16 +9,19 @@ def test_public_surface_is_exact():
         "Scope",
         "Recollection",
         "MemoryEvent",
-        "MemoryBackend",
+        "MemoryReader",
+        "MemoryWriter",
+        "MemoryExporter",
+        "CallableMemoryReader",
         "MemoryAccess",
         "MemoryAccessDenied",
         "AuthorizedMemory",
         "Capability",
-        "MemoryBackendReport",
-        "check_memory_backend_contract",
+        "MemoryContractReport",
+        "check_memory_contract",
         "ExportReport",
         "export",
-        "TenantMemoryBackendRouter",
+        "TenantMemoryRouter",
     }
     assert set(m.__all__) == expected
     for name in expected:

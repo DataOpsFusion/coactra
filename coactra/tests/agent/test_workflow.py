@@ -38,7 +38,7 @@ def _proof_bundle() -> ProofBundle:
 def _make_echo_model(label: str):
     """Return a FunctionModel that echoes '<label>: <prompt>'."""
 
-    def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         last_text = ""
         for msg in reversed(messages):
             for part in msg.parts:

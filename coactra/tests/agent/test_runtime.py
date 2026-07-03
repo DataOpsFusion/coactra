@@ -8,7 +8,7 @@ from pydantic_ai.models.test import TestModel
 from coactra.agent.runtime import PydanticAIRuntime
 
 
-def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("the first check is replication lag")])
 
 

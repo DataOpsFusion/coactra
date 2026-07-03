@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 
 
 def test_cli_doctor(capsys):
@@ -41,3 +43,14 @@ def test_cli_validate_rejects_missing_file(tmp_path, capsys):
 
     assert main(["validate", str(tmp_path / "missing.json")]) == 1
     assert "does not exist" in capsys.readouterr().err
+
+
+def test_package_is_module_executable():
+    result = subprocess.run(
+        [sys.executable, "-m", "coactra", "doctor"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "coactra doctor" in result.stdout

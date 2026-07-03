@@ -2,7 +2,7 @@ import importlib.util
 
 import pytest
 
-from coactra.memory import MemoryBackend, make_backend
+from coactra.memory import MemoryReader, make_backend
 from coactra.memory.backends._errors import MissingExtraError
 from coactra.memory.backends.inprocess import InProcessBackend
 
@@ -14,7 +14,7 @@ def _installed(mod: str) -> bool:
 def test_make_inprocess_returns_backend():
     be = make_backend("inprocess")
     assert isinstance(be, InProcessBackend)
-    assert isinstance(be, MemoryBackend)
+    assert isinstance(be, MemoryReader)
 
 
 def test_unknown_name_raises_value_error():
@@ -46,4 +46,4 @@ def test_engine_backed_backend_accepts_injected_client():
     # With a client injected, no extra is needed — factory forwards **config.
     sentinel = object()
     be = make_backend("mem0", client=sentinel)
-    assert isinstance(be, MemoryBackend)
+    assert isinstance(be, MemoryReader)

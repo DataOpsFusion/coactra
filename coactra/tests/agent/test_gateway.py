@@ -12,8 +12,16 @@ from coactra.agent.auth import BearerAuth, StaticToken
 from coactra.agent.runtime import PydanticAIRuntime
 
 
-def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("done")])
+
+
+def _mcp_toolset_type():
+    try:
+        from pydantic_ai.mcp import MCPToolset
+    except ImportError as exc:
+        pytest.skip(f"pydantic-ai MCP extra is not installed: {exc}")
+    return MCPToolset
 
 
 async def test_bearer_auth_injects_static_token() -> None:
@@ -49,7 +57,7 @@ async def test_bearer_auth_refreshes_token_per_flow() -> None:
 
 
 def test_gateway_wiring_creates_mcp_server() -> None:
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
@@ -67,7 +75,7 @@ def test_gateway_wiring_no_gateway_has_no_server() -> None:
 
 
 def test_gateway_wiring_str_auth_normalized_to_static_token() -> None:
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
@@ -79,7 +87,7 @@ def test_gateway_wiring_str_auth_normalized_to_static_token() -> None:
 
 
 def test_gateway_no_auth_uses_plain_client() -> None:
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     rt = PydanticAIRuntime(
         model=FunctionModel(_final),
@@ -98,7 +106,7 @@ async def test_offline_agent_runs_without_gateway() -> None:
 
 
 async def test_team_add_agent_accepts_gateway_params() -> None:
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     team = Team(
         scope=Scope(tenant_id="acme", namespace="gateway"),
@@ -140,7 +148,7 @@ async def test_agent_aclose_without_gateway_is_harmless() -> None:
 
 
 def test_build_mcp_toolsets_returns_gateway_and_additive_servers() -> None:
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     from coactra.agent.domain.tools import mcp
     from coactra.agent.toolsets import build_mcp_toolsets

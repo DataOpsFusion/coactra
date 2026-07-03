@@ -77,6 +77,27 @@ async def test_shared_recall_is_limited_to_prebound_aliases():
 
 
 @pytest.mark.asyncio
+async def test_recall_checks_acl_before_reading_shared_scope():
+    server = FakeServer()
+    memory = AsyncMock()
+    acl = SimpleNamespace(check_read=Mock())
+    department_scope = object()
+    memory.recall.return_value = [Recollection("department fact", "d1", None)]
+    register_recall_tool(
+        server,
+        memory,
+        object(),
+        scope_aliases={"department": department_scope},
+        acl=acl,
+        actor="platform",
+    )
+
+    await server.tools["recall_facts"]("query", scopes=["department"])
+
+    acl.check_read.assert_called_once_with("platform", department_scope)
+
+
+@pytest.mark.asyncio
 async def test_publish_memory_checks_acl_before_writing():
     server = FakeServer()
     memory = AsyncMock()

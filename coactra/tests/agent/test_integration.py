@@ -13,14 +13,14 @@ from coactra.agent.skills import Skill as SkillDirect
 
 
 def _static_model(text: str) -> FunctionModel:
-    def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         return ModelResponse(parts=[TextPart(text)])
 
     return FunctionModel(_fn)
 
 
 def _capturing_model(captured: list) -> FunctionModel:
-    def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _fn(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         captured.append(messages)
         return ModelResponse(parts=[TextPart("prod db is on .66")])
 
