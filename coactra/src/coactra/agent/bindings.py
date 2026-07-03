@@ -7,11 +7,6 @@ from typing import Any
 
 from coactra.agent.domain import AgentRef
 from coactra.agent.domain.tools import MCPServer
-from coactra.agent.learned import (
-    learned_procedure_skills,
-    learned_procedure_tools,
-    normalize_learned_procedures,
-)
 from coactra.agent.peers import RemotePeer, peer_tools
 from coactra.agent.skills import Skill, normalize_skills
 from coactra.policy import Policy
@@ -30,10 +25,6 @@ def build_agent_bindings(
     *,
     tools: list[Any] | None,
     skills: Any,
-    learned: Any,
-    allow_unreviewed_learned: bool,
-    procedure_engine: Any | None,
-    procedure_scope: Any | None,
     peers: list[Any] | None,
     registry: Any | None,
     name: str | None,
@@ -41,36 +32,17 @@ def build_agent_bindings(
     policy: Policy | None,
 ) -> AgentBindings:
     """Normalize Team.add_agent inputs into skills, callable tools, and MCP tags."""
-    learned_procedures = normalize_learned_procedures(
-        learned, allow_unreviewed=allow_unreviewed_learned
-    )
-    normalized_skills = agent_skills(skills, learned_procedures)
+    normalized_skills = normalize_agent_skills(skills)
     local_tools, mcp_servers = split_mcp_tools(tools)
     bound_tools = [
         *local_tools,
-        *learned_procedure_tools(
-            learned_procedures,
-            engine=procedure_engine,
-            tenant=tenant,
-            scope=procedure_scope,
-        ),
         *bind_peer_tools(peers=peers, registry=registry, name=name, tenant=tenant, policy=policy),
     ]
     return AgentBindings(skills=normalized_skills, tools=bound_tools, mcp_servers=mcp_servers)
 
 
-def normalize_agent_skills(
-    skills: Any,
-    *,
-    learned: Any,
-    allow_unreviewed_learned: bool,
-) -> list[Skill]:
-    procedures = normalize_learned_procedures(learned, allow_unreviewed=allow_unreviewed_learned)
-    return agent_skills(skills, procedures)
-
-
-def agent_skills(skills: Any, learned_procedures: list[Any]) -> list[Skill]:
-    return normalize_skills(skills) + learned_procedure_skills(learned_procedures)
+def normalize_agent_skills(skills: Any) -> list[Skill]:
+    return normalize_skills(skills)
 
 
 def split_mcp_tools(tools: list[Any] | None) -> tuple[list[Any], list[MCPServer]]:

@@ -7,7 +7,6 @@ retries failed steps, and stores its full audit trail.
 
 - `Workflow("name", steps=[...])` - authored playbook
 - `step("description", agent=, requires_skill=, required_tags=, approve=, approval_only=)` - step builder
-- `Workflow.run_goal("goal text", team=team)` - triage: reuse saved or plan new
 - Approval pauses and resume with `ProofBundle` evidence
 - Internal run ledger: `WorkflowRun`, `Checkpoint`, `Approval`
 
@@ -97,14 +96,3 @@ submitted -> running -> [paused for approval] -> resumed -> done
                                                        -> failed -> retried
                                                        -> cancelled
 ```
-
-## Run Goal (triage mode)
-
-```python
-run = await Workflow.run_goal(
-    "rotate prod cert and redeploy web tier",
-    team=team,
-)
-```
-
-Planned playbooks are saved as **candidates** - promoted to the reusable library only after review or repeated success.

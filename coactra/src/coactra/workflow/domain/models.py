@@ -1,8 +1,7 @@
 """Procedure-as-data models.
 
-A Procedure is an ordered list of typed Steps. The SAME type is used whether a human
-authored the flow or induce() learned it from a trace (is_induced just records origin).
-Step kinds are deliberately few: task / branch / approve / ask / escalate.
+A Procedure is an ordered list of typed Steps. Step kinds are deliberately few:
+task / branch / approve / ask / escalate.
 """
 
 from __future__ import annotations
@@ -69,7 +68,6 @@ class Procedure(BaseModel):
 
     name: str = Field(min_length=1)
     steps: list[Step] = Field(min_length=1)
-    is_induced: bool = False
 
     @model_validator(mode="after")
     def _validate_steps(self) -> Procedure:

@@ -54,7 +54,6 @@ nav:
       - Improvement Backlog: maintainers/improvement-backlog.md
       - Agent Design: maintainers/agent-design.md
       - Memory Design: maintainers/memory-design.md
-      - AI Library Design: maintainers/ai-library-design.md
 
 markdown_extensions:
   - admonition

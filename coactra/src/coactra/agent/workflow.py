@@ -2,8 +2,8 @@
 
 Pure playbook DTOs (`Step`, `Playbook`, `StepResult`, `Approval`, `WorkflowRun`,
 and `step`) are owned by `coactra.workflow.playbook` and re-exported here for
-runner-local convenience. This module owns execution over a Team, checkpoint
-bridging, and goal planning.
+runner-local convenience. This module owns execution over a Team and checkpoint
+bridging.
 
 No pydantic-ai imports at module level. Duck-types team and agent.
 """
@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field, model_validator
 
 if TYPE_CHECKING:
     from coactra.agent.checkpoint import CheckpointStore
-    from coactra.agent.playbook_store import PlaybookStore
 
 __all__ = [
     "Workflow",
@@ -1053,59 +1052,3 @@ class Workflow:
             verifier_roles=verifier_roles,
             requires_human_approval=needs_human,
         )
-
-
-    # ------------------------------------------------------------------
-    # run_goal — triage: store-hit or plan → run → save candidate
-    # ------------------------------------------------------------------
-
-    @classmethod
-    async def run_goal(
-        cls,
-        goal: str,
-        team: Any,
-        *,
-        store: PlaybookStore | None = None,
-        client: Any = None,
-    ) -> WorkflowRun:
-        """Triage a *goal*: reuse a promoted playbook or plan a new one.
-
-        Parameters
-        ----------
-        goal:
-            Plain-language description of the goal to accomplish.
-        team:
-            A :class:`~coactra.team.Team` for routing and planning.
-        store:
-            Optional :class:`~coactra.agent.playbook_store.PlaybookStore`.
-            When provided, ``store.find(goal)`` is checked first.  If a
-            promoted playbook is found it is run directly (no planning).
-            If not found, a new playbook is planned and — only on a
-            completed run — stored as a **CANDIDATE** (not auto-promoted).
-        client:
-            Injectable LLM client for :func:`~coactra.agent.planner.plan_playbook`.
-            When ``None``, the default :class:`coactra.ai.Client` is used.
-
-        Returns
-        -------
-        :class:`WorkflowRun`
-        """
-        from coactra.agent.planner import plan_playbook  # noqa: PLC0415
-
-        # Triage: check the store for a promoted playbook
-        if store is not None:
-            pb = store.find(goal)
-            if pb is not None:
-                wf = cls.from_playbook(pb)
-                return await wf.run(team)
-
-        # Miss — plan a new playbook
-        pb = plan_playbook(goal, team, client=client)
-        wf = cls.from_playbook(pb)
-        run = await wf.run(team)
-
-        # Save as candidate ONLY if the run completed successfully
-        if store is not None and run.status == "completed":
-            store.save_candidate(pb)
-
-        return run

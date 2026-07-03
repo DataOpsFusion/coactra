@@ -27,7 +27,6 @@ coactra = "coactra.cli:main"
 
 [project.optional-dependencies]
 # --- Capability extras (each = its origin package's base deps, minus the pydantic core). ---
-ai = ["instructor>=1.0,<2", "litellm>=1.40,<2"]
 memory = []
 workspace = []
 workflow = ["pyyaml>=6.0"]
@@ -36,11 +35,9 @@ agent = ["pydantic-ai-slim>=1.0,<2"]
 agent-gateway = ["pydantic-ai-slim[mcp]>=1.0,<2", "mcp>=1.24", "httpx>=0.27"]
 
 # --- Backend / integration extras (real, kept; intentionally OUT of `all`). ---
-chroma = ["chromadb>=0.5"]
 tiktoken = ["tiktoken>=0.7"]
 mem0 = ["mem0ai>=0.1,<1"]
 graphiti = ["graphiti-core>=0.3"]
-graphiti-ai = ["graphiti-core>=0.3", "coactra[ai]"]
 office = ["pyyaml>=6.0", "tiktoken>=0.7"]
 oauth = ["authlib>=1.3", "httpx>=0.27"]
 a2a = ["a2a-sdk>=1.0,<2.0", "starlette>=0.37", "sse-starlette>=2.0"]
@@ -62,7 +59,6 @@ otel = ["opentelemetry-api>=1,<2"]
 postgres = ["psycopg[binary]>=3"]
 openfga = ["openfga_sdk>=0.9,<1"]
 integrations = [
-    "coactra[ai]",
     "coactra[team]",
     "structlog>=24.0",
     "pyyaml>=6.0",
@@ -86,8 +82,6 @@ integrations = [
 # --- `all` = union of the capability extras only (no backends), so installing it adds
 # nothing currently absent from a dev environment and keeps absence-gated tests skipping. ---
 all = [
-    "instructor>=1.0,<2",
-    "litellm>=1.40,<2",
     "sqlmodel>=0.0.21",
     "pydantic-ai-slim>=1.0,<2",
 ]

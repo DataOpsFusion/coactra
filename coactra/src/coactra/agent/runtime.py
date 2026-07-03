@@ -38,29 +38,6 @@ def _resolve_model(
     return model
 
 
-def _model_config_for_planner(
-    model: Any,
-    *,
-    api_base: str | None,
-    api_key: str | None,
-    defaults: dict[str, Any],
-) -> dict[str, Any]:
-    """Capture create-time model kwargs for coactra.ai planner derivation."""
-    config: dict[str, Any] = {}
-    if isinstance(model, str):
-        config["model"] = model
-    else:
-        model_id = getattr(model, "_model_id", None) or getattr(model, "model_name", None)
-        if isinstance(model_id, str) and model_id:
-            config["model"] = model_id
-    if api_base is not None:
-        config["api_base"] = api_base
-    if api_key is not None:
-        config["api_key"] = api_key
-    config.update(defaults)
-    return config
-
-
 def _usage(result: Any, run_id: str, *, seq: int = 0):
     try:
         usage = result.usage
@@ -96,12 +73,6 @@ class PydanticAIRuntime:
         **defaults: Any,
     ) -> None:
         self._model = _resolve_model(
-            model,
-            api_base=api_base,
-            api_key=api_key,
-            defaults=defaults,
-        )
-        self._model_config = _model_config_for_planner(
             model,
             api_base=api_base,
             api_key=api_key,

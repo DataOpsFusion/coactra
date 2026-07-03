@@ -15,7 +15,7 @@ from coactra import (
 
 | Name | Type | Status | Description |
 |------|------|--------|-------------|
-| `Agent` | class | **Available** | Thin facade over pydantic-ai: model, tools, memory, workspace, skills, peers, learned procedure replay. |
+| `Agent` | class | **Available** | Thin facade over pydantic-ai: model, tools, memory, workspace, skills, and peers. |
 | `RemotePeer` | dataclass | **Available** | Remote A2A peer config for outbound delegation tools. |
 | `Run` | class | **Available** | Handle returned by `agent.send(...)`; supports `stream()` and `wait()`. |
 | `Decision` | dataclass | **Available** | Shared policy decision payload with outcome, reason, source, and metadata. |
@@ -162,38 +162,6 @@ agent = await team.add_agent(
 ```
 
 `RemotePeer` creates an `ask_<name>` tool backed by the official A2A transport (`coactra.agent.adapters.OfficialA2ATransport`). Policy is checked before the wire is touched. A plain string peer is accepted for the documented `peers=["name"]` shape, but without a registry or remote config it reports unavailable.
-
-## Learned Procedures
-
-```python
-import os
-
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
-
-team = Team(
-    scope=Scope(tenant_id="acme", namespace="learned"),
-    policy=Policy.permissive(),
-    model_resolver=ModelResolver([
-        ModelRoute(
-            capability="learned",
-            profile=ModelProfile(
-                name="learned",
-                model="openai/deepseek-v4-pro",
-                api_base="https://opencode.ai/zen/go/v1",
-                api_key=os.environ["OC_KEY"],
-            ),
-        )
-    ]),
-)
-agent = await team.add_agent(
-    model_capability="learned",
-    name="sre-agent",
-    learned=[promoted_version],
-    procedure_engine=engine,
-)
-```
-
-`learned=` accepts promoted `ProcedureVersion` objects by default. This preserves the candidate -> review -> promote trust boundary. For local experiments only, raw procedures can be enabled with `allow_unreviewed_learned=True`.
 
 ## Skill(...)
 
