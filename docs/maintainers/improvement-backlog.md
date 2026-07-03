@@ -7,7 +7,7 @@ against those decisions.
 
 ## Current Milestone: Team-First Alpha Cut
 
-Status of major features (0.0.x alpha):
+Status of major features (0.x alpha):
 
 | Feature | Status |
 |---|---|

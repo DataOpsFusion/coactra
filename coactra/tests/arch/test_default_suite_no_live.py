@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 LIVE_TEST_FILES = (
-    "tests/agent/test_acceptance_live.py",
-    "tests/agent/test_live_zen_agent.py",
+    "tests/agent/test_live_opencode_agent.py",
+    "tests/agent/test_live_opencode_workflow.py",
     "tests/memory/test_live_integration.py",
 )
 

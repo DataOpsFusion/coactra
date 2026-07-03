@@ -1,11 +1,8 @@
-"""Live acceptance — a real Team runs a Workflow against opencode-zen.
+"""Live workflow check against Opencode.
 
-Env-gated (skips cleanly without a key, like test_live_zen). Proves the design
-end-to-end: Team-owned agent assembly, exact skill routing, approval pause/resume,
-durable checkpoint/resume, and peer delegation.
-Deterministic parts are hard-asserted; LLM-dependent parts are asserted loosely.
+Env-gated; skips cleanly without a key.
 
-Run:  OC_KEY=... .venv/bin/python -m pytest tests/agent/test_acceptance_live.py -q -s
+Run:  OC_KEY=... .venv/bin/python -m pytest tests/agent/test_live_opencode_workflow.py -q -s
 """
 
 from __future__ import annotations
@@ -14,8 +11,6 @@ import os
 from pathlib import Path
 
 import pytest
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team, Workflow
 from coactra.agent.checkpoint import InMemoryCheckpointStore
@@ -35,11 +30,12 @@ def _proof_bundle() -> ProofBundle:
         ),
     )
 
-ZEN = os.getenv("OPENCODE_ZEN_BASE", "https://opencode.ai/zen/go/v1")
+
+OPENCODE_BASE = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/go/v1")
 _KEY_FILES = (Path("/tmp/OC.key"), Path("/tmp/oc.key"))
 
 
-def _key() -> str | None:
+def _opencode_key() -> str | None:
     for key_file in _KEY_FILES:
         if key_file.exists():
             return key_file.read_text().strip()
@@ -48,27 +44,34 @@ def _key() -> str | None:
 
 pytestmark = pytest.mark.live
 live = pytest.mark.skipif(
-    _key() is None,
+    _opencode_key() is None,
     reason="no opencode key (/tmp/OC.key, /tmp/oc.key, or OC_KEY)",
 )
 
 
-def _zen_model():
-    provider = OpenAIProvider(base_url=ZEN, api_key=_key())
+def _opencode_model():
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.providers.openai import OpenAIProvider
+
+    provider = OpenAIProvider(base_url=OPENCODE_BASE, api_key=_opencode_key())
     return OpenAIChatModel("deepseek-v4-pro", provider=provider)
 
 
 @live
-async def test_team_workflow_acceptance():
+async def test_team_runs_workflow_with_opencode_model():
     team = Team(
         scope=Scope(tenant_id="acme", namespace="prod"),
         policy=Policy.permissive(),
         model_resolver=ModelResolver(
             [
                 ModelRoute(
-                    capability="security", profile=ModelProfile(name="security", model=_zen_model())
+                    capability="security",
+                    profile=ModelProfile(name="security", model=_opencode_model()),
                 ),
-                ModelRoute(capability="sre", profile=ModelProfile(name="sre", model=_zen_model())),
+                ModelRoute(
+                    capability="sre",
+                    profile=ModelProfile(name="sre", model=_opencode_model()),
+                ),
             ]
         ),
     )
@@ -135,7 +138,8 @@ async def test_team_workflow_acceptance():
         model_resolver=ModelResolver(
             [
                 ModelRoute(
-                    capability="manager", profile=ModelProfile(name="manager", model=_zen_model())
+                    capability="manager",
+                    profile=ModelProfile(name="manager", model=_opencode_model()),
                 )
             ]
         ),

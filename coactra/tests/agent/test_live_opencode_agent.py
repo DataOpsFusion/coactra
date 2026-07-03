@@ -1,4 +1,4 @@
-"""Live Agent test against opencode zen — env-gated, skips cleanly without a key."""
+"""Live Agent check against Opencode."""
 
 from __future__ import annotations
 
@@ -6,16 +6,14 @@ import os
 from pathlib import Path
 
 import pytest
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
-ZEN_BASE = os.getenv("OPENCODE_ZEN_BASE", "https://opencode.ai/zen/go/v1")
+OPENCODE_BASE = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/zen/go/v1")
 _KEY_FILES = (Path("/tmp/OC.key"), Path("/tmp/oc.key"))
 
 
-def _zen_key() -> str | None:
+def _opencode_key() -> str | None:
     for key_file in _KEY_FILES:
         if key_file.exists():
             return key_file.read_text().strip()
@@ -24,15 +22,18 @@ def _zen_key() -> str | None:
 
 pytestmark = pytest.mark.live
 live = pytest.mark.skipif(
-    _zen_key() is None,
-    reason="no opencode zen key (/tmp/OC.key, /tmp/oc.key, or OC_KEY)",
+    _opencode_key() is None,
+    reason="no opencode key (/tmp/OC.key, /tmp/oc.key, or OC_KEY)",
 )
 
 
 @live
-async def test_team_add_agent_with_openai_provider_runs_live():
-    key = _zen_key()
-    provider = OpenAIProvider(base_url=ZEN_BASE, api_key=key)
+async def test_team_add_agent_with_opencode_provider_runs_live():
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.providers.openai import OpenAIProvider
+
+    key = _opencode_key()
+    provider = OpenAIProvider(base_url=OPENCODE_BASE, api_key=key)
     model = OpenAIChatModel("deepseek-v4-pro", provider=provider)
     team = Team(
         scope=Scope(tenant_id="acme", namespace="live"),
