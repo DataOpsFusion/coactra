@@ -13,6 +13,7 @@ from coactra.workflow import (
     WorkflowEngine,
     WorkflowRunStatus,
 )
+from coactra.workflow.runtime.tools import ToolContext
 
 
 class RecordingTools:
@@ -22,6 +23,15 @@ class RecordingTools:
     async def call(self, *, server, tool, params):
         self.calls.append((server, tool, params))
         return {"ok": True, "tool": tool}
+
+
+class ContextTools:
+    def __init__(self) -> None:
+        self.contexts = []
+
+    async def call(self, *, server, tool, params, context=None):
+        self.contexts.append(context)
+        return {"ok": True}
 
 
 def test_durable_langgraph_engine_satisfies_workflow_engine_protocol():
@@ -97,6 +107,35 @@ async def test_rich_document_red_tool_interrupts_before_the_tool_call():
 
     assert final["delete_result"] == {"ok": True, "tool": "delete_vm"}
     assert tools.calls == [("infra", "delete_vm", {"vmid": "42"})]
+
+
+@pytest.mark.asyncio
+async def test_tool_invoker_receives_runtime_context_when_it_accepts_context():
+    tools = ContextTools()
+    engine = DurableLangGraphEngine(tool_invoker=tools, checkpointer=MemorySaver())
+    ctx = RunContext(scope=Scope(tenant_id="acme", namespace="ops"), chain=["agent:builder"])
+    doc = {
+        "name": "contextual",
+        "nodes": [
+            {
+                "id": "inspect",
+                "type": "tool",
+                "target": "infra",
+                "tool": "inspect",
+                "inputs": {},
+            }
+        ],
+        "edges": [],
+    }
+
+    await engine.run_document(doc, params={}, thread_id="ctx-1", ctx=ctx)
+
+    assert len(tools.contexts) == 1
+    context = tools.contexts[0]
+    assert isinstance(context, ToolContext)
+    assert context.actor == "agent:builder"
+    assert context.scope == ctx.scope
+    assert context.run_context is ctx
 
 
 @pytest.mark.asyncio

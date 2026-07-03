@@ -59,7 +59,8 @@ def test_removed_legacy_modules_stay_deleted():
 def test_removed_work_extra_stays_removed():
     import tomllib
 
-    extras = tomllib.loads(Path("pyproject.toml").read_text())["project"]["optional-dependencies"]
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    extras = tomllib.loads(pyproject.read_text())["project"]["optional-dependencies"]
     assert "workflow" in extras
     assert "team" in extras
     assert "work" not in extras

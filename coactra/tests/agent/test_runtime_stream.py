@@ -4,19 +4,19 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from coactra.agent.runtime import PydanticAIRuntime
 
 
-def _echo_tool(value: str) -> str:
+async def _echo_tool(value: str) -> str:
     """Return the value unchanged."""
     return f"checked:{value}"
 
 
-def _two_step(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _two_step(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     # 1st model call → ask to run the tool; 2nd → final text
     if len(messages) == 1:
         return ModelResponse(parts=[ToolCallPart("_echo_tool", {"value": "replication"})])
     return ModelResponse(parts=[TextPart("done: replication checked")])
 
 
-def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _final_text(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("all done")])
 
 

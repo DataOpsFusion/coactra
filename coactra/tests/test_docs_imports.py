@@ -9,7 +9,7 @@ def _resolve(module_name: str, symbol: str):
 def test_api_index_preferred_imports_resolve():
     documented = {
         "coactra.scope": ["Scope", "is_safe_path_component"],
-        "coactra.memory": ["Memory", "make_backend", "Scope", "Recollection", "MemoryBackend"],
+        "coactra.memory": ["Memory", "make_backend", "Scope", "Recollection", "MemoryReader"],
         "coactra.workflow": ["Scope", "Orchestrator", "DurableOrchestrator", "Procedure"],
         "coactra.workflow.ledger": ["WorkManager", "WorkOrder"],
         "coactra.workflow.ledger.domain.scope": ["Scope"],
@@ -33,7 +33,6 @@ def test_api_index_preferred_imports_resolve():
             "MissingExtraError",
             "coactra_error_from_exception",
         ],
-        "coactra.ai": ["ask", "structured", "Client", "ReasoningEngine", "InMemoryStore"],
         "coactra.team": ["Team"],
         "coactra.policy": ["Policy", "PolicyRequest", "Decision", "DecisionOutcome"],
     }

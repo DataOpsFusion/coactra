@@ -2,10 +2,8 @@ from coactra.workflow import (
     InMemoryProcedureStore,
     Procedure,
     ProcedureStore,
-    ReasoningTrace,
     Scope,
     Step,
-    induce,
 )
 
 ACME = Scope(tenant_id="acme", namespace="agent:1")
@@ -46,9 +44,8 @@ def test_tenant_isolation_is_real():
     assert store.list(GLOBEX) == []
 
 
-def test_induced_procedure_round_trips_through_the_store():
+def test_procedure_round_trips_through_the_store():
     store = InMemoryProcedureStore()
-    induced = induce(ReasoningTrace(problem="deploy", steps=[{"id": "a", "kind": "task"}]))
-    store.save(induced, ACME)
+    store.save(_proc("deploy"), ACME)
     got = store.get("deploy", ACME)
-    assert got is not None and got.is_induced is True
+    assert got is not None and got.name == "deploy"

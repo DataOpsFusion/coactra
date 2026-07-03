@@ -20,8 +20,18 @@ from coactra import (
 from coactra.agent import MCPServer, mcp
 
 
-def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("hello")])
+
+
+def _mcp_toolset_type():
+    import pytest
+
+    try:
+        from pydantic_ai.mcp import MCPToolset
+    except ImportError as exc:
+        pytest.skip(f"pydantic-ai MCP extra is not installed: {exc}")
+    return MCPToolset
 
 
 class MyOutput(BaseModel):
@@ -75,7 +85,7 @@ def test_mcpserver_constructor_creates_remote_tool_tag():
 
 
 async def test_team_add_agent_accepts_mcp_helper_tool():
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     agent = await _make_agent(
         model=FunctionModel(_final),
@@ -88,7 +98,7 @@ async def test_team_add_agent_accepts_mcp_helper_tool():
 
 
 async def test_team_add_agent_accepts_mcpserver_tool():
-    from pydantic_ai.mcp import MCPToolset
+    MCPToolset = _mcp_toolset_type()
 
     agent = await _make_agent(
         model=FunctionModel(_final),

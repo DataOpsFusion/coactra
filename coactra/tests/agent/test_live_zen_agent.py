@@ -11,20 +11,21 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
-ZEN_BASE = "https://opencode.ai/zen/go/v1"
-_KEY_FILE = Path("/tmp/oc.key")
+ZEN_BASE = os.getenv("OPENCODE_ZEN_BASE", "https://opencode.ai/zen/go/v1")
+_KEY_FILES = (Path("/tmp/OC.key"), Path("/tmp/oc.key"))
 
 
 def _zen_key() -> str | None:
-    if os.environ.get("OC_KEY"):
-        return os.environ["OC_KEY"]
-    if _KEY_FILE.exists():
-        return _KEY_FILE.read_text().strip()
-    return None
+    for key_file in _KEY_FILES:
+        if key_file.exists():
+            return key_file.read_text().strip()
+    return os.environ.get("OC_KEY")
 
 
-live = pytest.mark.live(
-    pytest.mark.skipif(_zen_key() is None, reason="no opencode zen key (/tmp/oc.key or OC_KEY)")
+pytestmark = pytest.mark.live
+live = pytest.mark.skipif(
+    _zen_key() is None,
+    reason="no opencode zen key (/tmp/OC.key, /tmp/oc.key, or OC_KEY)",
 )
 
 
@@ -32,7 +33,7 @@ live = pytest.mark.live(
 async def test_team_add_agent_with_openai_provider_runs_live():
     key = _zen_key()
     provider = OpenAIProvider(base_url=ZEN_BASE, api_key=key)
-    model = OpenAIChatModel("qwen3.6-plus", provider=provider)
+    model = OpenAIChatModel("deepseek-v4-pro", provider=provider)
     team = Team(
         scope=Scope(tenant_id="acme", namespace="live"),
         policy=Policy.permissive(),
@@ -47,4 +48,4 @@ async def test_team_add_agent_with_openai_provider_runs_live():
     )
     out = await agent.run("Say hi in three words.")
     assert out and out.strip(), "agent.run() returned empty output"
-    print(f"\n[live] Agent(qwen3.6-plus) -> {out!r}")
+    print(f"\n[live] Agent(deepseek-v4-pro) -> {out!r}")

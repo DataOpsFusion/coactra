@@ -11,7 +11,7 @@ from coactra.agent.domain import AgentRef
 
 
 def _echo_model(name: str):
-    def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    async def _reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         last_text = name
         for msg in reversed(messages):
             for part in getattr(msg, "parts", []):

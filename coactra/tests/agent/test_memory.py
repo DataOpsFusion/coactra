@@ -132,6 +132,19 @@ async def test_bind_memory_from_name():
     assert result != ""
 
 
+async def test_bind_memory_accepts_read_only_recall_callable():
+    scope = _scope("callable")
+
+    def recall_existing_notes(query):
+        assert query == "deploy"
+        return ["existing deployment note"]
+
+    b = bind_memory(recall_existing_notes, scope)
+
+    assert await b.recall("deploy") == "existing deployment note"
+    await b.remember("ignored because callable memory is read-only")
+
+
 # ---------------------------------------------------------------------------
 # 7. recall returns "" when nothing is stored
 # ---------------------------------------------------------------------------

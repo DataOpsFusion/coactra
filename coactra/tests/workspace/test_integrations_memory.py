@@ -53,3 +53,24 @@ async def test_distill_skips_already_distilled(tmp_path: Path):
 
     assert count == 0
     llm.ainvoke.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_distill_rejects_journal_entry_symlink_escape(tmp_path: Path):
+    journal = tmp_path / "journal"
+    journal.mkdir()
+    secret = tmp_path / "secret.md"
+    secret.write_text("host secret")
+    (journal / "2026-05-27.md").symlink_to(secret)
+    llm = AsyncMock()
+
+    with pytest.raises(ValueError, match="escapes journal_dir"):
+        await distill_journal(
+            journal_dir=journal,
+            agent_id="platform",
+            llm=llm,
+            memory=AsyncMock(),
+            scope=Scope(tenant="default", agent="platform"),
+        )
+
+    llm.ainvoke.assert_not_awaited()

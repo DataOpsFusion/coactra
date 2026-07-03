@@ -6,15 +6,15 @@ from pydantic_ai.models.test import TestModel
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 
 
-def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _final(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     return ModelResponse(parts=[TextPart("hello from the agent")])
 
 
-def _echo_tool(value: str) -> str:
+async def _echo_tool(value: str) -> str:
     return f"checked:{value}"
 
 
-def _two_step(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+async def _two_step(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     if len(messages) == 1:
         return ModelResponse(parts=[ToolCallPart("_echo_tool", {"value": "x"})])
     return ModelResponse(parts=[TextPart("done")])
