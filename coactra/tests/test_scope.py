@@ -23,36 +23,14 @@ def test_scope_has_stable_canonical_key() -> None:
     }
 
 
-def test_scope_conversion_kwargs_match_package_field_names() -> None:
-    scope = Scope(
-        tenant_id="tenant-a",
-        namespace="support",
-        agent_id="triage",
-        session_id="session-1",
-    )
-
-    assert scope.to_agent_kwargs() == {"tenant_id": "tenant-a", "namespace": "support"}
-    assert scope.to_work_kwargs() == {"tenant_id": "tenant-a", "namespace": "support"}
-    assert scope.to_workflow_kwargs() == {"tenant_id": "tenant-a", "namespace": "support"}
-    assert scope.to_workspace_kwargs() == {"tenant_id": "tenant-a", "agent_id": "triage"}
-    assert scope.to_memory_kwargs() == {
-        "tenant": "tenant-a",
-        "namespace": "support",
-        "agent": "triage",
-        "session": "session-1",
-    }
-
-
-def test_scope_rejects_reserved_memory_separator_characters() -> None:
+def test_scope_rejects_reserved_key_characters() -> None:
     with pytest.raises(ValueError, match="tenant_id"):
         Scope(tenant_id="tenant:a")
     with pytest.raises(ValueError, match="namespace"):
         Scope(tenant_id="tenant-a", namespace="*")
 
 
-def test_workspace_conversion_requires_agent_and_path_safe_values() -> None:
-    with pytest.raises(ValueError, match="agent_id is required"):
-        Scope(tenant_id="tenant-a").to_workspace_kwargs()
-
-    with pytest.raises(ValueError, match="agent_id"):
-        Scope(tenant_id="tenant-a", agent_id="team/agent").to_workspace_kwargs()
+def test_scope_allows_memory_namespace_paths() -> None:
+    assert Scope(tenant_id="tenant-a", namespace="department/infrastructure").namespace == (
+        "department/infrastructure"
+    )

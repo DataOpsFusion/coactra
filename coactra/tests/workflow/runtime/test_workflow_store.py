@@ -6,8 +6,8 @@ from coactra.workflow import (
     Step,
 )
 
-ACME = Scope(tenant_id="acme", namespace="agent:1")
-GLOBEX = Scope(tenant_id="globex", namespace="agent:1")
+ACME = Scope(tenant_id="acme", namespace="agent-1")
+GLOBEX = Scope(tenant_id="globex", namespace="agent-1")
 
 
 def _proc(name="deploy"):

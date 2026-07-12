@@ -20,7 +20,8 @@ from datetime import UTC, datetime
 from coactra.memory.backends.base import event_text, normalize_events
 from coactra.memory.capabilities import Capability
 from coactra.memory.export import ExportReport
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 _SOURCE = "inprocess"
 _CAPS = {Capability.STORE, Capability.LEXICAL_RECALL, Capability.PROVENANCE}

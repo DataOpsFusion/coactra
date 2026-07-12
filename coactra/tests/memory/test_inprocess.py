@@ -1,7 +1,7 @@
 from coactra.memory import Capability, Recollection, Scope
 from coactra.memory.backends.inprocess import InProcessBackend
 
-SCOPE = Scope(tenant="acme", agent="agent1")
+SCOPE = Scope(tenant_id="acme", agent_id="agent1")
 
 
 async def test_remember_stores_recollections_with_lineage():

@@ -12,7 +12,7 @@ def test_api_index_preferred_imports_resolve():
         "coactra.memory": ["Memory", "make_backend", "Scope", "Recollection", "MemoryReader"],
         "coactra.workflow": ["Scope", "Orchestrator", "DurableOrchestrator", "Procedure"],
         "coactra.workflow.ledger": ["WorkManager", "WorkOrder"],
-        "coactra.workflow.ledger.domain.scope": ["Scope"],
+        "coactra.workflow.ledger.domain": ["Scope"],
         "coactra.workspace": [
             "open_workspace",
             "Workspace",

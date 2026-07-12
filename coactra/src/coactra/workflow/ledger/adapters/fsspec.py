@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.adapters._optional import optional_module
 from coactra.workflow.ledger.domain.artifacts import Artifact, ArtifactRef
-from coactra.workflow.ledger.domain.scope import Scope
 
 _MEDIA_TYPE = "application/vnd.coactra.artifact+json"
 

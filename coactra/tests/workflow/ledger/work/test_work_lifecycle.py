@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from coactra import Scope as WorkScope
 from coactra.workflow.ledger import (
     Artifact,
     ArtifactPart,
@@ -21,7 +22,6 @@ from coactra.workflow.ledger import (
     WorkOrder,
     WorkStatus,
 )
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class AuditRecorder:

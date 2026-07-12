@@ -61,7 +61,7 @@ class FakeGraphiti:
         return list(self._edges)
 
 
-SCOPE = Scope(tenant="acme", agent="builder")
+SCOPE = Scope(tenant_id="acme", agent_id="builder")
 
 
 def test_normalize_extracted_entities_accepts_provider_entities_list():
@@ -184,18 +184,18 @@ def test_group_id_is_injective_across_distinct_scopes():
     # discriminating case is the agent/session positional swap: a naive "skip
     # None and join" collapses both to "acme:x". The encoding must keep them apart.
     scopes = [
-        Scope(tenant="acme"),
-        Scope(tenant="acme", agent="x"),
-        Scope(tenant="acme", session="x"),  # swap-of-the-above — the trap
-        Scope(tenant="acme", agent="x", session="y"),
-        Scope(tenant="acme2", agent="x"),
-        Scope(tenant="acme", agent="x", session="x"),
+        Scope(tenant_id="acme"),
+        Scope(tenant_id="acme", agent_id="x"),
+        Scope(tenant_id="acme", session_id="x"),  # swap-of-the-above — the trap
+        Scope(tenant_id="acme", agent_id="x", session_id="y"),
+        Scope(tenant_id="acme2", agent_id="x"),
+        Scope(tenant_id="acme", agent_id="x", session_id="x"),
     ]
     gids = [_group_id(s) for s in scopes]
     assert len(set(gids)) == len(gids), f"collision among group_ids: {gids}"
     # the specific cross-scope collision the bug report calls out:
-    assert _group_id(Scope(tenant="acme", agent="x")) != _group_id(
-        Scope(tenant="acme", session="x")
+    assert _group_id(Scope(tenant_id="acme", agent_id="x")) != _group_id(
+        Scope(tenant_id="acme", session_id="x")
     )
 
 

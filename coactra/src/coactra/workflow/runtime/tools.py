@@ -5,11 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+from coactra.scope import Scope
+
 
 @dataclass(frozen=True, slots=True)
 class ToolContext:
     actor: str | None = None
-    scope: Any | None = None
+    scope: Scope | None = None
     policy: Any | None = None
     run_context: Any | None = None
 

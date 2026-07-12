@@ -21,7 +21,7 @@ async def test_distill_extracts_facts_and_writes_to_memory(tmp_path: Path):
     llm = AsyncMock()
     llm.ainvoke.return_value = type("R", (), {"content": '["VM 1024 created"]'})()
     memory = AsyncMock()
-    scope = Scope(tenant="default", agent="platform")
+    scope = Scope(tenant_id="default", agent_id="platform")
 
     count = await distill_journal(
         journal_dir=journal,
@@ -48,7 +48,7 @@ async def test_distill_skips_already_distilled(tmp_path: Path):
         agent_id="platform",
         llm=llm,
         memory=AsyncMock(),
-        scope=Scope(tenant="default", agent="platform"),
+        scope=Scope(tenant_id="default", agent_id="platform"),
     )
 
     assert count == 0
@@ -70,7 +70,7 @@ async def test_distill_rejects_journal_entry_symlink_escape(tmp_path: Path):
             agent_id="platform",
             llm=llm,
             memory=AsyncMock(),
-            scope=Scope(tenant="default", agent="platform"),
+            scope=Scope(tenant_id="default", agent_id="platform"),
         )
 
     llm.ainvoke.assert_not_awaited()

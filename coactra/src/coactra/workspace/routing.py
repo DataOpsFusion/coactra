@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from coactra._routing import TenantRouter
+from coactra.scope import Scope
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.models import ExecOptions, ExecResult
-from coactra.workspace.scope import Scope
 
 
 class TenantWorkspaceBackendRouter(TenantRouter[WorkspaceBackend]):

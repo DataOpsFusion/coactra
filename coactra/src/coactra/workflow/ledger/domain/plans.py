@@ -8,10 +8,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.capabilities import CapabilityRequirement
 from coactra.workflow.ledger.domain.events import AuditContext, utc_now
 from coactra.workflow.ledger.domain.models import WorkOrder, WorkStatus
-from coactra.workflow.ledger.domain.scope import Scope
 
 
 class ExecutionPlan(BaseModel):

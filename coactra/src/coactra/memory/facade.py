@@ -16,7 +16,8 @@ from collections.abc import Sequence
 from coactra.memory.backends.base import MemoryExporter, MemoryReader, MemoryWriter
 from coactra.memory.export import ExportReport
 from coactra.memory.export import export as _export
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 
 def _ensure_no_running_loop() -> None:

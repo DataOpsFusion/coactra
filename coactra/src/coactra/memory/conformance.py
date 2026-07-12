@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from coactra.memory.backends.base import MemoryExporter, MemoryReader, MemoryWriter
 from coactra.memory.capabilities import Capability
-from coactra.memory.types import Scope
+from coactra.scope import Scope
 
 
 class MemoryContractReport(BaseModel):
@@ -25,7 +25,7 @@ async def check_memory_contract(
 ) -> MemoryContractReport:
     """Exercise the memory contract a source actually supports."""
 
-    probe_scope = scope or Scope(tenant=f"contract-{uuid.uuid4().hex}")
+    probe_scope = scope or Scope(tenant_id=f"contract-{uuid.uuid4().hex}")
     marker = f"contract memory marker {uuid.uuid4().hex}"
     if not isinstance(backend, MemoryWriter):
         raise AssertionError("memory source does not support remember(); pass a writer source")

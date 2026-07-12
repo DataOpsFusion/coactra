@@ -21,10 +21,10 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from coactra.scope import Scope, is_safe_path_component
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.models import CapabilityManifest, ExecOptions, ExecResult
 from coactra.workspace.policy import CliPolicy
-from coactra.workspace.scope import Scope
 
 _MANIFEST_FILE = ".workspace/manifest.json"
 _HANDOFF_FILE = "HANDOFF.md"
@@ -191,13 +191,14 @@ def open_workspace(
 ) -> Workspace:
     """Open the default (LocalFilesystem) desk for scope.
 
-    Persistent by default: files live under base_dir/<tenant>/<agent> across sessions.
+    Persistent by default: files live under base_dir/<tenant>/<namespace>/<agent> across sessions.
     ephemeral=True uses a throwaway temp dir cleaned up on close(). Local subprocesses are
     not jailed; pass allow_unsafe_local_exec=True only for trusted local development.
     Local command execution requires an explicit policy.
     """
     from coactra.workspace.backends.local import LocalFilesystemBackend
 
+    _validate_workspace_scope(scope)
     if ephemeral:
         base = tempfile.mkdtemp(prefix="fleet-ws-ephemeral-")
     else:
@@ -209,3 +210,16 @@ def open_workspace(
         allow_unsafe_exec=allow_unsafe_local_exec,
     )
     return Workspace(backend=backend, scope=scope, policy=policy, ephemeral=ephemeral)
+
+
+def _validate_workspace_scope(scope: Scope) -> None:
+    """Enforce filesystem-safe tenant, namespace, and agent path components."""
+    if scope.agent_id is None:
+        raise ValueError("agent_id is required to create a workspace scope")
+    for field, value in (
+        ("tenant_id", scope.tenant_id),
+        ("namespace", scope.namespace),
+        ("agent_id", scope.agent_id),
+    ):
+        if not is_safe_path_component(value):
+            raise ValueError(f"{field} must be a safe workspace path component")

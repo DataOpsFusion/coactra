@@ -206,7 +206,7 @@ scope = Scope(
 )
 ```
 
-Use `to_memory_kwargs()`, `to_workspace_kwargs()`, and related helpers at package boundaries. Per-module `Scope` types in `coactra.memory`, `coactra.workspace`, and `coactra.workflow` are different classes — qualify imports when crossing packages.
+`Scope` is the canonical type across agent, memory, workspace, workflow, and ledger APIs. Import it from `coactra` (package roots re-export the same class) and pass the complete scope through each boundary.
 
 ## MCPServer(...) and workflow steps
 

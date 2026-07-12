@@ -10,6 +10,7 @@ from coactra.agent.domain.tools import MCPServer
 from coactra.agent.peers import RemotePeer, peer_tools
 from coactra.agent.skills import Skill, normalize_skills
 from coactra.policy import Policy
+from coactra.scope import Scope
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ def build_agent_bindings(
     peers: list[Any] | None,
     registry: Any | None,
     name: str | None,
-    tenant: str | None,
+    scope: Scope,
     policy: Policy | None,
 ) -> AgentBindings:
     """Normalize Team.add_agent inputs into skills, callable tools, and MCP tags."""
@@ -36,7 +37,7 @@ def build_agent_bindings(
     local_tools, mcp_servers = split_mcp_tools(tools)
     bound_tools = [
         *local_tools,
-        *bind_peer_tools(peers=peers, registry=registry, name=name, tenant=tenant, policy=policy),
+        *bind_peer_tools(peers=peers, registry=registry, name=name, scope=scope, policy=policy),
     ]
     return AgentBindings(skills=normalized_skills, tools=bound_tools, mcp_servers=mcp_servers)
 
@@ -62,7 +63,7 @@ def bind_peer_tools(
     peers: list[Any] | None,
     registry: Any | None,
     name: str | None,
-    tenant: str | None,
+    scope: Scope,
     policy: Policy | None,
 ) -> list[Any]:
     """Build peer delegation tools from local agents, names, and remote entries."""
@@ -73,7 +74,7 @@ def bind_peer_tools(
 
     local_agents, named_peers, direct_remotes = classify_peers(peers)
     registry_remotes, unresolved_names = resolve_named_remotes(
-        named_peers, registry=registry, tenant=tenant
+        named_peers, registry=registry, tenant=scope.tenant_id
     )
 
     tools: list[Any] = []
@@ -85,7 +86,7 @@ def bind_peer_tools(
                 resolve=resolver,
                 policy=policy,
                 me=name,
-                tenant=tenant,
+                scope=scope,
             )
         )
     if unresolved_names:
@@ -95,7 +96,7 @@ def bind_peer_tools(
                 resolve=lambda _name: None,
                 policy=policy,
                 me=name,
-                tenant=tenant,
+                scope=scope,
             )
         )
     for remote in [*direct_remotes, *registry_remotes]:
@@ -103,7 +104,7 @@ def bind_peer_tools(
             peer_tools(
                 [
                     AgentRef(
-                        tenant_id=remote.tenant or tenant or "default",
+                        tenant_id=remote.tenant or scope.tenant_id,
                         agent_id=remote.name,
                     )
                 ],
@@ -111,7 +112,7 @@ def bind_peer_tools(
                 policy=policy,
                 transport=remote.transport(),
                 me=name,
-                tenant=tenant,
+                scope=scope,
             )
         )
     return tools

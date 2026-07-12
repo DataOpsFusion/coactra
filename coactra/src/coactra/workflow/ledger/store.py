@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.artifacts import Artifact, ArtifactRef
 from coactra.workflow.ledger.domain.events import EventEnvelope
 from coactra.workflow.ledger.domain.models import WorkOrder, WorkStatus
-from coactra.workflow.ledger.domain.scope import Scope
 
 
 class ConflictError(RuntimeError):

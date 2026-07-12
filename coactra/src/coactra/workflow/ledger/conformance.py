@@ -6,9 +6,9 @@ import uuid
 
 from pydantic import BaseModel
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.events import EventEnvelope
 from coactra.workflow.ledger.domain.models import WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope
 from coactra.workflow.ledger.store import WorkStore
 
 

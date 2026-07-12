@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from coactra import Scope
 from coactra.workspace.office import (
     OFFICE_SUBDIRS,
     OfficeWorkspace,
@@ -53,11 +54,10 @@ def test_count_tokens_returns_int(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 def test_initialize_scaffolds_office_and_preserves_existing_files(tmp_path: Path):
     office = OfficeWorkspace.open(
         office_dir=tmp_path / "platform",
-        tenant_id="default",
-        agent_id="platform",
+        scope=Scope(tenant_id="default", agent_id="platform"),
     )
     office.initialize()
-    assert office.root == tmp_path / "default" / "platform"
+    assert office.root == tmp_path / "default" / "default" / "platform"
     assert all((office.root / subdir).is_dir() for subdir in OFFICE_SUBDIRS)
     assert "platform" in office.read("STATUS.md")
 
@@ -69,8 +69,7 @@ def test_initialize_scaffolds_office_and_preserves_existing_files(tmp_path: Path
 def test_rotate_journal_archives_old_dated_files(tmp_path: Path):
     office = OfficeWorkspace.open(
         office_dir=tmp_path / "platform",
-        tenant_id="default",
-        agent_id="platform",
+        scope=Scope(tenant_id="default", agent_id="platform"),
     )
     office.initialize()
     office.write("journal/2026-01-02.md", "old")

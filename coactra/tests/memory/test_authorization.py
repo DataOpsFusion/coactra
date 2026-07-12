@@ -19,8 +19,8 @@ class ScopedMemoryPolicy:
 
 @pytest.mark.asyncio
 async def test_authorized_memory_enforces_policy_for_exact_scope():
-    department = Scope(tenant="acme", namespace="department/engineering")
-    company = Scope(tenant="acme", namespace="company")
+    department = Scope(tenant_id="acme", namespace="department/engineering")
+    company = Scope(tenant_id="acme", namespace="company")
     memory = AuthorizedMemory(
         Memory(backend=make_backend("inprocess")),
         actor="agent:builder",
@@ -38,7 +38,7 @@ async def test_authorized_memory_enforces_policy_for_exact_scope():
 
 @pytest.mark.asyncio
 async def test_authorized_memory_honors_core_policy_outcomes():
-    department = Scope(tenant="acme", namespace="department/engineering")
+    department = Scope(tenant_id="acme", namespace="department/engineering")
     allowed = AuthorizedMemory(
         Memory(backend=make_backend("inprocess")),
         actor="agent:builder",

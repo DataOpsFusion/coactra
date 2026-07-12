@@ -11,8 +11,8 @@ from coactra.agent.domain.identity import (
     TokenPassthroughError,
 )
 from coactra.agent.domain.refs import AgentRef, as_ref
-from coactra.agent.domain.scope import Scope
 from coactra.agent.domain.tools import ToolSpec
+from coactra.scope import Scope
 
 __all__ = [
     "Scope",

@@ -1,6 +1,6 @@
 """LocalFilesystemBackend — the ONE working default backend.
 
-A persistent directory per desk: <base_dir>/<tenant_id>/<agent_id>/. Files survive
+A persistent directory per desk: <base_dir>/<tenant_id>/<namespace>/<agent_id>/. Files survive
 across process restarts (persistent by default). Relative paths are resolved and
 checked to stay inside the desk root — traversal
 (e.g. "../../etc/passwd") is rejected. Local subprocesses are not filesystem jails, so
@@ -17,13 +17,13 @@ import os
 import subprocess
 from pathlib import Path
 
+from coactra.scope import Scope, is_safe_path_component
 from coactra.workspace.errors import WorkspaceError
 from coactra.workspace.models import ExecOptions, ExecResult
-from coactra.workspace.scope import Scope
 
 
 class LocalFilesystemBackend:
-    """Tenant/agent-isolated filesystem desk with traversal-confined file operations.
+    """Tenant/namespace/agent-isolated desk with traversal-confined file operations.
 
     Local subprocesses are not filesystem jails. Enable them only for trusted local
     development; use a sandbox-backed adapter for mutually untrusted tenants.
@@ -39,7 +39,12 @@ class LocalFilesystemBackend:
         self._allow_unsafe_exec = allow_unsafe_exec
 
     def _root_path(self, scope: Scope) -> Path:
-        root = (self._base / scope.tenant_id / scope.agent_id).resolve()
+        if scope.agent_id is None:
+            raise ValueError("agent_id is required to create a workspace scope")
+        for value in (scope.tenant_id, scope.namespace, scope.agent_id):
+            if not is_safe_path_component(value):
+                raise ValueError("workspace scope contains an unsafe path component")
+        root = (self._base / scope.tenant_id / scope.namespace / scope.agent_id).resolve()
         root.mkdir(parents=True, exist_ok=True)
         return root
 

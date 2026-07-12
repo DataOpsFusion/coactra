@@ -86,6 +86,9 @@ async def test_temporal_engine_starts_and_signals_same_thread():
     assert client.started[0]["payload"]["scope"] == {
         "tenant_id": "acme",
         "namespace": "ops",
+        "agent_id": None,
+        "session_id": None,
+        "scope_key": "acme:ops:*:*",
     }
     assert resumed.status is WorkflowRunStatus.running
     assert client.handle.signals[0][0] == "resume"

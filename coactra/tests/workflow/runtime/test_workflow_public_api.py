@@ -37,7 +37,7 @@ def test_public_surface_is_complete():
 
 
 def test_end_to_end_author_run_store_and_reuse():
-    scope = w.Scope(tenant_id="acme", namespace="agent:1")
+    scope = w.Scope(tenant_id="acme", namespace="agent-1")
 
     def make(tag):
         return lambda s: {**s, tag: True}

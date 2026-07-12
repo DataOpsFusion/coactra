@@ -1,5 +1,6 @@
 """Public domain vocabulary for coactra work orders."""
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.artifacts import Artifact, ArtifactPart, ArtifactRef, Provenance
 from coactra.workflow.ledger.domain.capabilities import (
     AgentSpec,
@@ -28,7 +29,6 @@ from coactra.workflow.ledger.domain.models import (
     WorkStatus,
 )
 from coactra.workflow.ledger.domain.plans import ExecutionPlan, ExecutionReceipt
-from coactra.workflow.ledger.domain.scope import Scope
 
 __all__ = [
     "AgentSpec",

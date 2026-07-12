@@ -1,57 +1,35 @@
-"""Shared scope mapping helpers for Coactra packages.
-
-The individual packages intentionally keep their own small Scope classes so they
-can be installed independently. This module provides a canonical DTO and explicit
-conversion kwargs for applications that compose multiple Coactra packages.
-"""
+"""The single canonical scope shared by every Coactra package."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 _RESERVED = {":", "*", "\x00"}
-_PATH_RESERVED = {"/", "\\"}
 # Components that must be a single, non-escaping path segment (workspace desks).
 _PATH_INVALID = {"/", "\\", "\x00"}
 _PATH_RESERVED_NAMES = {".", ".."}
 
 
-def _validate_component(name: str, value: str, *, path_safe: bool = False) -> None:
+def _validate_component(name: str, value: str) -> None:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{name} must be a non-empty string")
-    invalid = _RESERVED | (_PATH_RESERVED if path_safe else set())
-    if any(ch in value for ch in invalid):
-        chars = "".join(sorted(invalid))
+    if any(ch in value for ch in _RESERVED):
+        chars = "".join(sorted(_RESERVED))
         raise ValueError(f"{name} must not contain reserved characters: {chars!r}")
 
 
 def is_safe_path_component(value: str) -> bool:
     """Return True if ``value`` is a single, non-escaping path segment.
 
-    Shared rule backing per-tenant/per-agent workspace desks: a value must not be
+    Shared rule backing per-tenant/namespace/agent workspace desks: a value must not be
     ``.``/``..`` and must not contain a path separator or NUL byte, so it can never
-    escape its desk root. This is the canonical home for the rule; capability Scope
-    classes delegate their path validation here.
+    escape its desk root. This is the canonical home for the rule; workspace
+    boundaries call this helper before constructing a filesystem path.
     """
     if value in _PATH_RESERVED_NAMES:
         return False
     return not any(ch in value for ch in _PATH_INVALID)
-
-
-class _TenantNamespaceScope(BaseModel):
-    """Shared pydantic base for tenant_id + namespace capability scopes."""
-
-    model_config = {"frozen": True}
-
-    tenant_id: str = Field(min_length=1)
-    namespace: str = Field(default="default", min_length=1)
-
-    @property
-    def key(self) -> str:
-        return f"{self.tenant_id}/{self.namespace}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,39 +62,6 @@ class Scope:
         agent = self.agent_id or "*"
         session = self.session_id or "*"
         return f"{self.tenant_id}:{self.namespace}:{agent}:{session}"
-
-    def to_agent_kwargs(self) -> dict[str, str]:
-        """Keyword arguments for ``coactra.agent.Scope``."""
-        return {"tenant_id": self.tenant_id, "namespace": self.namespace}
-
-    def to_work_kwargs(self) -> dict[str, str]:
-        """Keyword arguments for ``coactra.workflow.WorkScope``."""
-        return {"tenant_id": self.tenant_id, "namespace": self.namespace}
-
-    def to_workflow_kwargs(self) -> dict[str, str]:
-        """Keyword arguments for ``coactra.workflow.Scope``."""
-        return {"tenant_id": self.tenant_id, "namespace": self.namespace}
-
-    def to_memory_kwargs(self) -> dict[str, str | None]:
-        """Keyword arguments for ``coactra.memory.Scope``."""
-        return {
-            "tenant": self.tenant_id,
-            "namespace": self.namespace,
-            "agent": self.agent_id,
-            "session": self.session_id,
-        }
-
-    def to_workspace_kwargs(self) -> dict[str, str]:
-        """Keyword arguments for ``coactra.workspace.Scope``.
-
-        Workspace scopes require an agent id because workspaces are allocated per
-        tenant/agent pair and must be path-safe.
-        """
-        if self.agent_id is None:
-            raise ValueError("agent_id is required to create a workspace scope")
-        _validate_component("agent_id", self.agent_id, path_safe=True)
-        _validate_component("tenant_id", self.tenant_id, path_safe=True)
-        return {"tenant_id": self.tenant_id, "agent_id": self.agent_id}
 
     def as_event_metadata(self) -> dict[str, Any]:
         """Serializable scope metadata for work events and audit logs."""

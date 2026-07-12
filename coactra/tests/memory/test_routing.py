@@ -19,8 +19,8 @@ async def test_memory_router_binds_one_backend_per_tenant():
 
     router = TenantMemoryRouter(factory)
     assert isinstance(router, MemoryReader)
-    acme = Scope(tenant="acme")
-    globex = Scope(tenant="globex")
+    acme = Scope(tenant_id="acme")
+    globex = Scope(tenant_id="globex")
     await router.remember(["acme secret"], acme)
     assert [item.text for item in await router.recall("secret", acme)] == ["acme secret"]
     assert await router.recall("secret", globex) == []

@@ -13,10 +13,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.artifacts import Artifact
 from coactra.workflow.ledger.domain.capabilities import CapabilityRequirement
 from coactra.workflow.ledger.domain.events import AuditContext, utc_now
-from coactra.workflow.ledger.domain.scope import Scope
 
 
 class WorkStatus(StrEnum):

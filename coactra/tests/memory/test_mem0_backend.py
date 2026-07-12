@@ -37,7 +37,7 @@ class FakeMem0:
         return {"results": [{"id": "g1", "memory": "stored fact", "metadata": {}}]}
 
 
-SCOPE = Scope(tenant="acme", agent="builder", session="sess1")
+SCOPE = Scope(tenant_id="acme", agent_id="builder", session_id="sess1")
 
 
 async def test_remember_calls_add_with_scope_mapping():
@@ -48,22 +48,22 @@ async def test_remember_calls_add_with_scope_mapping():
     assert len(fake.add_calls) == 1
     messages, kwargs = fake.add_calls[0]
     assert messages == [{"role": "user", "content": "user likes dark mode"}]
-    # tenant ALWAYS maps to user_id (isolation); agent/session map to agent_id/run_id.
-    assert kwargs == {"user_id": "acme", "agent_id": "builder", "run_id": "sess1"}
+    # tenant + namespace map to user_id; agent/session narrow within that partition.
+    assert kwargs == {
+        "user_id": "acme:default",
+        "agent_id": "builder",
+        "run_id": "sess1",
+    }
 
 
-async def test_namespaced_scope_uses_reserved_injective_agent_id():
+async def test_namespaced_scope_is_encoded_in_mem0_user_id():
     fake = FakeMem0()
     be = Mem0Backend(client=fake)
-    scope = Scope(tenant="acme", namespace="department/infrastructure")
+    scope = Scope(tenant_id="acme", namespace="department/infrastructure")
     await be.remember(["shared fact"], scope)
 
     _, kwargs = fake.add_calls[0]
-    assert kwargs == {
-        "user_id": "acme",
-        "agent_id": "namespace:" + scope.key.encode("utf-8").hex(),
-    }
-    assert kwargs["agent_id"] != "department/infrastructure"
+    assert kwargs == {"user_id": "acme:department/infrastructure"}
 
 
 async def test_remember_passes_chat_dicts_through():
@@ -94,7 +94,7 @@ async def test_recall_calls_search_with_filters_and_top_k():
     call = fake.search_calls[0]
     assert call["query"] == "deploy strategy"
     assert call["filters"] == {
-        "user_id": "acme",
+        "user_id": "acme:default",
         "agent_id": "builder",
         "run_id": "sess1",
     }
@@ -126,7 +126,7 @@ async def test_dump_calls_get_all_with_scope_and_maps_results():
 
     assert fake.get_all_calls[0] == {
         "filters": {
-            "user_id": "acme",  # tenant always present in the scope key (isolation)
+            "user_id": "acme:default",
             "agent_id": "builder",
             "run_id": "sess1",
         },
@@ -143,7 +143,7 @@ async def test_ingest_writes_via_add_and_reports_transferred():
     # empty-text recollection is skipped; one message written.
     messages, kwargs = fake.add_calls[0]
     assert messages == [{"role": "user", "content": "ported fact"}]
-    assert kwargs["user_id"] == "acme"
+    assert kwargs["user_id"] == "acme:default"
     assert report.transferred == 1
 
 

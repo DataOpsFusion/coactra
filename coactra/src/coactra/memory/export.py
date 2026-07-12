@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from coactra.memory.capabilities import Capability
-from coactra.memory.types import Scope
+from coactra.scope import Scope
 
 if TYPE_CHECKING:
     from coactra.memory.backends.base import MemoryExporter

@@ -9,7 +9,7 @@ across the boundary.
     from coactra.memory import Memory, make_backend, Scope
 
     mem = Memory(backend=make_backend("inprocess"))   # "mem0" | "graphiti" too
-    scope = Scope(tenant="acme", agent="builder")
+    scope = Scope(tenant_id="acme", agent_id="builder")
     await mem.remember(["the build broke on the linter step"], scope=scope)
     hits = await mem.recall("why did the build break", scope=scope, k=5)
 
@@ -31,7 +31,8 @@ from coactra.memory.export import ExportReport, export
 from coactra.memory.facade import Memory
 from coactra.memory.factory import make_backend
 from coactra.memory.routing import TenantMemoryRouter
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 __all__ = [
     "__version__",

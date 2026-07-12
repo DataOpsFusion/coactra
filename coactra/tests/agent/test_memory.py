@@ -14,7 +14,7 @@ from coactra.memory import Scope, make_backend
 
 
 def _scope(agent: str = "a") -> Scope:
-    return Scope(tenant="test", agent=agent)
+    return Scope(tenant_id="test", agent_id=agent)
 
 
 # ---------------------------------------------------------------------------

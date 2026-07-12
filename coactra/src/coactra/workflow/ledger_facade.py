@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from coactra.scope import Scope
 from coactra.workflow import (
     InMemoryProcedureStore,
     PendingApproval,
@@ -20,7 +21,6 @@ from coactra.workflow import (
     WorkflowRunStatus,
     make_default_workflow_engine,
 )
-from coactra.workflow.domain.scope import Scope as WorkflowScope
 from coactra.workflow.ledger import (
     Decision,
     DecisionOutcome,
@@ -29,7 +29,6 @@ from coactra.workflow.ledger import (
     WorkOrder,
     WorkStatus,
 )
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 from coactra.workflow.runtime.approval import ApprovalStore, InMemoryApprovalStore
 
 
@@ -62,7 +61,7 @@ class Orchestrator:
         *,
         procedures: ProcedureStore | None = None,
         engine: ProcedureRunner | None = None,
-        context_factory: Callable[[WorkflowScope], RunContext] | None = None,
+        context_factory: Callable[[Scope], RunContext] | None = None,
     ) -> None:
         self.work = work or WorkManager()
         self.procedures = procedures or InMemoryProcedureStore()
@@ -72,13 +71,13 @@ class Orchestrator:
     def submit(self, order: WorkOrder) -> WorkOrder:
         return self.work.submit(order)
 
-    def register(self, procedure: Procedure, scope: WorkScope | WorkflowScope) -> None:
-        self.procedures.save(procedure, self._workflow_scope(scope))
+    def register(self, procedure: Procedure, scope: Scope) -> None:
+        self.procedures.save(procedure, scope)
 
     def run(
         self,
         work_id: str,
-        scope: WorkScope,
+        scope: Scope,
         *,
         worker: str,
         state: dict[str, Any] | None = None,
@@ -89,30 +88,23 @@ class Orchestrator:
         order = self.work.get(work_id, scope)
         if not order.procedure:
             raise ProcedureNotFoundError("work order does not name a procedure")
-        workflow_scope = self._workflow_scope(scope)
-        procedure = self.procedures.get(order.procedure, workflow_scope)
+        procedure = self.procedures.get(order.procedure, scope)
         if procedure is None:
             raise ProcedureNotFoundError(
-                f"procedure {order.procedure!r} not found in scope {workflow_scope.key!r}"
+                f"procedure {order.procedure!r} not found in scope {scope.key!r}"
             )
         lease = self.work.claim(work_id, scope, worker=worker, lease_seconds=lease_seconds)
         self.work.start(lease, scope)
         try:
-            run = self.engine.run(procedure, state or {}, self.context_factory(workflow_scope))
+            run = self.engine.run(procedure, state or {}, self.context_factory(scope))
         except Exception as exc:
             self.work.fail(lease, scope, error=str(exc), retry=False)
             raise
         completed = self.work.complete(lease, scope)
         return OrchestrationResult(order=completed, run=run)
 
-    def cancel(self, work_id: str, scope: WorkScope, *, reason: str = "") -> WorkOrder:
+    def cancel(self, work_id: str, scope: Scope, *, reason: str = "") -> WorkOrder:
         return self.work.cancel(work_id, scope, reason=reason)
-
-    @staticmethod
-    def _workflow_scope(scope: WorkScope | WorkflowScope) -> WorkflowScope:
-        if isinstance(scope, WorkflowScope):
-            return scope
-        return WorkflowScope(tenant_id=scope.tenant_id, namespace=scope.namespace)
 
 
 class DurableOrchestrationResult(BaseModel):
@@ -133,7 +125,7 @@ class DurableOrchestrator:
         *,
         procedures: ProcedureStore | None = None,
         approvals: ApprovalStore | None = None,
-        context_factory: Callable[[WorkflowScope], RunContext] | None = None,
+        context_factory: Callable[[Scope], RunContext] | None = None,
     ) -> None:
         self.engine = engine or make_default_workflow_engine()
         self.work = work or WorkManager()
@@ -144,13 +136,13 @@ class DurableOrchestrator:
     def submit(self, order: WorkOrder) -> WorkOrder:
         return self.work.submit(order)
 
-    def register(self, procedure: Procedure, scope: WorkScope | WorkflowScope) -> None:
-        self.procedures.save(procedure, Orchestrator._workflow_scope(scope))
+    def register(self, procedure: Procedure, scope: Scope) -> None:
+        self.procedures.save(procedure, scope)
 
     async def start(
         self,
         work_id: str,
-        scope: WorkScope,
+        scope: Scope,
         *,
         worker: str,
         state: dict[str, Any] | None = None,
@@ -175,7 +167,7 @@ class DurableOrchestrator:
     async def resume(
         self,
         work_id: str,
-        scope: WorkScope,
+        scope: Scope,
         *,
         worker: str,
         decision: dict[str, Any] | None = None,
@@ -213,7 +205,7 @@ class DurableOrchestrator:
     def resolve_approval(
         self,
         work_id: str,
-        scope: WorkScope,
+        scope: Scope,
         *,
         approved: bool,
         decided_by: str,
@@ -227,7 +219,7 @@ class DurableOrchestrator:
             raise ValueError("approval request is missing workflow approval linkage")
         self.approvals.decide(
             workflow_approval_id,
-            Orchestrator._workflow_scope(scope),
+            scope,
             approved=approved,
             decided_by=decided_by,
         )
@@ -241,25 +233,24 @@ class DurableOrchestrator:
             ),
         )
 
-    def _procedure(self, work_id: str, scope: WorkScope) -> tuple[Procedure, WorkflowScope]:
+    def _procedure(self, work_id: str, scope: Scope) -> tuple[Procedure, Scope]:
         order = self.work.get(work_id, scope)
         if not order.procedure:
             raise ProcedureNotFoundError("work order does not name a procedure")
-        workflow_scope = Orchestrator._workflow_scope(scope)
-        procedure = self.procedures.get(order.procedure, workflow_scope)
+        procedure = self.procedures.get(order.procedure, scope)
         if procedure is None:
             raise ProcedureNotFoundError(
-                f"procedure {order.procedure!r} not found in scope {workflow_scope.key!r}"
+                f"procedure {order.procedure!r} not found in scope {scope.key!r}"
             )
-        return procedure, workflow_scope
+        return procedure, scope
 
     def _apply_run(
         self,
         run: WorkflowRun,
         *,
         lease: Lease,
-        scope: WorkScope,
-        workflow_scope: WorkflowScope,
+        scope: Scope,
+        workflow_scope: Scope,
     ) -> DurableOrchestrationResult:
         if run.status is WorkflowRunStatus.completed:
             return DurableOrchestrationResult(order=self.work.complete(lease, scope), run=run)

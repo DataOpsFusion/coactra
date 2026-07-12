@@ -1,7 +1,6 @@
 import pytest
-from pydantic import ValidationError
 
-from coactra.workspace import Scope
+from coactra.scope import Scope, is_safe_path_component
 
 
 def test_scope_fields():
@@ -19,17 +18,22 @@ def test_scope_is_hashable_and_equal():
 
 
 def test_scope_rejects_empty_parts():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         Scope(tenant_id="", agent_id="planner")
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         Scope(tenant_id="acme", agent_id="")
 
 
 def test_scope_key_is_stable_relative_path():
-    assert Scope(tenant_id="acme", agent_id="planner").key == "acme/planner"
+    assert Scope(tenant_id="acme", agent_id="planner").key == "acme:default:planner:*"
 
 
 @pytest.mark.parametrize("part", ["..", ".", "../globex", "acme/other", r"acme\other"])
-def test_scope_rejects_path_components_that_can_escape_the_desk(part):
-    with pytest.raises(ValidationError):
-        Scope(tenant_id=part, agent_id="planner")
+def test_path_safety_is_a_workspace_boundary_rule(part):
+    assert not is_safe_path_component(part)
+
+
+def test_core_scope_allows_namespace_paths():
+    assert Scope(tenant_id="acme", namespace="department/engineering").namespace == (
+        "department/engineering"
+    )

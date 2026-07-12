@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from coactra.scope import Scope
 from coactra.workflow.domain.models import Procedure, Step
-from coactra.workflow.domain.scope import Scope
 from coactra.workflow.runtime import RunContext, WorkflowEngine, WorkflowRun
 
 

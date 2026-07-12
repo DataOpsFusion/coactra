@@ -10,9 +10,9 @@ from collections.abc import Sequence
 from enum import StrEnum
 
 from coactra.memory.facade import Memory
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
 from coactra.policy import Policy, PolicyRequest
-from coactra.scope import Scope as CoreScope
+from coactra.scope import Scope
 
 
 class MemoryAccess(StrEnum):
@@ -55,12 +55,7 @@ class AuthorizedMemory:
             principal=self._actor,
             action=f"memory.{access.value}",
             resource=f"memory:{scope.key}",
-            scope=CoreScope(
-                tenant_id=scope.tenant,
-                namespace=scope.namespace,
-                agent_id=scope.agent,
-                session_id=scope.session,
-            ),
+            scope=scope,
             component="memory",
             context={"memory_access": access.value, "memory_scope": scope.key},
         )

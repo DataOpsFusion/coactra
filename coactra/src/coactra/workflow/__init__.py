@@ -4,8 +4,8 @@ from importlib import import_module
 from typing import Any
 
 from coactra._version import distribution_version
+from coactra.scope import Scope
 from coactra.workflow.domain.models import Procedure, RunResult, Step
-from coactra.workflow.domain.scope import Scope
 from coactra.workflow.playbook import ProofBundle, VerificationReceipt, step
 from coactra.workflow.store import InMemoryProcedureStore, ProcedureStore
 

@@ -5,7 +5,8 @@ and nothing more. Filesystem confinement for file operations is mandatory; secur
 execution requires a sandbox-backed adapter. Desk features (CLI policy, handoff,
 compact, manifest) live in the
 Workspace facade above it, which is what keeps the backend swappable. Every method takes a
-Scope; confinement to <root>/<tenant_id>/<agent_id> is part of the contract. The default is
+Scope; confinement to <root>/<tenant_id>/<namespace>/<agent_id> is part of the
+contract. The default is
 LocalFilesystemBackend; provider integrations (Daytona/E2B/OpenHands, etc.) satisfy this
 same seam when implemented.
 
@@ -17,8 +18,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from coactra.scope import Scope
 from coactra.workspace.models import ExecOptions, ExecResult
-from coactra.workspace.scope import Scope
 
 
 @runtime_checkable

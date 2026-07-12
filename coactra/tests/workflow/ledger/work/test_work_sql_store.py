@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from coactra import Scope as WorkScope
 from coactra.workflow.ledger import (
     ConflictError,
     Decision,
@@ -14,7 +15,6 @@ from coactra.workflow.ledger import (
     WorkOrder,
     WorkStatus,
 )
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 def make_store(tmp_path):
@@ -23,7 +23,7 @@ def make_store(tmp_path):
 
 def test_sql_store_create_and_load_work_order(tmp_path):
     store = make_store(tmp_path)
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = store.save(WorkOrder(scope=scope, title="build docs"))
 
     loaded = store.get(order.id, scope)
@@ -37,7 +37,7 @@ def test_sql_store_create_and_load_work_order(tmp_path):
 
 def test_sql_store_updates_status_through_work_manager(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     lease = manager.claim(order.id, scope, worker="worker-1")
     running = manager.start(lease, scope)
@@ -48,7 +48,7 @@ def test_sql_store_updates_status_through_work_manager(tmp_path):
 
 def test_sql_store_claim_lease_persists_and_blocks_other_worker(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     lease = manager.claim(order.id, scope, worker="worker-1", lease_seconds=60)
 
@@ -66,7 +66,7 @@ def test_sql_store_two_worker_claim_race_allows_only_one_winner(tmp_path):
 
     store = make_store(tmp_path)
     manager = WorkManager(store=store)
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     barrier = threading.Barrier(2)
     results: list[tuple[str, str]] = []
@@ -101,7 +101,7 @@ def test_sql_store_two_worker_claim_race_allows_only_one_winner(tmp_path):
 
 def test_sql_store_optimistic_version_conflict_blocks_stale_save(tmp_path):
     store = make_store(tmp_path)
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = store.save(WorkOrder(scope=scope, title="build docs"))
     first = store.get(order.id, scope)
     stale = store.get(order.id, scope)
@@ -119,7 +119,7 @@ def test_sql_store_optimistic_version_conflict_blocks_stale_save(tmp_path):
 
 def test_sql_store_checkpoint_save_and_load(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     lease = manager.claim(order.id, scope, worker="worker-1")
     manager.start(lease, scope)
@@ -134,7 +134,7 @@ def test_sql_store_checkpoint_save_and_load(tmp_path):
 
 def test_sql_store_approval_state_save_and_load(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     lease = manager.claim(order.id, scope, worker="worker-1")
     manager.start(lease, scope)
@@ -150,7 +150,7 @@ def test_sql_store_approval_state_save_and_load(tmp_path):
 
 def test_sql_store_retry_attempt_persistence(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
     first_lease = manager.claim(order.id, scope, worker="worker-1")
     manager.start(first_lease, scope)
@@ -169,7 +169,7 @@ def test_sql_store_retry_attempt_persistence(tmp_path):
 
 def test_sql_store_sqlite_file_reopen_persists_orders_and_events(tmp_path):
     url = f"sqlite:///{tmp_path / 'work.db'}"
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     first_store = SqlWorkStore.from_url(url)
     manager = WorkManager(store=first_store)
     order = manager.submit(WorkOrder(scope=scope, title="build docs"))
@@ -192,8 +192,8 @@ def test_sql_store_sqlite_file_reopen_persists_orders_and_events(tmp_path):
 def test_sql_store_idempotency_key_is_scoped(tmp_path):
     store = make_store(tmp_path)
     manager = WorkManager(store=store)
-    acme = WorkScope(tenant_id="acme", namespace="agent:build")
-    globex = WorkScope(tenant_id="globex", namespace="agent:build")
+    acme = WorkScope(tenant_id="acme", namespace="agent-build")
+    globex = WorkScope(tenant_id="globex", namespace="agent-build")
     first = manager.submit(WorkOrder(scope=acme, title="build docs", idempotency_key="same"))
     second = manager.submit(WorkOrder(scope=acme, title="duplicate", idempotency_key="same"))
     third = manager.submit(WorkOrder(scope=globex, title="other tenant", idempotency_key="same"))
@@ -206,7 +206,7 @@ def test_sql_store_idempotent_submit_race_returns_single_order(tmp_path):
     import threading
 
     store = make_store(tmp_path)
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     barrier = threading.Barrier(2)
     results: list[str] = []
     errors: list[BaseException] = []
@@ -241,7 +241,7 @@ def test_sql_store_idempotent_submit_race_returns_single_order(tmp_path):
 
 def test_sql_store_save_with_event_persists_order_and_event_atomically(tmp_path):
     store = make_store(tmp_path)
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = WorkOrder(scope=scope, title="build docs")
     event = EventEnvelope(
         type="coactra.workflow.submitted",
@@ -258,7 +258,7 @@ def test_sql_store_save_with_event_persists_order_and_event_atomically(tmp_path)
 
 def test_sql_store_compatible_with_execution_plan_receipt_flow(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     plan = ExecutionPlan(scope=scope, title="ship release")
     receipt = manager.execute(plan)
 
@@ -271,7 +271,7 @@ def test_sql_store_compatible_with_execution_plan_receipt_flow(tmp_path):
 
 def test_sql_store_decision_persistence_after_approval(tmp_path):
     manager = WorkManager(store=make_store(tmp_path))
-    scope = WorkScope(tenant_id="acme", namespace="agent:build")
+    scope = WorkScope(tenant_id="acme", namespace="agent-build")
     order = manager.submit(WorkOrder(scope=scope, title="deploy"))
     lease = manager.claim(order.id, scope, worker="worker-1")
     manager.start(lease, scope)

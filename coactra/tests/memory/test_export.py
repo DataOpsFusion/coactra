@@ -1,7 +1,7 @@
 from coactra.memory import Capability, ExportReport, MemoryExporter, Scope, export
 from coactra.memory.backends.inprocess import InProcessBackend
 
-SCOPE = Scope(tenant="acme", agent="agent1")
+SCOPE = Scope(tenant_id="acme", agent_id="agent1")
 
 
 class _GraphBackend:
@@ -82,7 +82,7 @@ async def test_same_capability_export_is_lossless():
 async def test_export_is_scope_isolated():
     src = InProcessBackend()
     dst = InProcessBackend()
-    other = Scope(tenant="acme", agent="agent2")
+    other = Scope(tenant_id="acme", agent_id="agent2")
     await src.remember(["only in agent1"], SCOPE)
     await src.remember(["only in agent2"], other)
 

@@ -1,5 +1,6 @@
 import pytest
 
+from coactra import Scope as WorkScope
 from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
     InMemoryProcedureStore,
@@ -20,7 +21,6 @@ from coactra.workflow.ledger import (
     WorkOrder,
     WorkStore,
 )
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 def test_work_store_router_binds_one_store_per_tenant():

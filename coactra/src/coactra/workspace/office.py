@@ -11,9 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
+from coactra.scope import Scope
 from coactra.workspace.desk import Workspace, open_workspace
 from coactra.workspace.policy import CliPolicy
-from coactra.workspace.scope import Scope
 
 TOKEN_BUDGET = 8000
 
@@ -154,27 +154,20 @@ class OfficeWorkspace:
         cls,
         *,
         office_dir: Path | str,
-        tenant_id: str,
-        agent_id: str,
+        scope: Scope,
         policy: CliPolicy | None = None,
         layout: OfficeLayout | None = None,
         allow_unsafe_local_exec: bool = False,
     ) -> OfficeWorkspace:
-        """Open an office rooted at ``office_dir.parent/tenant_id/agent_id``.
-
-        The explicit tenant and agent segments keep the local backend aligned with
-        the same scope contract used by remote sandbox backends. Callers should use
-        :attr:`root` as the canonical office path after opening the desk.
-        """
+        """Open an office rooted under the canonical tenant/namespace/agent scope."""
         base_dir = Path(office_dir).parent
-        scope = Scope(tenant_id=tenant_id, agent_id=agent_id)
         workspace = open_workspace(
             scope=scope,
             base_dir=base_dir,
             policy=policy,
             allow_unsafe_local_exec=allow_unsafe_local_exec,
         )
-        return cls(workspace, agent_id, layout=layout)
+        return cls(workspace, scope.agent_id or "", layout=layout)
 
     @property
     def root(self) -> Path:

@@ -11,9 +11,9 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team
 from coactra.workflow.ledger import Artifact, ArtifactPart, WorkManager, WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra import Scope
 
-WORK_SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")
+WORK_SCOPE = Scope(tenant_id="acme", namespace="incident-response")
 
 
 def incident_key(summary: str) -> str:

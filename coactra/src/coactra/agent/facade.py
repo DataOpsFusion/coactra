@@ -16,6 +16,7 @@ from coactra.agent.run import Run
 from coactra.agent.runtime import PydanticAIRuntime
 from coactra.agent.skills import Skill, build_agent_card
 from coactra.agent.spec import AgentSpec
+from coactra.scope import Scope
 
 _KNOWN_RUNTIME_KWARGS = frozenset(
     {
@@ -42,13 +43,15 @@ class Agent:
         *,
         name: str | None = None,
         tenant: str | None = None,
+        scope: Scope | None = None,
         skills: list[Skill] | None = None,
         expose: bool = False,
         tools: list[Any] | None = None,
     ) -> None:
         self._runtime = runtime
         self._name = name or "agent"
-        self._tenant = tenant or "default"
+        self._scope = scope or Scope(tenant_id=tenant or "default", agent_id=self._name)
+        self._tenant = self._scope.tenant_id
         self._skills: list[Skill] = list(skills) if skills is not None else []
         self._expose = expose
         self._tools: list[Any] = list(tools) if tools is not None else []
@@ -60,6 +63,10 @@ class Agent:
     @property
     def tenant(self) -> str:
         return self._tenant
+
+    @property
+    def scope(self) -> Scope:
+        return self._scope
 
     @property
     def skills(self) -> tuple[Skill, ...]:
@@ -128,11 +135,13 @@ async def build_agent(spec: AgentSpec, *, policy: Any | None = None) -> Agent:
     if unknown:
         raise TypeError(f"build_agent() got unexpected keyword argument(s): {sorted(unknown)}")
     tenant = spec.scope.tenant_id if spec.scope is not None else None
+    scope = spec.scope or Scope(tenant_id=tenant or "default", agent_id=spec.name)
     if spec.runtime is not None:
         return Agent(
             spec.runtime,
             name=spec.name,
             tenant=tenant,
+            scope=scope,
             skills=list(spec.skills),
             expose=spec.expose,
             tools=list(spec.tools),
@@ -144,7 +153,7 @@ async def build_agent(spec: AgentSpec, *, policy: Any | None = None) -> Agent:
         peers=list(spec.peers),
         registry=spec.registry,
         name=spec.name,
-        tenant=tenant,
+        scope=scope,
         policy=policy,
     )
     rt = PydanticAIRuntime(
@@ -157,6 +166,7 @@ async def build_agent(spec: AgentSpec, *, policy: Any | None = None) -> Agent:
         auth=spec.auth,
         name=spec.name,
         tenant=tenant,
+        scope=scope,
         memory=spec.memory,
         workspace=spec.workspace,
         tracer=spec.tracer,
@@ -167,6 +177,7 @@ async def build_agent(spec: AgentSpec, *, policy: Any | None = None) -> Agent:
         rt,
         name=spec.name,
         tenant=tenant,
+        scope=scope,
         skills=bindings.skills,
         expose=spec.expose,
         tools=bindings.tools,

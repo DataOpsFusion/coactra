@@ -19,26 +19,20 @@ from coactra.memory.backends._errors import MissingExtraError
 from coactra.memory.backends.base import event_text
 from coactra.memory.capabilities import Capability
 from coactra.memory.export import ExportReport
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 _SOURCE = "mem0"
 _CAPS = {Capability.STORE, Capability.VECTOR_EMBEDDING, Capability.PROVENANCE}
 
 
 def _scope_kwargs(scope: Scope) -> dict[str, str]:
-    """Map Scope → mem0 scoping. tenant is ALWAYS present (isolation guarantee).
-
-    Preserve the historical agent_id mapping for non-namespaced callers. A namespaced
-    scope is encoded into a reserved colon-prefixed token; ``Scope.agent`` rejects
-    colons, so a legacy agent id can never collide with the generated value.
-    """
-    kwargs: dict[str, str] = {"user_id": scope.tenant}
-    if scope.namespace is not None:
-        kwargs["agent_id"] = "namespace:" + scope.key.encode("utf-8").hex()
-    elif scope.agent:
-        kwargs["agent_id"] = scope.agent
-    if scope.session:
-        kwargs["run_id"] = scope.session
+    """Map the complete canonical scope to mem0's filtering fields."""
+    kwargs: dict[str, str] = {"user_id": f"{scope.tenant_id}:{scope.namespace}"}
+    if scope.agent_id is not None:
+        kwargs["agent_id"] = scope.agent_id
+    if scope.session_id is not None:
+        kwargs["run_id"] = scope.session_id
     return kwargs
 
 

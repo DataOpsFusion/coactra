@@ -17,12 +17,12 @@ _LEGAL = re.compile(r"[A-Za-z0-9_-]+")
 
 def test_group_id_is_graphiti_legal():
     scopes = [
-        Scope(tenant="acme"),
-        Scope(tenant="acme", agent="builder"),
-        Scope(tenant="acme", agent="builder", session="s1"),
-        Scope(tenant="acme", namespace="company"),
-        Scope(tenant="acme", namespace="department/infrastructure"),
-        Scope(tenant="a_b-c", agent="x-y_z"),
+        Scope(tenant_id="acme"),
+        Scope(tenant_id="acme", agent_id="builder"),
+        Scope(tenant_id="acme", agent_id="builder", session_id="s1"),
+        Scope(tenant_id="acme", namespace="company"),
+        Scope(tenant_id="acme", namespace="department/infrastructure"),
+        Scope(tenant_id="a_b-c", agent_id="x-y_z"),
     ]
     for s in scopes:
         gid = _group_id(s)
@@ -31,13 +31,13 @@ def test_group_id_is_graphiti_legal():
 
 def test_group_id_is_injective_across_distinct_scopes():
     scopes = [
-        Scope(tenant="acme", agent="x"),
-        Scope(tenant="acme", session="x"),  # must NOT alias the agent="x" scope
-        Scope(tenant="acme"),
-        Scope(tenant="acmex"),
-        Scope(tenant="acme", agent="x", session="y"),
-        Scope(tenant="acme", namespace="company"),
-        Scope(tenant="acme", namespace="department/infrastructure"),
+        Scope(tenant_id="acme", agent_id="x"),
+        Scope(tenant_id="acme", session_id="x"),  # must NOT alias the agent="x" scope
+        Scope(tenant_id="acme"),
+        Scope(tenant_id="acmex"),
+        Scope(tenant_id="acme", agent_id="x", session_id="y"),
+        Scope(tenant_id="acme", namespace="company"),
+        Scope(tenant_id="acme", namespace="department/infrastructure"),
     ]
     seen: dict[str, Scope] = {}
     for s in scopes:
@@ -52,4 +52,6 @@ def test_group_id_passes_graphitis_own_validator_if_installed():
     except Exception:
         pytest.skip("graphiti-core not installed")
     # must not raise GroupIdValidationError
-    validate_group_id(_group_id(Scope(tenant="acme", agent="builder", session="run1")))
+    validate_group_id(
+        _group_id(Scope(tenant_id="acme", agent_id="builder", session_id="run1"))
+    )

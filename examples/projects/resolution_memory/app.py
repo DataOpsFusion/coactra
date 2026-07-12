@@ -10,7 +10,7 @@ from pprint import pprint
 
 from coactra.memory import Memory, Scope, make_backend
 
-SCOPE = Scope(tenant="acme", namespace="support", agent="helpdesk")
+SCOPE = Scope(tenant_id="acme", namespace="support", agent_id="helpdesk")
 
 
 def build_memory() -> Memory:

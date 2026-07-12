@@ -6,6 +6,7 @@ from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta
 from typing import Any
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.backends.inmemory import InMemoryWorkStore
 from coactra.workflow.ledger.domain.artifacts import Artifact
 from coactra.workflow.ledger.domain.events import EventEnvelope, utc_now
@@ -27,7 +28,6 @@ from coactra.workflow.ledger.domain.models import (
     WorkStatus,
 )
 from coactra.workflow.ledger.domain.plans import ExecutionPlan, ExecutionReceipt
-from coactra.workflow.ledger.domain.scope import Scope
 from coactra.workflow.ledger.store import AuditSink, ConflictError, WorkStore
 
 

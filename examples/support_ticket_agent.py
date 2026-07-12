@@ -11,9 +11,8 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
 from coactra.workflow.ledger import WorkManager, WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
-WORK_SCOPE = WorkScope(tenant_id="acme", namespace="support-tickets")
+WORK_SCOPE = Scope(tenant_id="acme", namespace="support-tickets")
 
 
 def ticket_key(ticket_id: str) -> str:

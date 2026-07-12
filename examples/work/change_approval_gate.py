@@ -5,10 +5,10 @@ from __future__ import annotations
 from pprint import pprint
 
 from coactra.workflow.ledger import WorkManager, WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra import Scope
 from coactra.workflow.ledger import Artifact, ArtifactPart, Decision, DecisionOutcome, WorkStatus
 
-SCOPE = WorkScope(tenant_id="acme", namespace="change-management")
+SCOPE = Scope(tenant_id="acme", namespace="change-management")
 
 
 def run_change_with_approval(work: WorkManager, change_id: str) -> dict[str, object]:

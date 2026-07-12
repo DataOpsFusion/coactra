@@ -10,10 +10,10 @@ from pprint import pprint
 
 from coactra.workflow import Orchestrator, Procedure, Step
 from coactra.workflow.ledger import WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra import Scope
 from coactra.workflow import RunResult
 
-SCOPE = WorkScope(tenant_id="acme", namespace="incident-response")
+SCOPE = Scope(tenant_id="acme", namespace="incident-response")
 
 
 class InspectEngine:

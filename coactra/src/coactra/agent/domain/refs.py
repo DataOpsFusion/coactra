@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from coactra.agent.domain.scope import Scope
+from coactra.scope import Scope
 
 
 class AgentRef(BaseModel):

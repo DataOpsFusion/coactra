@@ -6,7 +6,7 @@ import pytest
 
 from coactra.memory import ExportReport, Memory, Recollection, Scope, make_backend
 
-SCOPE = Scope(tenant="acme", agent="agent1")
+SCOPE = Scope(tenant_id="acme", agent_id="agent1")
 
 
 async def test_async_remember_recall_returns_recollections():

@@ -10,12 +10,11 @@ from pydantic_ai.messages import ModelResponse, TextPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team
-from coactra.memory import Memory, Scope as MemoryScope, make_backend
+from coactra.memory import Memory, make_backend
 from coactra.workflow.ledger import Artifact, ArtifactPart, WorkManager, WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
-WORK_SCOPE = WorkScope(tenant_id="acme", namespace="support-tickets")
-MEMORY_SCOPE = MemoryScope(tenant="acme", namespace="support", agent="helpdesk")
+WORK_SCOPE = Scope(tenant_id="acme", namespace="support-tickets")
+MEMORY_SCOPE = Scope(tenant_id="acme", namespace="support", agent_id="helpdesk")
 
 
 def ticket_key(ticket_id: str) -> str:

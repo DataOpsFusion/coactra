@@ -5,38 +5,34 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from coactra.scope import Scope
+
 
 class ScopeViolation(PermissionError):
     """Raised when an agent attempts an unauthorized memory write."""
 
 
-def read_action(tenant: str, agent: str) -> str:
-    """Return the directory permission token for an agent-owned memory read."""
-    return f"memory:read:{tenant}:{agent}"
+def read_action(scope: Scope) -> str:
+    """Return the directory permission token for a scoped memory read."""
+    return scope_read_action(scope)
 
 
-def write_action(tenant: str, agent: str) -> str:
-    """Return the directory permission token for an agent-owned memory write."""
-    return f"memory:write:{tenant}:{agent}"
+def write_action(scope: Scope) -> str:
+    """Return the directory permission token for a scoped memory write."""
+    return scope_write_action(scope)
 
 
-def _scope_action(scope: Any, action: str) -> str:
-    """Return the directory permission token for an exact memory scope.
-
-    Agent-owned scopes use the concise per-agent permission token. Shared scopes
-    use the full collision-resistant key.
-    """
-    if scope.namespace is None and scope.agent is not None and scope.session is None:
-        return f"memory:{action}:{scope.tenant}:{scope.agent}"
+def _scope_action(scope: Scope, action: str) -> str:
+    """Return the directory permission token for an exact canonical memory scope."""
     return f"memory:{action}:{scope.key}"
 
 
-def scope_read_action(scope: Any) -> str:
+def scope_read_action(scope: Scope) -> str:
     """Return the directory permission token for an exact memory scope read."""
     return _scope_action(scope, "read")
 
 
-def scope_write_action(scope: Any) -> str:
+def scope_write_action(scope: Scope) -> str:
     """Return the directory permission token for an exact memory scope write."""
     return _scope_action(scope, "write")
 
@@ -63,11 +59,11 @@ class MemoryAcl:
                 f"agent {agent_name!r} is not permitted {action!r} (directory can check denied)"
             )
 
-    def check_read(self, agent_name: str, scope: Any) -> None:
+    def check_read(self, agent_name: str, scope: Scope) -> None:
         """Permit a scoped read or fail closed with ScopeViolation."""
         self._check(agent_name, scope_read_action(scope), "read")
 
-    def check_write(self, agent_name: str, scope: Any) -> None:
+    def check_write(self, agent_name: str, scope: Scope) -> None:
         """Permit a scoped write or fail closed with ScopeViolation."""
         self._check(agent_name, scope_write_action(scope), "write")
 
@@ -77,8 +73,8 @@ class MemoryAcl:
         *,
         tenant: str,
         agent_name: str,
-        writable_scopes: Iterable[Any],
-        readable_scopes: Iterable[Any] = (),
+        writable_scopes: Iterable[Scope],
+        readable_scopes: Iterable[Scope] = (),
         org_name: str = "homelab",
     ) -> MemoryAcl:
         """Seed a minimal directory granting an agent an explicit scope allowlist."""
@@ -86,7 +82,7 @@ class MemoryAcl:
 
         scopes = list(writable_scopes)
         readable = list(readable_scopes)
-        if any(scope.tenant != tenant for scope in scopes + readable):
+        if any(scope.tenant_id != tenant for scope in scopes + readable):
             raise ValueError("every memory scope must belong to the ACL tenant")
         org = Organization.root(tenant=tenant, name=org_name)
         permissions = {scope_write_action(scope) for scope in scopes}
@@ -103,12 +99,12 @@ class MemoryAcl:
         org_name: str = "homelab",
     ) -> MemoryAcl:
         """Seed a minimal directory granting only the agent-owned memory scope."""
-        from coactra.memory import Scope
+        from coactra.scope import Scope
 
         return cls.for_scopes(
             tenant=tenant,
             agent_name=agent_name,
-            writable_scopes=[Scope(tenant=tenant, agent=agent_name)],
-            readable_scopes=[Scope(tenant=tenant, agent=agent_name)],
+            writable_scopes=[Scope(tenant_id=tenant, agent_id=agent_name)],
+            readable_scopes=[Scope(tenant_id=tenant, agent_id=agent_name)],
             org_name=org_name,
         )

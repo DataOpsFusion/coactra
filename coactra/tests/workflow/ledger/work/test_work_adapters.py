@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from coactra import Scope as WorkScope
 from coactra.workflow.ledger import (
     AgentSpec,
     Artifact,
@@ -21,7 +22,6 @@ from coactra.workflow.ledger.adapters import (
     to_a2a_artifact,
     to_cloudevent,
 )
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Struct:
@@ -105,7 +105,7 @@ def test_dbos_dispatcher_maps_work_order_to_registered_queue():
         "queue_name": "agent-work",
         "workflow_id": "work-1",
         "deduplication_id": "event-42",
-        "queue_partition_key": "acme/ops",
+        "queue_partition_key": "acme:ops:*:*",
     }
     assert args[0]["title"] == "Process incident"
     assert args[1] == "extra"
@@ -156,7 +156,12 @@ async def test_temporal_dispatcher_uses_work_id_and_task_queue():
     assert await dispatcher.submit(order) is client.workflow_handle
     args, kwargs = client.calls[0]
     assert args[0] == "RunWork"
-    assert args[1]["scope"] == {"tenant_id": "acme", "namespace": "default"}
+    assert args[1]["scope"] == {
+        "tenant_id": "acme",
+        "namespace": "default",
+        "agent_id": None,
+        "session_id": None,
+    }
     assert kwargs == {"id": "work-1", "task_queue": "agent-work"}
     await dispatcher.signal("work-1", "approve", {"ok": True})
     await dispatcher.cancel("work-1")

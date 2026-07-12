@@ -1,6 +1,6 @@
+from coactra import Scope as WorkScope
 from coactra.workflow import Orchestrator, Procedure, RunResult, Step
 from coactra.workflow.ledger import WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Engine:

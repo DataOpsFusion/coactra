@@ -10,6 +10,7 @@ and does NOT own hierarchy/policy (organization does).
 """
 
 from coactra._version import distribution_version
+from coactra.scope import Scope
 from coactra.workspace.backends.base import WorkspaceBackend
 from coactra.workspace.backends.local import (
     LocalFilesystemBackend,
@@ -20,7 +21,6 @@ from coactra.workspace.errors import WorkspaceError
 from coactra.workspace.models import CapabilityManifest, ExecOptions, ExecResult
 from coactra.workspace.policy import CliPolicy, PolicyError
 from coactra.workspace.routing import TenantWorkspaceBackendRouter
-from coactra.workspace.scope import Scope
 
 __all__ = [
     "__version__",

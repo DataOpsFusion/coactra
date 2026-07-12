@@ -8,7 +8,8 @@ from coactra._routing import TenantRouter
 from coactra.memory.backends.base import MemoryExporter, MemoryReader, MemoryWriter
 from coactra.memory.capabilities import Capability
 from coactra.memory.export import ExportReport
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 
 class TenantMemoryRouter(TenantRouter[MemoryReader]):
@@ -33,22 +34,22 @@ class TenantMemoryRouter(TenantRouter[MemoryReader]):
         return set.intersection(*per_backend)
 
     async def remember(self, events: Sequence[MemoryEvent], scope: Scope) -> None:
-        backend = self.for_tenant(scope.tenant)
+        backend = self.for_tenant(scope.tenant_id)
         if not isinstance(backend, MemoryWriter):
             raise TypeError("tenant memory backend does not support remember()")
         await backend.remember(events, scope)
 
     async def recall(self, query: str, scope: Scope, k: int = 10) -> list[Recollection]:
-        return await self.for_tenant(scope.tenant).recall(query, scope, k)
+        return await self.for_tenant(scope.tenant_id).recall(query, scope, k)
 
     async def dump(self, scope: Scope) -> list[Recollection]:
-        backend = self.for_tenant(scope.tenant)
+        backend = self.for_tenant(scope.tenant_id)
         if not isinstance(backend, MemoryExporter):
             raise TypeError("tenant memory backend does not support dump()")
         return await backend.dump(scope)
 
     async def ingest(self, items: Sequence[Recollection], scope: Scope) -> ExportReport:
-        backend = self.for_tenant(scope.tenant)
+        backend = self.for_tenant(scope.tenant_id)
         if not isinstance(backend, MemoryExporter):
             raise TypeError("tenant memory backend does not support ingest()")
         return await backend.ingest(items, scope)

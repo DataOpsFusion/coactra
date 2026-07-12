@@ -31,7 +31,7 @@ def default_external_payload(
 
     payload: dict[str, Any] = {
         "state": dict(state),
-        "scope": ctx.scope.model_dump(mode="json"),
+        "scope": ctx.scope.as_event_metadata(),
     }
     if procedure is not None:
         payload["procedure"] = procedure.model_dump(mode="json")

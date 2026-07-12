@@ -14,7 +14,7 @@ import pytest
 
 from coactra.memory import Memory, Recollection, Scope, make_backend
 
-SCOPE = Scope(tenant="livetest", agent="pytest")
+SCOPE = Scope(tenant_id="livetest", agent_id="pytest")
 
 
 def _installed(module: str) -> bool:

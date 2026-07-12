@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from coactra.agent.domain import AgentRef, Scope, as_ref
+from coactra.agent.domain import AgentRef, as_ref
 from coactra.errors import PermissionDeniedError
 from coactra.policy import Policy, PolicyRequest
-from coactra.scope import Scope as CoreScope
+from coactra.scope import Scope
 
 
 class CollaborationDenied(PermissionDeniedError):
@@ -58,7 +58,7 @@ class AsyncPolicyGatedCollaborator:
                 principal=f"agent:{me_ref.agent_id}",
                 action="agent.delegate",
                 resource=f"agent:{dst_ref.qualified_name}",
-                scope=CoreScope(tenant_id=self._scope.tenant_id, namespace=self._scope.namespace),
+                scope=self._scope,
                 component="agent",
                 context={
                     "src_tenant": me_ref.tenant_id,

@@ -1,5 +1,6 @@
 import pytest
 
+from coactra import Scope as WorkScope
 from coactra.workflow import (
     DurableOrchestrator,
     Procedure,
@@ -9,7 +10,6 @@ from coactra.workflow import (
     WorkflowRunStatus,
 )
 from coactra.workflow.ledger import WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
 
 
 class Engine:

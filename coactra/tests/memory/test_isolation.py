@@ -1,9 +1,9 @@
 from coactra.memory import Scope
 from coactra.memory.backends.inprocess import InProcessBackend
 
-ACME = Scope(tenant="acme", agent="shared")
-GLOBEX = Scope(tenant="globex", agent="shared")
-ACME_OTHER = Scope(tenant="acme", agent="agent2")
+ACME = Scope(tenant_id="acme", agent_id="shared")
+GLOBEX = Scope(tenant_id="globex", agent_id="shared")
+ACME_OTHER = Scope(tenant_id="acme", agent_id="agent2")
 
 
 async def test_tenant_cannot_read_other_tenants_items():

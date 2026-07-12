@@ -7,6 +7,8 @@ from pathlib import Path
 
 import structlog
 
+from coactra.scope import Scope
+
 log = structlog.get_logger("coactra.workspace.integrations.memory")
 
 _DISTILL_PROMPT = """You are extracting durable facts from an agent's work journal.
@@ -45,7 +47,7 @@ async def distill_journal(
     agent_id: str,
     llm,
     memory,
-    scope,
+    scope: Scope,
     acl=None,
 ) -> int:
     """Extract durable journal facts and write them through ``memory.remember``.

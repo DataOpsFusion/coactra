@@ -10,9 +10,9 @@ from coactra.agent.collaboration import (
     AsyncPolicyGatedCollaborator,
     CollaborationDenied,
 )
-from coactra.agent.domain import AgentRef, Scope
+from coactra.agent.domain import AgentRef
 from coactra.policy import Policy, PolicyRequest
-from coactra.scope import Scope as CoreScope
+from coactra.scope import Scope
 
 __all__ = ["RemotePeer", "peer_tools"]
 
@@ -57,10 +57,11 @@ def peer_tools(
     transport: Any | None = None,
     me: str | None = None,
     tenant: str | None = None,
+    scope: Scope | None = None,
 ) -> list[Callable]:
     """Turn peer names into async delegation tools."""
     effective_me = me or "agent"
-    effective_tenant = tenant or "default"
+    caller_scope = scope or Scope(tenant_id=tenant or "default")
 
     tools: list[Callable] = []
     for name in peers:
@@ -71,7 +72,7 @@ def peer_tools(
                 policy=policy,
                 transport=transport,
                 me=effective_me,
-                tenant=effective_tenant,
+                scope=caller_scope,
             )
         )
     return tools
@@ -84,14 +85,15 @@ def _make_peer_tool(
     policy: Policy,
     transport: Any | None,
     me: str,
-    tenant: str,
+    scope: Scope,
 ) -> Callable:
     peer_id = name.agent_id if isinstance(name, AgentRef) else name
     remote_ref = (
-        name if isinstance(name, AgentRef) else AgentRef(tenant_id=tenant, agent_id=peer_id)
+        name
+        if isinstance(name, AgentRef)
+        else AgentRef(tenant_id=scope.tenant_id, agent_id=peer_id)
     )
     tool_name = "ask_" + peer_id.replace("-", "_")
-    caller_scope = Scope(tenant_id=tenant)
 
     async def _tool(question: str) -> str:
         peer = resolve(peer_id)
@@ -101,7 +103,7 @@ def _make_peer_tool(
             collaborator = AsyncPolicyGatedCollaborator(
                 transport=transport,
                 policy=policy,
-                scope=caller_scope,
+                scope=scope,
                 me=me,
             )
             try:
@@ -109,8 +111,8 @@ def _make_peer_tool(
             except CollaborationDenied as exc:
                 return f"not permitted: {exc}"
 
-        src_ref = AgentRef(tenant_id=tenant, agent_id=me)
-        peer_tenant = getattr(peer, "_tenant", tenant)
+        src_ref = AgentRef(tenant_id=scope.tenant_id, agent_id=me)
+        peer_tenant = getattr(peer, "_tenant", scope.tenant_id)
         resolved_peer_id = getattr(peer, "_name", peer_id)
         dst_ref = AgentRef(tenant_id=peer_tenant, agent_id=resolved_peer_id)
         decision = await policy.check(
@@ -118,7 +120,7 @@ def _make_peer_tool(
                 principal=f"agent:{src_ref.agent_id}",
                 action="agent.delegate",
                 resource=f"agent:{dst_ref.qualified_name}",
-                scope=CoreScope(tenant_id=caller_scope.tenant_id, namespace=caller_scope.namespace),
+                scope=scope,
                 component="agent",
                 context={
                     "src_tenant": src_ref.tenant_id,

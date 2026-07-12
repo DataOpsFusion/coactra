@@ -17,6 +17,7 @@ from coactra.agent.runtime_wiring import (
     bind_runtime_workspace,
     close_workspace,
 )
+from coactra.scope import Scope
 
 __all__ = ["AgentRuntimePort", "PydanticAIRuntime"]
 
@@ -66,6 +67,7 @@ class PydanticAIRuntime:
         auth: Any = None,
         name: str | None = None,
         tenant: str | None = None,
+        scope: Scope | None = None,
         memory: Any = None,
         workspace: Any = None,
         tracer: Any | None = None,
@@ -81,7 +83,11 @@ class PydanticAIRuntime:
         self._instructions = instructions
         self._tools = tools or []
         self._agent_name = name or "agent"
-        self._tenant_name = tenant or "default"
+        self._scope = scope or Scope(
+            tenant_id=tenant or "default",
+            agent_id=self._agent_name,
+        )
+        self._tenant_name = self._scope.tenant_id
         self._tracer = tracer
 
         from coactra.agent.toolsets import build_mcp_toolsets  # noqa: PLC0415
@@ -94,13 +100,11 @@ class PydanticAIRuntime:
         self._gateway_url: str | None = gateway
         self._memory = bind_runtime_memory(
             memory,
-            tenant=self._tenant_name,
-            agent=self._agent_name,
+            scope=self._scope,
         )
         self._workspace, self._workspace_tools = bind_runtime_workspace(
             workspace,
-            tenant=self._tenant_name,
-            agent=self._agent_name,
+            scope=self._scope,
         )
 
     def _build(self, output_type: type | None):

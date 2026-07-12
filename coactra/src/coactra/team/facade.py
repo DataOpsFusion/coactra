@@ -162,14 +162,14 @@ class Team:
         if self._model_resolver is None:
             raise ValueError("Team has no model_resolver; configure routes before add_agent()")
 
+        resolved_scope = spec.scope or replace(self.scope, agent_id=spec.name)
         route = await self._model_resolver.resolve(
             capability,
             principal=f"agent:{spec.name}",
-            scope=self.scope,
+            scope=resolved_scope,
             policy=self.policy,
             context={"agent_name": spec.name},
         )
-        resolved_scope = replace(spec.scope or self.scope, agent_id=spec.name)
         resolved = replace(
             spec,
             model=route.model,

@@ -10,10 +10,10 @@ import hashlib
 from pprint import pprint
 
 from coactra.workflow.ledger import WorkManager, WorkOrder
-from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra import Scope
 from coactra.workflow.ledger import Artifact, ArtifactPart
 
-SCOPE = WorkScope(tenant_id="acme", namespace="release")
+SCOPE = Scope(tenant_id="acme", namespace="release")
 
 
 def release_key(version: str) -> str:

@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from coactra._routing import TenantRouter
+from coactra.scope import Scope
 from coactra.workflow.domain.models import Procedure
-from coactra.workflow.domain.scope import Scope
 from coactra.workflow.runtime import WorkflowEngine, WorkflowRun
 from coactra.workflow.store import ProcedureStore
 

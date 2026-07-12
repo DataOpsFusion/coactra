@@ -22,9 +22,10 @@ pip install 'coactra[integrations]'
 ## Quick Start
 
 ```python
-from coactra.workflow import Artifact, ArtifactPart, WorkScope, WorkManager, WorkOrder
+from coactra import Scope
+from coactra.workflow.ledger import Artifact, ArtifactPart, WorkManager, WorkOrder
 
-scope = WorkScope(tenant_id="acme", namespace="support")
+scope = Scope(tenant_id="acme", namespace="support")
 work = WorkManager()
 order = work.submit(WorkOrder(scope=scope, title="Prepare incident report"))
 lease = work.claim(order.id, scope, worker="agent:analyst")
@@ -110,7 +111,7 @@ from coactra.workflow import Scope, SqlWorkStore, WorkManager, WorkOrder
 
 store = SqlWorkStore.from_url("sqlite:///coactra[workflow].db")
 manager = WorkManager(store=store)
-scope = WorkScope(tenant_id="acme", namespace="agent:builder")
+scope = Scope(tenant_id="acme", namespace="agent", agent_id="builder")
 
 order = manager.submit(WorkOrder(scope=scope, title="Build release"))
 lease = manager.claim(order.id, scope, worker="worker-1", lease_seconds=300)

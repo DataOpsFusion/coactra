@@ -12,7 +12,8 @@ from collections.abc import Awaitable, Callable, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from coactra.memory.capabilities import Capability
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 if TYPE_CHECKING:  # avoid a runtime import cycle (export imports base)
     from coactra.memory.export import ExportReport

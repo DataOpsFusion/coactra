@@ -10,13 +10,13 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.models import (
     PAUSED_STATUSES,
     TERMINAL_STATUSES,
     WorkOrder,
     WorkStatus,
 )
-from coactra.workflow.ledger.domain.scope import Scope
 from coactra.workflow.ledger.service import WorkManager
 
 

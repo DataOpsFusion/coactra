@@ -22,7 +22,7 @@ from coactra.memory.backends.base import (
     RecallCallable,
 )
 from coactra.memory.factory import make_backend as _make_backend
-from coactra.memory.types import Scope
+from coactra.scope import Scope
 
 # ---------------------------------------------------------------------------
 # Public factory
@@ -41,7 +41,7 @@ def bind_memory(
     Args:
         spec: A backend name (``"inprocess"``, ``"mem0"``, ``"graphiti"``), an
             object with ``recall()``, or a simple recall callable.
-        scope: A :class:`~coactra.memory.types.Scope` object that namespaces every
+        scope: The canonical :class:`~coactra.scope.Scope` that namespaces every
             remember/recall call.  Tenant isolation is enforced by the backend; this
             connector threads the scope through without modification.  (Accepting raw
             kwargs and building a Scope on-the-fly is a known future convenience; the

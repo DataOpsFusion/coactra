@@ -24,11 +24,12 @@ Use `SqlWorkStore` for backend services, long-running workers, serverless resume
 SQLite is useful for local development:
 
 ```python
-from coactra.workflow import Scope, SqlWorkStore, WorkManager, WorkOrder
+from coactra import Scope
+from coactra.workflow.ledger import SqlWorkStore, WorkManager, WorkOrder
 
 store = SqlWorkStore.from_url("sqlite:///./coactra[workflow].db")
 manager = WorkManager(store)
-scope = WorkScope(tenant_id="tenant-a", namespace="prod")
+scope = Scope(tenant_id="tenant-a", namespace="prod")
 ```
 
 Postgres-compatible deployments should use a SQLAlchemy URL and run the same store API:
@@ -61,7 +62,7 @@ except Exception as exc:
 
 ## Scope consistency
 
-Use `coactra.Scope` when one application composes multiple packages. It documents the conversion rules and prevents tenant, namespace, agent, and session collisions.
+Use the canonical `coactra.Scope` whenever one application composes multiple packages. It carries tenant, namespace, agent, and session isolation as one value.
 
 ```python
 from coactra import Scope
@@ -73,10 +74,7 @@ scope = Scope(
     session_id="session-1",
 )
 
-agent_scope_kwargs = scope.to_agent_kwargs()
-work_scope_kwargs = scope.to_work_kwargs()
-workspace_scope_kwargs = scope.to_workspace_kwargs()
-memory_scope_kwargs = scope.to_memory_kwargs()
+# Pass `scope` directly to agent, memory, workflow, ledger, and workspace APIs.
 ```
 
 ## Workspace execution policy

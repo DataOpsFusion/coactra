@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from coactra.scope import Scope
+
 
 def _select_scopes(bound: Mapping[str, Any], selected: list[str] | None) -> list[tuple[str, Any]]:
     aliases = selected or ["agent"]
@@ -14,7 +16,7 @@ def _select_scopes(bound: Mapping[str, Any], selected: list[str] | None) -> list
     return [(alias, bound[alias]) for alias in aliases]
 
 
-def _check_acl(acl: Any, actor: str | None, operation: str, scope: Any) -> None:
+def _check_acl(acl: Any, actor: str | None, operation: str, scope: Scope) -> None:
     if acl is None or actor is None:
         return
     checker = getattr(acl, f"check_{operation}", None) or getattr(acl, "check", None)
@@ -26,9 +28,9 @@ def _check_acl(acl: Any, actor: str | None, operation: str, scope: Any) -> None:
 def register_recall_tool(
     mcp_server: object,
     memory: Any,
-    scope: Any,
+    scope: Scope,
     *,
-    scope_aliases: Mapping[str, Any] | None = None,
+    scope_aliases: Mapping[str, Scope] | None = None,
     acl: Any = None,
     actor: str | None = None,
 ) -> None:

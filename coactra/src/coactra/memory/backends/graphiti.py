@@ -24,7 +24,8 @@ from coactra.memory.backends._errors import MissingExtraError
 from coactra.memory.backends.base import event_text
 from coactra.memory.capabilities import Capability
 from coactra.memory.export import ExportReport
-from coactra.memory.types import MemoryEvent, Recollection, Scope
+from coactra.memory.types import MemoryEvent, Recollection
+from coactra.scope import Scope
 
 _SOURCE = "graphiti"
 _CAPS = {

@@ -10,9 +10,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from coactra.scope import Scope
 from coactra.workflow.ledger.domain.events import EventEnvelope
 from coactra.workflow.ledger.domain.models import WorkOrder, WorkStatus
-from coactra.workflow.ledger.domain.scope import Scope
 from coactra.workflow.ledger.store import ConflictError
 
 
