@@ -30,6 +30,37 @@ def test_workflow_surface_does_not_export_agent_concepts():
         assert not hasattr(workflow, name), name
 
 
+def test_workflow_surface_does_not_export_langgraph_document_helpers():
+    import coactra.workflow as workflow
+
+    for name in [
+        "build_graph",
+        "run_workflow",
+        "document_from_procedure",
+        "check_done_criteria",
+        "verify_done_criteria",
+    ]:
+        assert not hasattr(workflow, name), name
+
+
+def test_code_change_recipe_lives_outside_workflow_runner():
+    from coactra.agent.recipes import code_change
+    from coactra.agent.workflow import Workflow
+
+    assert callable(code_change)
+    assert not hasattr(Workflow, "code_change")
+
+
+def test_workflow_surface_keeps_runtime_approval_store_advanced():
+    import coactra.workflow as workflow
+    from coactra.workflow.runtime import ApprovalStore, InMemoryApprovalStore
+
+    for name in ["ApprovalStore", "InMemoryApprovalStore"]:
+        assert not hasattr(workflow, name), name
+    assert ApprovalStore is not None
+    assert InMemoryApprovalStore is not None
+
+
 def test_playbook_module_stays_dependency_light():
     root = Path(__file__).resolve().parents[2]
     source = (root / "src" / "coactra" / "workflow" / "playbook.py").read_text()
@@ -72,6 +103,7 @@ def test_top_level_public_api_stays_small():
 
     expected = {
         "Agent",
+        "AgentSpec",
         "CoactraError",
         "Decision",
         "DecisionOutcome",

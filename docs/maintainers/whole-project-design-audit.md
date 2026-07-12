@@ -9,6 +9,8 @@ Status update:
   file contents to an LLM.
 - Improved: durable workflow tool invokers can receive actor/scope/runtime context
   through `ToolContext` when they accept a `context=` keyword.
+- Completed: code-change workflow types moved to `coactra.agent.recipes` and
+  LangGraph document compiler helpers are no longer exported from `coactra.workflow`.
 
 This audit treats Coactra as a policy-aware composition library for AI workloads,
 not as a single app framework. A host may run one agent, many agents, or attach
@@ -78,12 +80,11 @@ Recommendation:
 - Keep `WorkflowEngine` as the durable runtime SPI.
 - Make `Procedure` an internal/intermediate representation or move it to an
   advanced namespace.
-- Move `Workflow.code_change(...)` and code-change-specific types into a recipe
-  module or example. They are useful, but not core library vocabulary.
-- Stop exporting LangGraph document compiler helpers such as `build_graph`,
-  `run_workflow`, `document_from_procedure`, and done-criteria helpers from the
-  public `coactra.workflow` namespace unless Coactra intentionally owns a workflow
-  DSL.
+- Done: moved `Workflow.code_change(...)` and code-change-specific types into
+  `coactra.agent.recipes.code_change(...)`.
+- Done: LangGraph document compiler helpers such as `build_graph`, `run_workflow`,
+  `document_from_procedure`, and done-criteria helpers are adapter-only imports;
+  they are no longer exported from the public `coactra.workflow` namespace.
 
 Concrete files:
 
@@ -272,8 +273,9 @@ Concrete files:
 
 ## What To Remove Or Demote
 
-- Public exports for LangGraph document compiler helpers.
-- `Workflow.code_change(...)` from the core facade; keep as recipe/example.
+- Keep LangGraph document compiler helpers adapter-only.
+- Keep `coactra.agent.recipes.code_change(...)` as a recipe/example, outside the
+  core `Workflow` facade.
 - Standalone runtime `ApprovalStore` if the ledger can own approval state.
 - Mandatory memory export methods from the core backend protocol.
 - Public sync/async identity protocol duplication if one async exchanger seam plus

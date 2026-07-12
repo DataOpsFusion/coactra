@@ -1,6 +1,6 @@
 # Code Change Workflow
 
-`Workflow.code_change(...)` is a thin helper for the common
+`code_change(...)` is an optional recipe for the common
 **implement -> verify* -> review -> optional human approval** pattern.
 
 It does not replace dynamic workflow induction. It gives you one reusable, typed bootstrap
@@ -9,7 +9,7 @@ the normal Workflow model.
 
 ## Demonstrates
 
-- `Workflow.code_change(...)`
+- `coactra.agent.recipes.code_change(...)`
 - multiple verifier roles with required vs advisory checks
 - broad skill routing plus `required_tags`
 - structured verification and review contracts
@@ -22,11 +22,12 @@ import asyncio
 import os
 
 from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Skill, Team, Workflow
-from coactra.agent.workflow import (
+from coactra.agent.recipes import (
     CodeChangeRiskTier,
     VerificationCheck,
     VerifierRequirement,
     VerifierRole,
+    code_change,
 )
 
 
@@ -68,7 +69,7 @@ async def main() -> None:
         expose=True,
     )
 
-    plan = Workflow.code_change(
+    plan = code_change(
         "checkout-hardening",
         implement_instruction="Patch the checkout service to reject invalid coupon signatures.",
         implement_skill="python",
@@ -125,5 +126,5 @@ asyncio.run(main())
 ## Notes
 
 - The helper returns a `CodeChangeWorkflowPlan`, so execute `plan.workflow` like any other Workflow.
-- The helper types currently live in `coactra.agent.workflow`; treat that as a beta seam during alpha.
+- The helper types live in `coactra.agent.recipes`; they are separate from the core `Workflow` runner.
 - High- and medium-risk plans add a final `approval_only=True` human gate by default when `human_approval="auto"`.

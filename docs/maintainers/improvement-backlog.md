@@ -22,7 +22,7 @@ Status of major features (0.x alpha):
 | `peers=` outbound A2A delegation (`RemotePeer`, `OfficialA2ATransport`) | Built |
 | broad `requires_skill` routing with `required_tags` fail-closed disambiguation | Built |
 | approval proof bundles and `approval_only=True` gates | Built |
-| `Workflow.code_change(...)` thin builder | Built |
+| `coactra.agent.recipes.code_change(...)` optional builder | Built |
 | `ModelResolver` / `ModelProfile` / `ModelRoute` | Built |
 
 ## Outstanding: Team and Agent Layer

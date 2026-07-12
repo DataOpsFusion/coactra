@@ -2,7 +2,6 @@ import pytest
 
 from coactra.workflow import (
     AsyncProcedureRunnerAdapter,
-    InMemoryApprovalStore,
     PendingApproval,
     Procedure,
     RunContext,
@@ -14,6 +13,7 @@ from coactra.workflow import (
     WorkflowRunStatus,
     make_workflow_engine,
 )
+from coactra.workflow.runtime import InMemoryApprovalStore
 
 
 class Runner:

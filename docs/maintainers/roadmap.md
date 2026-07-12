@@ -21,7 +21,7 @@ durability**.
 - `Workflow` / `step()` with approval pause/resume and checkpoint-store resume
 - broad `requires_skill` workflow routing with `required_tags` disambiguation and fail-closed ambiguity
 - `ProofBundle` / `VerificationReceipt` approval evidence and `approval_only=True` pure human gates
-- `Workflow.code_change(...)` as a thin implement/verify/review builder
+- `coactra.agent.recipes.code_change(...)` as an optional implement/verify/review builder
 - `ModelProfile` / `ModelRoute` / `ModelResolver` as the governed model seam
 - Outbound A2A via `coactra.agent.adapters.OfficialA2ATransport`
 

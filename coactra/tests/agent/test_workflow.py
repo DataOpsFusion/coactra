@@ -475,15 +475,15 @@ async def test_approval_only_gate_records_human_decision_and_continues(team):
 
 
 async def test_code_change_builder_returns_workflow_and_contracts():
-    from coactra.agent.workflow import (
+    from coactra.agent.recipes import (
         CodeChangeRiskTier,
         VerificationCheck,
         VerifierRequirement,
         VerifierRole,
-        Workflow,
+        code_change,
     )
 
-    plan = Workflow.code_change(
+    plan = code_change(
         "website-maintenance",
         implement_instruction="Update the website configuration safely.",
         implement_skill="ops",
@@ -531,9 +531,14 @@ async def test_code_change_builder_returns_workflow_and_contracts():
 
 
 async def test_code_change_builder_low_risk_can_skip_human_gate():
-    from coactra.agent.workflow import CodeChangeRiskTier, VerificationCheck, VerifierRole, Workflow
+    from coactra.agent.recipes import (
+        CodeChangeRiskTier,
+        VerificationCheck,
+        VerifierRole,
+        code_change,
+    )
 
-    plan = Workflow.code_change(
+    plan = code_change(
         "small-fix",
         implement_instruction="Apply a small safe change.",
         implement_agent="implementer",

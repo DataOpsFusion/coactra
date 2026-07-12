@@ -15,7 +15,7 @@ and connector contracts that sit above those engines.
 - `Workflow(steps=[...])` routes by broad `requires_skill` domains plus optional `required_tags`; direct `agent=` pinning is an override
 - Workflow routing and execution both go through Team policy checks
 - Approval resumes carry structured `ProofBundle` evidence, not plain text claims
-- `Workflow.code_change(...)` is a thin helper for implement/verify/review, not a replacement for dynamic workflow induction
+- `coactra.agent.recipes.code_change(...)` is an optional helper for implement/verify/review, not a replacement for dynamic workflow induction
 - `ai` remains an internal engine layer, not a public package identity
 - `memory` and `workspace` stay adapter-backed capabilities governed by Team policy
 - `Department` / `Company` style hierarchies are optional composition layers, not mandatory core concepts

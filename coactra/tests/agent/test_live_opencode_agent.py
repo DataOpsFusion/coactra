@@ -17,7 +17,7 @@ def _opencode_key() -> str | None:
     for key_file in _KEY_FILES:
         if key_file.exists():
             return key_file.read_text().strip()
-    return os.environ.get("OC_KEY")
+    return os.environ.get("OC_KEY") or os.environ.get("API_KEY")
 
 
 pytestmark = pytest.mark.live

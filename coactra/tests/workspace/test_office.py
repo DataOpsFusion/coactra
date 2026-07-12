@@ -36,12 +36,18 @@ def test_invalid_status_missing_field_raises():
         validate_status("---\ncurrent_assignment_id: WO-118\n---\n")
 
 
-def test_count_tokens_returns_int(tmp_path: Path):
-    pytest.importorskip("tiktoken")
+def test_count_tokens_returns_int(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    class WordEncoder:
+        def encode(self, text: str) -> list[str]:
+            return text.split()
+
+    monkeypatch.setattr(
+        "coactra.workspace.office._get_encoder",
+        lambda _: WordEncoder(),
+    )
     (tmp_path / "STATUS.md").write_text("hello world " * 100)
     count = count_office_tokens(tmp_path)
-    assert isinstance(count, int)
-    assert count > 0
+    assert count == 200
 
 
 def test_initialize_scaffolds_office_and_preserves_existing_files(tmp_path: Path):

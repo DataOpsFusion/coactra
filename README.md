@@ -163,7 +163,7 @@ workflow = Workflow(
 run = await team.run(workflow)
 ```
 
-Broad skill ids stay reusable; `required_tags` keeps routing deterministic when multiple agents share the same domain. Approved steps resume with a `ProofBundle`, and `Workflow.code_change(...)` provides a thin implement/verify/review helper for common change-management flows.
+Broad skill ids stay reusable; `required_tags` keeps routing deterministic when multiple agents share the same domain. Approved steps resume with a `ProofBundle`. The optional `coactra.agent.recipes.code_change(...)` recipe covers common implement/verify/review flows without expanding the core `Workflow` runner.
 
 ## Development
 

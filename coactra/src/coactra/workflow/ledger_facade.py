@@ -8,8 +8,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from coactra.workflow import (
-    ApprovalStore,
-    InMemoryApprovalStore,
     InMemoryProcedureStore,
     PendingApproval,
     Procedure,
@@ -32,6 +30,7 @@ from coactra.workflow.ledger import (
     WorkStatus,
 )
 from coactra.workflow.ledger.domain.scope import Scope as WorkScope
+from coactra.workflow.runtime.approval import ApprovalStore, InMemoryApprovalStore
 
 
 class ProcedureNotFoundError(LookupError):

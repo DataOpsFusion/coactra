@@ -183,7 +183,7 @@ if run.status == "interrupted":
     )
 ```
 
-`Workflow` supports Team skill routing, approval pause/resume with proof bundles, checkpoint storage, and swappable engine seams. For the common implement/verify/review pattern, see `Workflow.code_change(...)` in [Code Change Workflow](../examples/code-change-workflow.md).
+`Workflow` supports Team skill routing, approval pause/resume with proof bundles, checkpoint storage, and swappable engine seams. For the common implement/verify/review pattern, see `coactra.agent.recipes.code_change(...)` in [Code Change Workflow](../examples/code-change-workflow.md).
 
 ## 7. Production Shape
 
