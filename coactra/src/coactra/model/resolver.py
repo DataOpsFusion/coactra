@@ -23,6 +23,11 @@ class ModelResolver:
         self._routes[route.capability] = route
         return route
 
+    @property
+    def capabilities(self) -> tuple[str, ...]:
+        """Registered capability names, in registration order."""
+        return tuple(self._routes)
+
     def route(self, capability: str) -> ModelRoute | None:
         return self._routes.get(capability)
 

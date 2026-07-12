@@ -15,6 +15,7 @@ __version__ = distribution_version()
 
 __all__ = [
     "Agent",
+    "AgentSpec",
     "CoactraError",
     "Decision",
     "DecisionOutcome",
@@ -36,7 +37,7 @@ __all__ = [
     "__version__",
 ]
 
-_SDK_EXPORTS = frozenset({"Agent", "RemotePeer", "Run"})
+_SDK_EXPORTS = frozenset({"Agent", "AgentSpec", "RemotePeer", "Run"})
 _AUTH_EXPORTS = frozenset({"StaticToken"})
 _SKILLS_EXPORTS = frozenset({"Skill"})
 _SCOPE_EXPORTS = frozenset({"Scope"})

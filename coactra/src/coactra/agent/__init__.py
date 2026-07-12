@@ -48,6 +48,7 @@ from coactra.agent.identity import (
 
 _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     "Agent": ("coactra.agent.facade", "Agent"),
+    "AgentSpec": ("coactra.agent.spec", "AgentSpec"),
     "Run": ("coactra.agent.run", "Run"),
     "RemotePeer": ("coactra.agent.peers", "RemotePeer"),
     "FleetEntry": ("coactra.agent.registry", "FleetEntry"),
@@ -87,6 +88,7 @@ __all__ = [
     "InMemoryFleetRegistry",
     # agent SDK
     "Agent",
+    "AgentSpec",
     "Run",
     "RunResult",
     "Event",

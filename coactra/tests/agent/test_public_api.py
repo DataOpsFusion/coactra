@@ -42,6 +42,7 @@ def test_public_surface_is_stable_root_api():
         "InMemoryFleetRegistry",
         # agent facade exports
         "Agent",
+        "AgentSpec",
         "Run",
         "RunResult",
         "Event",

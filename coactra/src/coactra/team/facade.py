@@ -7,17 +7,18 @@ and carries canonical scope and policy for its members.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import fields, replace
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from coactra.agent import Agent
-from coactra.agent.skills import Skill, normalize_skills
+from coactra.agent.skills import Skill
+from coactra.agent.spec import AgentSpec
 from coactra.model import ModelProfile, ModelResolver, ModelRoute
 from coactra.policy import DecisionOutcome, Policy, PolicyRequest
 from coactra.policy import permissive as _permissive_policy
 from coactra.scope import Scope
-from coactra.team.spec import TeamAgentSpec
 
 __all__ = ["Team"]
 
@@ -26,32 +27,7 @@ def _has_required_tags(agent: Any, required_tags: tuple[str, ...]) -> bool:
     if not required_tags:
         return True
     required = set(required_tags)
-    for skill in getattr(agent, "_skills", []):
-        if required <= set(getattr(skill, "tags", ())):
-            return True
-    return False
-
-
-@dataclass(slots=True)
-class _AgentSpec:
-    name: str
-    model: Any | None = None
-    model_capability: str | None = None
-    instructions: str | None = None
-    tools: list[Any] = field(default_factory=list)
-    runtime: Any | None = None
-    api_base: str | None = None
-    api_key: str | None = None
-    gateway: str | None = None
-    auth: Any = None
-    memory: Any = None
-    workspace: Any = None
-    skills: list[Skill] = field(default_factory=list)
-    expose: bool = False
-    peers: list[Any] = field(default_factory=list)
-    registry: Any | None = None
-    tracer: Any | None = None
-    defaults: dict[str, Any] = field(default_factory=dict)
+    return any(required <= set(getattr(skill, "tags", ())) for skill in agent.skills)
 
 
 class Team:
@@ -69,10 +45,9 @@ class Team:
         self.policy = policy
         self._model_resolver = model_resolver
         if default_model_capability is None and model_resolver is not None:
-            routes = getattr(model_resolver, "_routes", {})
-            default_model_capability = next(iter(routes), None)
+            default_model_capability = next(iter(model_resolver.capabilities), None)
         self._default_model_capability = default_model_capability
-        self._agent_specs: dict[str, _AgentSpec] = {}
+        self._agent_specs: dict[str, AgentSpec] = {}
         self._agents: dict[str, Agent] = {}
         self._members: dict[str, Agent] = self._agents
         self._skills: dict[str, Skill] = {}
@@ -145,32 +120,41 @@ class Team:
         self.set_model_routes(route)
         return route
 
-    async def add_agent(
-        self,
-        *,
-        name: str,
-        model_capability: str | None = None,
-        instructions: str | None = None,
-        tools: list[Any] | None = None,
-        runtime: Any | None = None,
-        api_base: str | None = None,
-        api_key: str | None = None,
-        gateway: str | None = None,
-        auth: Any = None,
-        memory: Any = None,
-        workspace: Any = None,
-        skills: Any = None,
-        expose: bool = False,
-        peers: list[Any] | None = None,
-        registry: Any | None = None,
-        tracer: Any | None = None,
-        **defaults: Any,
-    ) -> Agent:
-        """Register and build an Agent owned by this Team."""
-        if name in self._agent_specs:
-            raise ValueError(f"agent {name!r} is already registered")
-        effective_model_capability = model_capability or self._default_model_capability
-        if effective_model_capability is None:
+    async def add_agent(self, spec: AgentSpec | None = None, /, **kwargs: Any) -> Agent:
+        """Register an :class:`AgentSpec`, or build one from keyword sugar."""
+        if spec is not None and kwargs:
+            raise TypeError("pass either an AgentSpec or keyword fields, not both")
+        if spec is None:
+            known = {item.name for item in fields(AgentSpec)}
+            extras = {key: kwargs.pop(key) for key in list(kwargs) if key not in known}
+            if extras:
+                kwargs["defaults"] = {**extras, **dict(kwargs.get("defaults", {}))}
+            spec = AgentSpec(**kwargs)
+        elif not isinstance(spec, AgentSpec):
+            raise TypeError("add_agent() requires an AgentSpec or keyword fields")
+        return await self._register(spec)
+
+    async def _register(self, spec: AgentSpec) -> Agent:
+        if spec.name in self._agent_specs:
+            raise ValueError(f"agent {spec.name!r} is already registered")
+        if spec.scope is not None and spec.scope.tenant_id != self.scope.tenant_id:
+            raise ValueError(
+                f"agent scope tenant {spec.scope.tenant_id!r} does not match "
+                f"team tenant {self.scope.tenant_id!r}"
+            )
+
+        capability = spec.model_capability
+        if spec.model is not None:
+            capability = capability or f"agent:{spec.name}"
+            self.add_model(
+                capability,
+                spec.model,
+                api_base=spec.api_base,
+                api_key=spec.api_key,
+            )
+        else:
+            capability = capability or self._default_model_capability
+        if capability is None:
             raise TypeError(
                 "add_agent() requires model_capability= or a Team default route; "
                 "use Team.local(model=...) for the low-ceremony path"
@@ -179,67 +163,35 @@ class Team:
             raise ValueError("Team has no model_resolver; configure routes before add_agent()")
 
         route = await self._model_resolver.resolve(
-            effective_model_capability,
-            principal=f"agent:{name}",
+            capability,
+            principal=f"agent:{spec.name}",
             scope=self.scope,
             policy=self.policy,
-            context={"agent_name": name},
+            context={"agent_name": spec.name},
         )
-        resolved_model = route.model
-        effective_api_base = api_base if api_base is not None else route.api_base
-        effective_api_key = api_key if api_key is not None else route.api_key
-        effective_defaults = {**route.defaults, **defaults}
-
-        normalized_skills = normalize_skills(skills)
-        spec = _AgentSpec(
-            name=name,
-            model=resolved_model,
-            model_capability=effective_model_capability,
-            instructions=instructions,
-            tools=list(tools or []),
-            runtime=runtime,
-            api_base=effective_api_base,
-            api_key=effective_api_key,
-            gateway=gateway,
-            auth=auth,
-            memory=memory,
-            workspace=workspace,
-            skills=normalized_skills,
-            expose=expose,
-            peers=list(peers or []),
-            registry=registry,
-            tracer=tracer,
-            defaults=effective_defaults,
+        resolved_scope = replace(spec.scope or self.scope, agent_id=spec.name)
+        resolved = replace(
+            spec,
+            model=route.model,
+            model_capability=capability,
+            scope=resolved_scope,
+            api_base=spec.api_base if spec.api_base is not None else route.api_base,
+            api_key=spec.api_key if spec.api_key is not None else route.api_key,
+            defaults={**route.defaults, **dict(spec.defaults)},
         )
-        self._agent_specs[name] = spec
-        for skill in normalized_skills:
+        self._agent_specs[spec.name] = resolved
+        for skill in resolved.skills:
             self._skills.setdefault(skill.id, skill)
 
         from coactra.agent.facade import build_agent
 
-        agent = await build_agent(
-            model=resolved_model,
-            instructions=instructions,
-            tools=list(tools or []),
-            runtime=runtime,
-            api_base=effective_api_base,
-            api_key=effective_api_key,
-            gateway=gateway,
-            auth=auth,
-            name=name,
-            tenant=self.scope.tenant_id,
-            memory=memory,
-            workspace=workspace,
-            skills=normalized_skills,
-            expose=expose,
-            peers=list(peers or []),
-            registry=registry,
-            tracer=tracer,
-            policy=self.policy,
-            **effective_defaults,
-        )
-        self._agents[name] = agent
+        agent = await build_agent(resolved, policy=self.policy)
+        self._agents[spec.name] = agent
         return agent
+
+    def spec(self, name: str) -> AgentSpec | None:
+        """Return the resolved spec registered under ``name``."""
+        return self._agent_specs.get(name)
 
     def add_skill(self, skill: Skill) -> Skill:
         self._skills[skill.id] = skill
@@ -254,9 +206,8 @@ class Team:
             raise KeyError(f"unknown agent {agent_name!r}")
         spec = self._agent_specs[agent_name]
         if not any(existing.id == skill.id for existing in spec.skills):
-            spec.skills.append(skill)
-        if not any(existing.id == skill.id for existing in agent._skills):
-            agent._skills.append(skill)
+            self._agent_specs[agent_name] = replace(spec, skills=[*spec.skills, skill])
+        agent.add_skill(skill)
         self._skills[skill.id] = skill
         return skill
 
@@ -277,7 +228,7 @@ class Team:
         tags = tuple(required_tags)
         matches: list[Agent] = []
         for agent in self._agents.values():
-            skills = getattr(agent, "_skills", [])
+            skills = agent.skills
             if any(skill.id == skill_id for skill in skills) and _has_required_tags(
                 agent,
                 tags,
@@ -297,7 +248,7 @@ class Team:
         if len(matches) > 1:
             raise ValueError(
                 f"skill {skill_id!r} is ambiguous for tags {tuple(required_tags)!r}: "
-                f"{[agent._name for agent in matches]!r}"
+                f"{[agent.name for agent in matches]!r}"
             )
         return matches[0]
 
@@ -339,14 +290,14 @@ class Team:
             return False
         decision = await self.policy.check(
             PolicyRequest(
-                principal=f"agent:{src_agent._name}",
+                principal=f"agent:{src_agent.name}",
                 action="agent.delegate",
-                resource=f"agent:{dst_agent._name}",
+                resource=f"agent:{dst_agent.name}",
                 scope=self.scope,
                 component="team",
                 context={
-                    "source_agent": src_agent._name,
-                    "target_agent": dst_agent._name,
+                    "source_agent": src_agent.name,
+                    "target_agent": dst_agent.name,
                 },
             )
         )
@@ -372,7 +323,7 @@ class Team:
         cls,
         *,
         model: Any,
-        agents: list[TeamAgentSpec] | tuple[TeamAgentSpec, ...],
+        agents: Sequence[AgentSpec],
         tenant_id: str = "local",
         namespace: str = "default",
         capability: str = "default",
@@ -401,35 +352,7 @@ class Team:
                 **defaults,
             )
         for spec in agents:
-            spec_capability = spec.model_capability
-            if spec.model is not None:
-                spec_capability = spec_capability or f"agent:{spec.name}"
-                team.add_model(
-                    spec_capability,
-                    spec.model,
-                    api_base=spec.api_base,
-                    api_key=spec.api_key,
-                    **spec.defaults,
-                )
-            await team.add_agent(
-                name=spec.name,
-                model_capability=spec_capability,
-                instructions=spec.instructions,
-                tools=list(spec.tools),
-                runtime=spec.runtime,
-                api_base=spec.api_base,
-                api_key=spec.api_key,
-                gateway=spec.gateway,
-                auth=spec.auth,
-                memory=spec.memory,
-                workspace=spec.workspace,
-                skills=list(spec.skills),
-                expose=spec.expose,
-                peers=list(spec.peers),
-                registry=spec.registry,
-                tracer=spec.tracer,
-                **({} if spec.model is not None else spec.defaults),
-            )
+            await team.add_agent(spec)
         return team
 
     @staticmethod

@@ -12,7 +12,16 @@ from __future__ import annotations
 import pytest
 from pydantic_ai.models.test import TestModel
 
-from coactra import ModelProfile, ModelResolver, ModelRoute, Policy, Scope, Team, Workflow
+from coactra import (
+    AgentSpec,
+    ModelProfile,
+    ModelResolver,
+    ModelRoute,
+    Policy,
+    Scope,
+    Team,
+    Workflow,
+)
 from coactra.agent import Agent
 from coactra.agent.skills import Skill
 from coactra.workflow import step
@@ -83,6 +92,47 @@ def test_team_requires_explicit_policy(team_scope):
         Team(scope=team_scope)
 
 
+@pytest.mark.asyncio
+async def test_add_agent_accepts_agent_spec_directly():
+    team = Team.local(model=TestModel(), tenant_id="acme")
+
+    agent = await team.add_agent(AgentSpec(name="helper", skills="review things"))
+
+    assert agent.name == "helper"
+    assert team.member("helper") is agent
+    resolved = team.spec("helper")
+    assert resolved is not None
+    assert resolved.scope == Scope(tenant_id="acme", namespace="default", agent_id="helper")
+
+
+@pytest.mark.asyncio
+async def test_add_agent_with_explicit_model_needs_no_default_route():
+    team = Team(scope=Scope(tenant_id="acme"), policy=Policy.permissive())
+
+    agent = await team.add_agent(AgentSpec(name="helper", model=TestModel()))
+
+    assert agent.name == "helper"
+    resolved = team.spec("helper")
+    assert resolved is not None
+    assert resolved.model_capability == "agent:helper"
+
+
+@pytest.mark.asyncio
+async def test_add_agent_rejects_spec_plus_kwargs():
+    team = Team.local(model=TestModel())
+
+    with pytest.raises(TypeError):
+        await team.add_agent(AgentSpec(name="helper"), instructions="nope")
+
+
+@pytest.mark.asyncio
+async def test_add_agent_rejects_foreign_tenant_scope():
+    team = Team.local(model=TestModel(), tenant_id="acme")
+
+    with pytest.raises(ValueError):
+        await team.add_agent(AgentSpec(name="helper", scope=Scope(tenant_id="other")))
+
+
 def test_team_keeps_scope_and_policy(team_scope, permissive_policy):
     team = Team(scope=team_scope, policy=permissive_policy)
 
@@ -131,8 +181,8 @@ async def test_match_skill_uses_exact_skill_ids(team_scope, permissive_policy):
         expose=True,
     )
 
-    assert team.match_skill("cert.rotate")._name == "security-agent"
-    assert team.match_skill("infra.deploy")._name == "sre-agent"
+    assert team.match_skill("cert.rotate").name == "security-agent"
+    assert team.match_skill("infra.deploy").name == "sre-agent"
     assert team.match_skill("missing.skill") is None
 
 
@@ -230,6 +280,6 @@ async def test_match_skill_with_required_tags_and_ambiguity(team_scope, permissi
         expose=True,
     )
 
-    assert team.match_skill("python", required_tags=["security"])._name == "python-security"
+    assert team.match_skill("python", required_tags=["security"]).name == "python-security"
     with pytest.raises(ValueError):
         team.match_skill("python")

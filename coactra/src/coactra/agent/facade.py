@@ -10,11 +10,12 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from coactra.agent.bindings import build_agent_bindings, normalize_agent_skills
+from coactra.agent.bindings import build_agent_bindings
 from coactra.agent.ports import AgentRuntimePort
 from coactra.agent.run import Run
 from coactra.agent.runtime import PydanticAIRuntime
 from coactra.agent.skills import Skill, build_agent_card
+from coactra.agent.spec import AgentSpec
 
 _KNOWN_RUNTIME_KWARGS = frozenset(
     {
@@ -51,6 +52,24 @@ class Agent:
         self._skills: list[Skill] = list(skills) if skills is not None else []
         self._expose = expose
         self._tools: list[Any] = list(tools) if tools is not None else []
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def tenant(self) -> str:
+        return self._tenant
+
+    @property
+    def skills(self) -> tuple[Skill, ...]:
+        return tuple(self._skills)
+
+    def add_skill(self, skill: Skill) -> Skill:
+        """Attach a skill unless one with the same id is already present."""
+        if not any(existing.id == skill.id for existing in self._skills):
+            self._skills.append(skill)
+        return skill
 
     @property
     def card(self) -> dict | None:
@@ -103,66 +122,52 @@ class Agent:
         await self.aclose()
 
 
-async def build_agent(
-    *,
-    model: Any,
-    instructions: str | None = None,
-    tools: list[Any] | None = None,
-    runtime: AgentRuntimePort | None = None,
-    api_base: str | None = None,
-    api_key: str | None = None,
-    gateway: str | None = None,
-    auth: Any = None,
-    name: str | None = None,
-    tenant: str | None = None,
-    memory: Any = None,
-    workspace: Any = None,
-    skills: Any = None,
-    expose: bool = False,
-    peers: list | None = None,
-    registry: Any | None = None,
-    tracer: Any | None = None,
-    policy: Any | None = None,
-    **defaults: Any,
-) -> Agent:
-    """Internal Team-facing agent assembly helper."""
-    unknown = set(defaults) - _KNOWN_RUNTIME_KWARGS
+async def build_agent(spec: AgentSpec, *, policy: Any | None = None) -> Agent:
+    """Assemble an Agent from one resolved :class:`coactra.AgentSpec`."""
+    unknown = set(spec.defaults) - _KNOWN_RUNTIME_KWARGS
     if unknown:
         raise TypeError(f"build_agent() got unexpected keyword argument(s): {sorted(unknown)}")
-    if runtime is not None:
-        skills_for_card = normalize_agent_skills(skills)
-        return Agent(runtime, name=name, tenant=tenant, skills=skills_for_card, expose=expose)
+    tenant = spec.scope.tenant_id if spec.scope is not None else None
+    if spec.runtime is not None:
+        return Agent(
+            spec.runtime,
+            name=spec.name,
+            tenant=tenant,
+            skills=list(spec.skills),
+            expose=spec.expose,
+            tools=list(spec.tools),
+        )
 
     bindings = build_agent_bindings(
-        tools=tools,
-        skills=skills,
-        peers=peers,
-        registry=registry,
-        name=name,
+        tools=list(spec.tools),
+        skills=list(spec.skills),
+        peers=list(spec.peers),
+        registry=spec.registry,
+        name=spec.name,
         tenant=tenant,
         policy=policy,
     )
     rt = PydanticAIRuntime(
-        model=model,
-        instructions=instructions,
+        model=spec.model,
+        instructions=spec.instructions,
         tools=bindings.tools,
-        api_base=api_base,
-        api_key=api_key,
-        gateway=gateway,
-        auth=auth,
-        name=name,
+        api_base=spec.api_base,
+        api_key=spec.api_key,
+        gateway=spec.gateway,
+        auth=spec.auth,
+        name=spec.name,
         tenant=tenant,
-        memory=memory,
-        workspace=workspace,
-        tracer=tracer,
+        memory=spec.memory,
+        workspace=spec.workspace,
+        tracer=spec.tracer,
         mcp_servers=bindings.mcp_servers,
-        **defaults,
+        **dict(spec.defaults),
     )
     return Agent(
         rt,
-        name=name,
+        name=spec.name,
         tenant=tenant,
         skills=bindings.skills,
-        expose=expose,
+        expose=spec.expose,
         tools=bindings.tools,
     )

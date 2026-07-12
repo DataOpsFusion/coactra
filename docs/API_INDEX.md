@@ -6,7 +6,7 @@ Complete public surface for Coactra 0.x (alpha). Tags: **Available** = works tod
 
 ```python
 from coactra import (
-    Agent, CoactraError, Decision, DecisionOutcome, ErrorCode,
+    Agent, AgentSpec, CoactraError, Decision, DecisionOutcome, ErrorCode,
     MissingExtraError, ModelProfile, ModelResolver, ModelRoute,
     Policy, PolicyRequest, RemotePeer, Run, Scope, Skill,
     StaticToken, Team, ValidationError, Workflow, __version__,
@@ -16,6 +16,7 @@ from coactra import (
 | Name | Type | Status | Description |
 |------|------|--------|-------------|
 | `Agent` | class | **Available** | Thin facade over pydantic-ai: model, tools, memory, workspace, skills, and peers. |
+| `AgentSpec` | dataclass | **Available** | Canonical declarative composition of one agent: identity, model routing, scope, skills, tools, memory, and runtime config. |
 | `RemotePeer` | dataclass | **Available** | Remote A2A peer config for outbound delegation tools. |
 | `Run` | class | **Available** | Handle returned by `agent.send(...)`; supports `stream()` and `wait()`. |
 | `Decision` | dataclass | **Available** | Shared policy decision payload with outcome, reason, source, and metadata. |
@@ -104,6 +105,22 @@ agent = await team.add_agent(
 ```
 
 `Team.add_agent(...)` is the public construction door. `model_capability=` is the governed route-selection path.
+
+The same construction as an explicit spec — `AgentSpec` is the canonical form; the
+keyword arguments above are convenience sugar over it:
+
+```python
+from coactra import AgentSpec, Skill
+
+agent = await team.add_agent(
+    AgentSpec(
+        name="security-agent",
+        model_capability="sre",
+        instructions="You handle certificate rotation.",
+        skills=[Skill(id="security", description="...", tags=["review", "tls"])],
+    )
+)
+```
 
 ## run / send / stream
 
@@ -255,9 +272,9 @@ if run.status == "interrupted":
 Thin code-change helper (beta seam during alpha):
 
 ```python
-from coactra.agent.workflow import CodeChangeRiskTier, VerificationCheck, VerifierRole
+from coactra.agent.recipes import CodeChangeRiskTier, VerificationCheck, VerifierRole, code_change
 
-plan = Workflow.code_change(
+plan = code_change(
     "checkout-fix",
     implement_instruction="Patch checkout to reject invalid coupon signatures.",
     implement_skill="python",
